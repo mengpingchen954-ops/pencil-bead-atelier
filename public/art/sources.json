@@ -1,0 +1,101 @@
+[
+  {
+    "asset": "cover.jpg",
+    "source": "4cca3cc61062b6778ec7ee861878eeb9.png",
+    "crop": [
+      0,
+      1010,
+      1536,
+      1600
+    ],
+    "method": "Cropped and resized from user-provided artwork"
+  },
+  {
+    "asset": "shop.jpg",
+    "source": "e153152570564e016e54948177011df7.png",
+    "crop": [
+      38,
+      640,
+      1460,
+      1200
+    ],
+    "method": "Cropped and resized from user-provided artwork"
+  },
+  {
+    "asset": "workshop.jpg",
+    "source": "31ceb56afa2327802678707fe5ca2276.png",
+    "crop": [
+      0,
+      205,
+      1536,
+      825
+    ],
+    "method": "Cropped and resized from user-provided artwork"
+  },
+  {
+    "asset": "delivery.jpg",
+    "source": "9e547310d4aeddffed3a54ec254a8c4b.png",
+    "crop": [
+      0,
+      315,
+      1536,
+      1390
+    ],
+    "method": "Cropped and resized from user-provided artwork"
+  },
+  {
+    "asset": "girl.jpg",
+    "source": "cffc43b62193bd97e529aaa47f09d2ea.png",
+    "crop": [
+      110,
+      190,
+      590,
+      720
+    ],
+    "method": "Cropped and resized from user-provided artwork"
+  },
+  {
+    "asset": "grandma.jpg",
+    "source": "f96f3a5928fac7947009ea952bf5b020.png",
+    "crop": [
+      860,
+      405,
+      500,
+      745
+    ],
+    "method": "Cropped and resized from user-provided artwork"
+  },
+  {
+    "asset": "chair-wood.jpg",
+    "source": "f96f3a5928fac7947009ea952bf5b020.png",
+    "crop": [
+      140,
+      1395,
+      350,
+      405
+    ],
+    "method": "Cropped and resized from user-provided artwork"
+  },
+  {
+    "asset": "chair-sage.jpg",
+    "source": "f96f3a5928fac7947009ea952bf5b020.png",
+    "crop": [
+      590,
+      1395,
+      340,
+      405
+    ],
+    "method": "Cropped and resized from user-provided artwork"
+  },
+  {
+    "asset": "chair-blue.jpg",
+    "source": "f96f3a5928fac7947009ea952bf5b020.png",
+    "crop": [
+      1030,
+      1395,
+      350,
+      405
+    ],
+    "method": "Cropped and resized from user-provided artwork"
+  }
+]
