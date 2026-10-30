@@ -6,7 +6,9 @@ import {
   STORIES,
   FURNITURE,
   CHARMS,
+  JOURNEY,
 } from "./content.js";
+import { storyUnlocked, pendingStory, finishStory, storyEvidence, mediaPath } from "./story.js";
 import {
   SAVE_KEY,
   targetForLevel,
@@ -64,6 +66,12 @@ const view = $("#view"),
 const order = () => ORDERS.find((o) => o.id === save.orderId);
 const currentChapter = () =>
   CHAPTERS[Math.min(2, Math.floor(save.completed.length / 2))];
+const journey = () => JOURNEY[Math.min(6, save.completed.length)];
+const mediaController = new AbortController();
+const mediaTimeout = setTimeout(() => mediaController.abort(), 4000);
+const mediaReady = fetch(`${import.meta.env.BASE_URL}story-media.json`, {
+  signal: mediaController.signal,
+}).then((r) => r.ok ? r.json() : {}).catch(() => ({})).finally(() => clearTimeout(mediaTimeout));
 const btn = (label, action, cls = "primary", attrs = "") =>
   `<button class="${cls}" data-action="${action}" ${attrs}>${label}</button>`;
 const ibtn = (name, action, label) =>
@@ -240,17 +248,21 @@ function mountScene() {
 function coverView() {
   return `<section class="cover"><div class="cover-arch">${botanical}</div><div class="cover-title">${tag("A LITTLE BEAD ATELIER")}<h1>珠光<span>小店物语</span></h1>${flourish}<p>与奶奶一起，把日子串成光。</p></div><img class="cover-art" src="${artURL("cover")}" alt="奶奶陪着阿禾在木桌边串珠，花叶环绕着她们"><div class="cover-bottom">${btn(`推开小店的门 ${icon("arrow")}`, "start", "primary start-button")}<p>三消采珠 · 亲手串珠 · 小店焕新</p><span class="cover-caption">献给每个认真生活、热爱手作的你</span></div></section>`;
 }
+function journeyCard() {
+  const task = journey(), pending = pendingStory(save);
+  return `<aside class="journey-card"><small>阿禾的心愿 · ${save.completed.length < 6 ? `第 ${save.completed.length + 1} 步` : "本篇后记"}</small><h2>${task.title}</h2><p>${task.pressure}</p><div class="journey-goal">${icon("flower")}<span>${task.goal}</span></div>${pending ? btn(`继续剧情 · ${pending.title} ${icon("arrow")}`, `story:${STORIES.indexOf(pending)}`, "text-button journey-read") : btn("翻开故事与线索手账", "nav:journal", "text-button journey-read")}</aside>`;
+}
 function homeView() {
   const o = order(),
     chapter = currentChapter();
-  return `<section class="home-page"><div class="home-intro">${tag("AH HE’S LITTLE ATELIER")}<h1>一颗珠子，一段新生活</h1><p>午后的阳光刚好，小店又开门了。</p></div><div class="shop-illustration"><img src="${artURL("shop")}" alt="阿禾和奶奶的温暖手串小店"><div class="shop-plaque">阿禾手作 <span>营业中</span></div>${btn(`${icon("chair")} 布置小店`, "nav:decor", "floating-button")}</div><div class="home-paper"><div class="chapter-line"><span>${chapter.title}</span><button class="text-button" data-action="nav:journal">故事 ${icon("arrow")}</button></div><div class="chapter-progress"><span style="width:${(save.completed.length / 6) * 100}%"></span></div><div class="home-order"><div class="order-mark">${icon(save.completed.length === 6 ? "flower" : "orders")}</div><div><small>${save.completed.length === 6 ? "新的开始" : "正在等待的心意 · " + o.customer}</small><h2>${save.completed.length === 6 ? "我们的故事，会继续" : o.name}</h2></div>${reward(o.reward)}</div><p class="home-quote">“${save.completed.length === 6 ? "明天还要开门。先为自己做一条喜欢的手串吧。" : o.text}”</p><div class="home-actions">${btn(`${icon("craft")} ${save.completed.length === 6 ? "自由设计" : "开始手作"}`, "nav:craft", "secondary")}${btn(`${icon("flower")} 消除采珠`, "match-intro")}</div><div class="home-footer"><span>${icon("star")} 小店口碑 ${save.rep}</span><span>已完成 ${save.completed.length}/6 份委托</span></div></div></section>`;
+  return `<section class="home-page"><div class="home-intro">${tag("AH HE’S LITTLE ATELIER")}<h1>一颗珠子，一段新生活</h1><p>午后的阳光刚好，小店又开门了。</p></div><div class="shop-illustration"><img src="${artURL("shop")}" alt="阿禾和奶奶的温暖手串小店"><div class="shop-plaque">阿禾手作 <span>营业中</span></div>${btn(`${icon("chair")} 布置小店`, "nav:decor", "floating-button")}</div><div class="home-paper"><div class="chapter-line"><span>${chapter.title}</span><button class="text-button" data-action="nav:journal">故事 ${icon("arrow")}</button></div><div class="chapter-progress"><span style="width:${(save.completed.length / 6) * 100}%"></span></div><div class="home-order"><div class="order-mark">${icon(save.completed.length === 6 ? "flower" : "orders")}</div><div><small>${save.completed.length === 6 ? "新的开始" : "正在等待的心意 · " + o.customer}</small><h2>${save.completed.length === 6 ? "我们的故事，会继续" : o.name}</h2></div>${reward(o.reward)}</div><p class="home-quote">“${save.completed.length === 6 ? "明天还要开门。先为自己做一条喜欢的手串吧。" : o.text}”</p><div class="home-actions">${btn(`${icon("craft")} ${save.completed.length === 6 ? "自由设计" : "开始手作"}`, "nav:craft", "secondary")}${btn(`${icon("flower")} 消除采珠`, "match-intro")}</div>${journeyCard()}<div class="home-footer"><span>${icon("star")} 小店口碑 ${save.rep}</span><span>已完成 ${save.completed.length}/6 份委托</span></div></div></section>`;
 }
 function ordersView() {
   return `<section class="page">${heading("LET EVERY WISH SHINE", "每一份心意，都值得", "听听客人的故事，为她们做一条独一无二的手串。")}<div class="order-list">${ORDERS.map(
     (o, i) => {
       const done = save.completed.includes(o.id),
         locked = i > save.completed.length;
-      return `<article class="order-card ${done ? "finished" : ""}"><div class="order-number">${String(i + 1).padStart(2, "0")}<span>${done ? "已交付" : locked ? "待开启" : "可接单"}</span></div><div class="order-card-top">${miniBracelet(o.palette, o.charm)}<div><small>${o.customer} · ${o.occasion}</small><h2>${o.name}</h2><p>${o.text}</p></div></div><div class="order-requirements"><span>${bead(o.main)}${BEADS[o.main].short} ≥${o.mainNeed}</span><span>${bead(o.accent)}${BEADS[o.accent].short} ≥${o.accentNeed}</span><span>${icon(o.charm === "daisy" ? "flower" : o.charm)}${CHARMS[o.charm]}吊坠</span></div><div class="card-footer">${reward(o.reward)}<span class="muted">口碑 +${o.rep}</span>${btn(done ? `${icon("check")} 已送达` : locked ? `${icon("lock")} 完成前单解锁` : "为她制作", `accept:${o.id}`, done || locked ? "small-button disabled" : "small-button", done || locked ? "disabled" : "")}</div></article>`;
+      return `<article class="order-card ${done ? "finished" : ""}"><div class="order-number">${String(i + 1).padStart(2, "0")}<span>${done ? "已交付" : locked ? "待开启" : "可接单"}</span></div><div class="order-card-top">${miniBracelet(o.palette, o.charm)}<div><small>${o.customer} · ${o.occasion}</small><h2>${o.name}</h2><p>${o.text}</p></div></div><p class="order-story">${icon("book")} ${JOURNEY[i].title}</p><div class="order-requirements"><span>${bead(o.main)}${BEADS[o.main].short} ≥${o.mainNeed}</span><span>${bead(o.accent)}${BEADS[o.accent].short} ≥${o.accentNeed}</span><span>${icon(o.charm === "daisy" ? "flower" : o.charm)}${CHARMS[o.charm]}吊坠</span></div><div class="card-footer">${reward(o.reward)}<span class="muted">口碑 +${o.rep}</span>${btn(done ? `${icon("check")} 已送达` : locked ? `${icon("lock")} 完成前单解锁` : "为她制作", `accept:${o.id}`, done || locked ? "small-button disabled" : "small-button", done || locked ? "disabled" : "")}</div></article>`;
     },
   ).join("")}</div></section>`;
 }
@@ -259,7 +271,7 @@ function craftView() {
     checks = checkOrder(save, o),
     counts = draftCounts(save.draft),
     done = save.completed.length === 6;
-  return `<section class="craft-page"><div class="craft-banner"><img src="${artURL("workshop")}" alt="窗边手作台"><div>${tag("HANDMADE WITH LOVE")}<h1>${done ? "把喜欢，串给自己" : o.name}</h1><p>${done ? "试着搭配，作品会自动保存在工作台。" : o.customer + "的定制委托 · 12 颗珠子"}</p></div></div><div class="craft-goals">${[
+  return `<section class="craft-page"><div class="craft-banner"><img src="${artURL("workshop")}" alt="窗边手作台"><div>${tag("HANDMADE WITH LOVE")}<h1>${done ? "把喜欢，串给自己" : o.name}</h1><p>${done ? "试着搭配，作品会自动保存在工作台。" : o.customer + "的定制委托 · 12 颗珠子"}</p></div></div>${!done ? `<p class="craft-story">${icon("book")} ${journey().goal}</p>` : ""}<div class="craft-goals">${[
     [checks.main, `${BEADS[o.main].short} ${counts[o.main]}/${o.mainNeed}`],
     [
       checks.accent,
@@ -313,7 +325,7 @@ function decorView() {
   return `<section class="page decor-page">${heading("A HOME FOR OUR DREAMS", "把小店，慢慢变好", "先添一把舒服的椅子，再给梦想多一点位置。")}<div class="decor-nook"><div class="nook-window">✧</div><div class="nook-furnitures">${FURNITURE.map((f) => `<div>${furnitureArt(f)}</div>`).join("")}</div><div class="nook-caption">阿禾与奶奶的小小天地</div></div><div class="furniture-list">${FURNITURE.map(
     (f) => {
       const tier = save.upgrades[f.id];
-      return `<article class="furniture-card"><div class="furniture-preview">${furnitureArt(f)}</div><div class="furniture-info"><small>${f.title}</small><h2>${f.names[tier]}</h2><p>${f.text}</p><div class="tier-dots">${[0, 1, 2].map((i) => `<i class="${i <= tier ? "filled" : ""}"></i>`).join("")}<span>${tier === 2 ? "已全部焕新" : "第 " + (tier + 1) + " 阶段"}</span></div>${tier < 2 ? btn(`${icon("coin")} ${f.prices[tier + 1]} · 升级${f.names[tier + 1]}`, `buy:${f.id}`, "small-button") : `<span class="owned-label">${icon("check")} 已拥有最终款</span>`}</div></article>`;
+      return `<article class="furniture-card"><div class="furniture-preview">${furnitureArt(f)}</div><div class="furniture-info"><small>${f.title}</small><h2>${f.names[tier]}</h2><p>${f.text}</p><div class="tier-dots">${[0, 1, 2].map((i) => `<i class="${i <= tier ? "filled" : ""}"></i>`).join("")}<span>${tier === 2 ? "已全部焕新" : "第 " + (tier + 1) + " 阶段"}</span></div>${tier < 2 ? btn(`${icon("coin")} ${f.prices[tier + 1]} · 升级${f.names[tier + 1]}`, `buy:${f.id}`, "small-button") : `<span class="owned-label">${icon("check")} 已拥有最终款</span>`}${tier >= 1 ? btn("翻开这件家具的故事", `story:${STORIES.findIndex((s) => s.furniture === f.id)}`, "text-button furniture-story") : ""}</div></article>`;
     },
   ).join("")}</div></section>`;
 }
@@ -330,20 +342,19 @@ function albumView() {
   }<button class="journal-link" data-action="nav:journal">${icon("book")} 翻开阿禾的故事手账 ${icon("arrow")}</button></section>`;
 }
 function journalView() {
-  return `<section class="page">${heading("OUR DAYS, OUR STORY", "日子，一页页亮起来", "属于阿禾和奶奶的手作生活手账。")}<div class="journal-portrait"><img src="${artURL("shop")}" alt="陪伴彼此的阿禾与奶奶"><span>从一张旧桌子，到属于自己的天地</span></div>${CHAPTERS.map(
+  const evidence = storyEvidence(save);
+  return `<section class="page">${heading("OUR DAYS, OUR STORY", "把生活，握回自己手里", "三章主线 · 家具支线 · 属于阿禾的记录与回忆")}<div class="journal-portrait"><img src="${artURL("shop")}" alt="陪伴彼此的阿禾与奶奶"><span>从一张旧桌子，到属于自己的天地</span></div><div class="memory-box"><h2>${icon("book")} 线索与回忆 · ${evidence.length}</h2><p>读完对应剧情后收好，随时可以翻看。</p>${evidence.length ? evidence.map((s) => btn(`${icon("book")} ${s.evidence.title} ${icon("arrow")}`, `evidence:${s.id}`, "evidence-card")).join("") : '<p class="muted">第一张订单收据，还在等你亲手写下。</p>'}</div>${CHAPTERS.map(
     (c, i) =>
       `<div class="chapter-card"><small>CHAPTER ${String(i + 1).padStart(2, "0")}</small><h2>${c.title}</h2><p>${c.subtitle}</p>${STORIES.map(
         (s, n) => ({ s, n }),
       )
-        .filter(({ n }) =>
-          i === 0 ? n <= 2 : i === 1 ? n >= 3 && n <= 4 : n >= 5,
-        )
+        .filter(({ s }) => s.chapter === i)
         .map(({ s, n }) =>
           btn(
-            `<span>${n <= save.completed.length ? icon("book") : icon("lock")}${s.title}</span>${icon("arrow")}`,
+            `<span>${storyUnlocked(save, s) ? icon(save.seenStories.includes(s.id) ? "check" : "book") : icon("lock")}<span>${s.title}<small>${s.furniture ? `支线 · 升级${FURNITURE.find((f) => f.id === s.furniture).title}解锁` : s.afterOrder ? `主线 · 交付「${ORDERS.find((o) => o.id === s.afterOrder).name}」` : "序章 · 幼年的往事"}${storyUnlocked(save, s) ? save.seenStories.includes(s.id) ? " · 可重温" : " · 未读" : ""}</small></span></span>${icon("arrow")}`,
             `story:${n}`,
-            `story-link ${n > save.completed.length ? "locked" : ""}`,
-            n > save.completed.length ? "disabled" : "",
+            `story-link ${!storyUnlocked(save, s) ? "locked" : ""}`,
+            !storyUnlocked(save, s) ? "disabled" : "",
           ),
         )
         .join("")}</div>`,
@@ -362,7 +373,53 @@ function close() {
 function modalShell(title, body, footer = "", cls = "") {
   return `<div class="modal-scrim"><section class="modal ${cls}" role="dialog" aria-modal="true" aria-label="${title}"><div class="modal-heading"><h2>${title}</h2>${ibtn("close", "close", "关闭弹窗")}</div>${body}${footer ? `<div class="modal-footer">${footer}</div>` : ""}</section></div>`;
 }
+function stopStoryVideo() {
+  const video = modalRoot.querySelector("video");
+  if (!video) return;
+  video.onerror = video.onended = null;
+  video.pause();
+  video.removeAttribute("src");
+  video.load();
+}
+function storyBody(s) {
+  if (modal.mode === "loading") return '<p class="story-loading" role="status">正在翻开这一页…</p>';
+  const finishLabel = s.evidence ? `收好${s.evidence.title}` : "把这一页收好";
+  if (modal.mode === "video")
+    return `<div class="story-video-wrap"><video class="story-video" controls playsinline preload="metadata" aria-label="${s.title}剧情视频"></video><p class="video-status" role="status">点击播放，可随时切换文字剧情。</p><div class="video-actions">${btn("播放剧情", "story-play", "small-button")}${btn("跳过视频 · 阅读文字", "story-text", "text-button")}</div></div>`;
+  if (modal.mode === "video-end")
+    return `<div class="story-summary"><small>片段已结束</small><p>${s.summary}</p>${btn(finishLabel, "story-finish", "small-button")}${btn("阅读完整文字", "story-text", "text-button")}</div>`;
+  const [speaker, line] = s.lines[storyLine];
+  const portrait = speaker === "奶奶" || speaker === "阿禾"
+    ? `<img src="${artURL(speaker === "奶奶" ? "grandma" : "girl")}" alt="${speaker}">`
+    : `<span class="speaker-name">${speaker}</span>`;
+  return `${modal.mediaError ? '<p class="video-fallback" role="status">视频暂时无法播放，已为你打开完整文字剧情。</p>' : ""}<div class="story-art"><img src="${artURL("shop")}" alt="阿禾与奶奶的手作小店"><div class="story-portrait">${portrait}</div></div><div class="dialogue"><small>${speaker}</small><p>${line}</p><div class="dialogue-footer"><span class="story-page-number">${storyLine + 1} / ${s.lines.length}</span>${btn(storyLine === s.lines.length - 1 ? finishLabel : "继续", "story-next", "small-button")}</div></div>`;
+}
+function bindStoryVideo() {
+  const video = modalRoot.querySelector("video"), active = modal;
+  if (!video) return;
+  video.muted = !save.sound;
+  video.poster = mediaPath(active.media.poster, import.meta.env.BASE_URL) || artURL("shop");
+  const captions = mediaPath(active.media.captions, import.meta.env.BASE_URL);
+  if (captions) {
+    const track = document.createElement("track");
+    Object.assign(track, { kind: "subtitles", srclang: "zh", label: "中文字幕", src: captions, default: true });
+    video.append(track);
+  }
+  video.onerror = () => {
+    if (modal !== active) return;
+    active.mode = "text";
+    active.mediaError = true;
+    renderModal();
+  };
+  video.onended = () => {
+    if (modal !== active) return;
+    active.mode = "video-end";
+    renderModal();
+  };
+  video.src = mediaPath(active.media.src, import.meta.env.BASE_URL);
+}
 function renderModal() {
+  stopStoryVideo();
   if (!modal) {
     modalRoot.innerHTML = "";
     return;
@@ -372,7 +429,7 @@ function renderModal() {
   if (modal.type === "intro")
     html = modalShell(
       "去珠材花园走走",
-      `<div class="intro-beads">${BEADS.map((_, i) => bead(i)).join("")}</div><p class="modal-copy">交换相邻的珠子，连成三个或更多。<br>收集 ${targetForLevel(save.level)} 颗，即可带回一袋手作珠材。</p><div class="reward-strip">${icon("bag")} 六色珠材包 <span>${icon("energy")} 消耗 1 体力</span></div><p class="muted centered">珠材会用于你的真实订单，每一颗都派得上用场。</p>`,
+      `<div class="intro-beads">${BEADS.map((_, i) => bead(i)).join("")}</div><p class="modal-copy">交换相邻的珠子，连成三个或更多。<br>收集 ${targetForLevel(save.level)} 颗，即可带回一袋手作珠材。</p><div class="reward-strip">${icon("bag")} 六色珠材包 <span>${icon("energy")} 消耗 1 体力</span></div><p class="muted centered">${journey().goal}</p>`,
       btn("开始采珠", "match-start"),
     );
   if (modal.type === "inventory")
@@ -414,7 +471,7 @@ function renderModal() {
   if (modal.type === "delivery")
     html = modalShell(
       "把心意，好好交到她手上",
-      `${miniBracelet(save.draft, save.charm)}<div class="delivery-note"><small>TO ${o.customer}</small><h3>${o.name}</h3><p>“${o.text}”</p><span>${reward(o.reward)} 口碑 +${o.rep}</span></div>`,
+      `${miniBracelet(save.draft, save.charm)}<div class="delivery-note"><small>TO ${o.customer}</small><h3>${o.name}</h3><p>“${o.text}”</p><span>${reward(o.reward)} 口碑 +${o.rep}</span><p class="delivery-story">${journey().result}</p></div>`,
       btn("系好丝带，确认交付", "confirm-delivery"),
     );
   if (modal.type === "collection" || modal.type === "free") {
@@ -432,12 +489,12 @@ function renderModal() {
   if (modal.type === "settings")
     html = modalShell(
       "小店设置",
-      `<div class="setting-row"><span>${icon("sound")} 轻柔音效</span>${btn(save.sound ? "已开启" : "已关闭", "sound", `toggle ${save.sound ? "on" : ""}`, `aria-pressed="${save.sound}"`)}</div><div class="setting-row"><span>${icon("flower")} 减少动态效果</span>${btn(save.reduced ? "已开启" : "已关闭", "motion", `toggle ${save.reduced ? "on" : ""}`, `aria-pressed="${save.reduced}"`)}</div><p class="modal-copy small-copy">进度自动保存在当前浏览器。<br>触屏滑动交换珠子；电脑可用鼠标操作。<br>棋盘聚焦后用方向键移动、空格选珠与交换。<br>F 全屏，Esc 返回或关闭弹窗。</p><div class="settings-links">${btn("玩法说明", "help", "text-button")}${btn("导出进度", "export", "text-button")}${btn("重新开始", "reset", "text-button danger")}</div>`,
+      `<div class="setting-row"><span>${icon("sound")} 游戏声音与剧情音频</span>${btn(save.sound ? "已开启" : "已关闭", "sound", `toggle ${save.sound ? "on" : ""}`, `aria-pressed="${save.sound}"`)}</div><div class="setting-row"><span>${icon("flower")} 减少动态效果</span>${btn(save.reduced ? "已开启" : "已关闭", "motion", `toggle ${save.reduced ? "on" : ""}`, `aria-pressed="${save.reduced}"`)}</div><p class="modal-copy small-copy">进度自动保存在当前浏览器。<br>触屏滑动交换珠子；电脑可用鼠标操作。<br>棋盘聚焦后用方向键移动、空格选珠与交换。<br>F 全屏，Esc 返回或关闭弹窗。</p><div class="settings-links">${btn("玩法说明", "help", "text-button")}${btn("导出进度", "export", "text-button")}${btn("重新开始", "reset", "text-button danger")}</div>`,
     );
   if (modal.type === "help")
     html = modalShell(
       "把日子，慢慢串成光",
-      `<ol class="help-list"><li><b>采珠</b><p>交换相邻珠子，三颗同色相连就能收集。工具不耗步数，提示可免费使用。</p></li><li><b>接单与手作</b><p>点珠材依次串入 12 个位置；点选已有珠子后可替换，拖动可换位。满足配色和吊坠要求即可交付。</p></li><li><b>小店与故事</b><p>交付订单获得金币和口碑，金币能添置家具。每份委托都会揭开阿禾和奶奶的新故事。</p></li></ol>`,
+      `<ol class="help-list"><li><b>采珠</b><p>交换相邻珠子，三颗同色相连就能收集。工具不耗步数，提示可免费使用。</p></li><li><b>接单与手作</b><p>点珠材依次串入 12 个位置；点选已有珠子后可替换，拖动可换位。满足配色和吊坠要求即可交付。</p></li><li><b>小店与故事</b><p>交付推进主线，升级家具开启祖孙支线。手账可回看已解锁剧情和收集的记录。稍后阅读会保留未读状态；视频可以切换文字版。</p></li></ol>`,
       btn("知道了，开始吧", "close"),
     );
   if (modal.type === "reset")
@@ -448,11 +505,15 @@ function renderModal() {
         btn("确认清除并重新开始", "confirm-reset", "secondary danger"),
     );
   if (modal.type === "story") {
-    const s = STORIES[storyIndex],
-      [speaker, line] = s.lines[storyLine];
-    html = `<div class="modal-scrim story-scrim"><section class="story-modal" role="dialog" aria-modal="true" aria-label="${s.title}"><div class="story-top">${tag("OUR LITTLE STORY")}<span>${storyIndex + 1} / ${STORIES.length}</span>${ibtn("close", "story-close", "稍后阅读")}</div><h2>${s.title}</h2><div class="story-art"><img src="${artURL("shop")}" alt="阿禾和奶奶的小店"><div class="story-portrait"><img src="${artURL(speaker === "奶奶" ? "grandma" : "girl")}" alt="${speaker === "奶奶" ? "奶奶" : "阿禾"}"></div></div><div class="dialogue"><small>${speaker}</small><p>${line}</p><div class="dialogue-footer"><span>${s.lines.map((_, i) => `<i class="${i === storyLine ? "active" : ""}"></i>`).join("")}</span>${btn(storyLine === s.lines.length - 1 ? "把这页心意收好" : "继续", "story-next", "small-button")}</div></div></section></div>`;
+    const s = STORIES[storyIndex];
+    html = `<div class="modal-scrim story-scrim"><section class="story-modal" role="dialog" aria-modal="true" aria-label="${s.title}"><div class="story-top">${tag(s.furniture ? "A LITTLE MEMORY" : "AH HE’S STORY")}<span>${s.furniture ? "生活支线" : "主线剧情"}</span>${ibtn("close", "story-close", "稍后阅读")}</div><h2>${s.title}</h2>${storyBody(s)}</section></div>`;
+  }
+  if (modal.type === "evidence") {
+    const scene = storyEvidence(save).find((s) => s.id === modal.id);
+    if (scene) html = modalShell(scene.evidence.title, `<div class="memory-seal">${icon("book")}</div><p class="modal-copy">${scene.evidence.text}</p>`, btn("放回手账", "close") + btn("重温这段故事", `story:${STORIES.indexOf(scene)}`, "secondary"));
   }
   modalRoot.innerHTML = html;
+  if (modal.type === "story" && modal.mode === "video") bindStoryVideo();
   requestAnimationFrame(() =>
     modalRoot.querySelector("button")?.focus({ preventScroll: true }),
   );
@@ -470,10 +531,16 @@ function go(s) {
   hint = null;
   render();
 }
-function startStory(index) {
+async function startStory(index) {
+  if (!storyUnlocked(save, STORIES[index])) return;
   storyIndex = index;
   storyLine = 0;
-  open("story");
+  open("story", { mode: "loading" });
+  const active = modal, manifest = await mediaReady;
+  if (modal !== active) return;
+  active.media = manifest?.[STORIES[index].id];
+  active.mode = mediaPath(active.media?.src, import.meta.env.BASE_URL) ? "video" : "text";
+  renderModal();
 }
 function rememberDraft() {
   undo.push({ draft: [...save.draft], charm: save.charm });
@@ -791,7 +858,7 @@ function action(a) {
       save.started = true;
       persist();
       go("home");
-      if (save.lastStory < 0) startStory(0);
+      if (!save.seenStories.includes(STORIES[0].id)) startStory(0);
       break;
     case "close":
       if (modal?.type === "result") {
@@ -899,6 +966,7 @@ function action(a) {
       break;
     }
     case "confirm-delivery": {
+      const deliveredOrder = save.orderId;
       const next = deliver(save);
       if (!next) return;
       save = next;
@@ -910,7 +978,7 @@ function action(a) {
       screen = "home";
       modal = null;
       render();
-      startStory(save.completed.length);
+      startStory(STORIES.findIndex((s) => s.afterOrder === deliveredOrder));
       break;
     }
     case "free-preview":
@@ -947,24 +1015,50 @@ function action(a) {
       persist();
       chime(1);
       render();
-      toast("新家具已经摆好，小店又暖了一点。");
+      toast("新家具已经摆好，手账里多了一段生活支线。");
       break;
     }
     case "collection":
       open("collection", { id: arg });
       break;
     case "story":
-      if (Number(arg) <= save.completed.length) startStory(Number(arg));
+      startStory(Number(arg));
+      break;
+    case "evidence":
+      if (storyEvidence(save).some((s) => s.id === arg)) open("evidence", { id: arg });
+      break;
+    case "story-play": {
+      const video = modalRoot.querySelector("video"), active = modal;
+      if (video) video.play().catch(() => {
+        const status = $(".video-status");
+        if (modal === active && status) status.textContent = "未能开始播放，可再次点击播放，或阅读文字剧情。";
+      });
+      break;
+    }
+    case "story-text":
+      if (modal?.type !== "story") return;
+      modal.mode = "text";
+      storyLine = 0;
+      renderModal();
       break;
     case "story-next":
+      if (modal?.type !== "story" || modal.mode !== "text") return;
       if (storyLine < STORIES[storyIndex].lines.length - 1) {
         storyLine++;
         renderModal();
-      } else action("story-close");
+      } else action("story-finish");
       break;
-    case "story-close":
-      save.lastStory = Math.max(save.lastStory, storyIndex);
+    case "story-finish": {
+      if (modal?.type !== "story" || !(modal.mode === "video-end" || (modal.mode === "text" && storyLine === STORIES[storyIndex].lines.length - 1))) return;
+      const scene = STORIES[storyIndex];
+      save = finishStory(save, scene.id);
       persist();
+      close();
+      render();
+      if (scene.evidence) toast(`已收入手账：${scene.evidence.title}`);
+      break;
+    }
+    case "story-close":
       close();
       break;
     case "sound":
@@ -1082,6 +1176,9 @@ window.render_game_to_text = () =>
     draft: save.draft,
     charm: save.charm,
     completed: save.completed,
+    story: modal?.type === "story" ? { id: STORIES[storyIndex].id, line: storyLine, mode: modal.mode } : null,
+    seenStories: save.seenStories,
+    evidence: storyEvidence(save).map((s) => s.id),
     upgrades: save.upgrades,
     level: save.level,
     selected,
@@ -1111,7 +1208,10 @@ window.advanceTime = (ms) => {
   return window.render_game_to_text();
 };
 document.addEventListener("visibilitychange", () => {
-  if (document.hidden) persist();
+  if (document.hidden) {
+    modalRoot.querySelector("video")?.pause();
+    persist();
+  }
   else {
     save = refreshEnergy(save);
     persist();

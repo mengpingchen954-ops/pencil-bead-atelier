@@ -1,4 +1,5 @@
-import { ORDERS, FURNITURE } from "./content.js";
+import { ORDERS, FURNITURE, STORIES } from "./content.js";
+import { storyUnlocked } from "./story.js";
 export const SAVE_KEY = "pencil-bead-atelier-v1";
 export function rng(seed = 1) {
   let a = seed >>> 0;
@@ -216,6 +217,7 @@ export function freshSave() {
     sound: true,
     reduced: false,
     lastStory: -1,
+    seenStories: [],
   };
 }
 const bounded = (v, max = 100000) =>
@@ -271,6 +273,11 @@ export function normalizeSave(input) {
   s.lastStory = Number.isInteger(input.lastStory)
     ? Math.max(-1, Math.min(6, input.lastStory))
     : -1;
+  s.seenStories = [...new Set(
+    (Array.isArray(input.seenStories) ? input.seenStories : []).filter((id) =>
+      storyUnlocked(s, STORIES.find((scene) => scene.id === id)),
+    ),
+  )];
   return s;
 }
 export function draftCounts(draft) {
