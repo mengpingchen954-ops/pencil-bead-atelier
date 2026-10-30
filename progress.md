@@ -15,4 +15,9 @@ Original prompt: 根据 E:\Game\手串\铅笔2 美术制作手机游戏原型，
 - Browser test completed all 6 orders through actual puzzles and crafting, real canvas raycasting/dragging, upgrades and reload persistence; checked 360, 390 and 1440 widths. No page/console errors or missing resources.
 - Raised puzzle goal and reduced moves so loss is possible; tested real loss and retry without granting materials.
 - Inspected actual cover, shop, board, craft, story and decor screenshots; fixed oversized floral decoration, missing mini-bracelet class and shared material cleanup.
-- Publication and public verification in progress.
+- Published source: https://github.com/mengpingchen954-ops/pencil-bead-atelier
+- GitHub Actions Pages deployment succeeded: run 41038098503 (runtime commit 112c021).
+- Public game: https://mengpingchen954-ops.github.io/pencil-bead-atelier/
+- Repeated the complete browser integration test against the public Pages URL in an unauthenticated context. All 6 deliveries, real touch/canvas picks, drag editing, purchases, story replay, reload persistence, loss/retry and zero-energy behavior passed; no console errors or HTTP failures.
+- Ran the supplied web-game Playwright client (unchanged copy to resolve local dependencies); inspected actual Three.js screenshots and read-only state outputs.
+- Public game is open in the in-app browser as a deliverable. Native iOS/Android packaging and physical-device Safari testing are outside this prototype.
