@@ -85,6 +85,10 @@ function toast(message) {
   clearTimeout(toast.timer);
   toast.timer = setTimeout(() => $("#toast").classList.remove("show"), 2500);
 }
+function clearToast() {
+  clearTimeout(toast.timer);
+  $("#toast").classList.remove("show");
+}
 function chime(kind = 0) {
   if (!save.sound) return;
   try {
@@ -301,6 +305,7 @@ function journalView() {
 }
 
 function open(type, data = {}) {
+  clearToast();
   modal = { type, ...data };
   renderModal();
 }
@@ -408,6 +413,7 @@ function renderModal() {
 }
 function go(s) {
   if (busy) return;
+  clearToast();
   close();
   screen = s;
   selected = -1;
@@ -467,6 +473,7 @@ function reorderSlots(a, b) {
   updateCraft();
 }
 function startMatch() {
+  clearToast();
   save = refreshEnergy(save);
   if (!save.energy) {
     open("energy");
