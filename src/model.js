@@ -94,14 +94,26 @@ function resolve(board, first, seed) {
       if (board[i] >= 0) collected[board[i]]++;
       board[i] = -1;
     }
-    frames.push({ before, hit: [...hit] });
+    const falls = [];
     for (let x = 0; x < 8; x++) {
       const col = [];
       for (let y = 7; y >= 0; y--)
-        if (board[y * 8 + x] >= 0) col.push(board[y * 8 + x]);
-      for (let y = 7; y >= 0; y--)
-        board[y * 8 + x] = col[7 - y] ?? Math.floor(random() * 6);
+        if (board[y * 8 + x] >= 0)
+          col.push({ type: board[y * 8 + x], from: y * 8 + x });
+      const missing = 8 - col.length;
+      for (let y = 7; y >= 0; y--) {
+        const retained = col[7 - y];
+        const type = retained?.type ?? Math.floor(random() * 6);
+        board[y * 8 + x] = type;
+        falls.push({
+          from: retained?.from ?? null,
+          fromRow: retained ? Math.floor(retained.from / 8) : y - missing,
+          to: y * 8 + x,
+          type,
+        });
+      }
     }
+    frames.push({ before, hit: [...hit], after: [...board], falls });
     hit = matches(board);
   }
   if (matches(board).length) board = createBoard(seed + 7);

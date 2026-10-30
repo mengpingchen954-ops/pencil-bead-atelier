@@ -21,3 +21,9 @@ Original prompt: 根据 E:\Game\手串\铅笔2 美术制作手机游戏原型，
 - Repeated the complete browser integration test against the public Pages URL in an unauthenticated context. All 6 deliveries, real touch/canvas picks, drag editing, purchases, story replay, reload persistence, loss/retry and zero-energy behavior passed; no console errors or HTTP failures.
 - Ran the supplied web-game Playwright client (unchanged copy to resolve local dependencies); inspected actual Three.js screenshots and read-only state outputs.
 - Public game is open in the in-app browser as a deliverable. Native iOS/Android packaging and physical-device Safari testing are outside this prototype.
+
+## Match-three feel update
+- Replaced board redraws with persistent pieces and a visual timeline: finger-follow preview, axis lock, eased swap/return, anticipation/pop, sparkle, real survivor/spawn gravity, landing squash and settle.
+- Cascade frames now expose exact source/destination bead mappings; rules, random sequence, inventory and rewards are unchanged.
+- Added pooled glints, tiny decaying board movement for larger matches, collection flights, combo labels, pitch-stepped clear sounds, live HUD updates, and one buffered board gesture. Existing reduced-motion/mute settings are honored.
+- Added model coverage for gravity conservation across 100 seeds, and a touch/mouse browser test inspecting intermediate swap/fall positions, invalid return, cascades, queued tap, reduced motion and final board agreement with pure rules. All tests passed locally; full 6-order regression also passed with no console errors.

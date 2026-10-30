@@ -20,6 +20,7 @@ import {
   total,
   draftCounts,
   canPlace,
+  adjacent,
   checkOrder,
   deliver,
   purchase,
@@ -50,6 +51,7 @@ let screen = save.started ? "home" : "cover",
   tool = null,
   hint = null,
   busy = false,
+  queuedInput = null,
   modal = null,
   undo = [],
   storyIndex = 0,
@@ -109,6 +111,47 @@ function chime(kind = 0) {
     });
   } catch {}
 }
+function beadSound(event, chain = 0) {
+  if (!save.sound) return;
+  try {
+    audio ??= new (window.AudioContext || window.webkitAudioContext)();
+    audio.resume();
+    const notes =
+      event === "clear"
+        ? [880, 1108.73, 1318.51].slice(0, chain ? 3 : 2)
+        : event === "miss"
+          ? [246.94, 220]
+          : event === "land"
+            ? [392]
+            : [620];
+    notes.forEach((frequency, i) => {
+      const osc = audio.createOscillator(),
+        gain = audio.createGain(),
+        at = audio.currentTime + i * 0.045;
+      osc.type = event === "miss" ? "triangle" : "sine";
+      osc.frequency.setValueAtTime(
+        frequency * (1 + Math.min(chain, 5) * 0.085),
+        at,
+      );
+      osc.frequency.exponentialRampToValueAtTime(
+        frequency * (event === "tap" ? 0.7 : 1),
+        at + 0.075,
+      );
+      gain.gain.setValueAtTime(0.001, at);
+      gain.gain.linearRampToValueAtTime(
+        event === "tap" ? 0.012 : event === "land" ? 0.014 : 0.025,
+        at + 0.008,
+      );
+      gain.gain.exponentialRampToValueAtTime(
+        0.001,
+        at + (event === "clear" ? 0.19 : 0.085),
+      );
+      osc.connect(gain).connect(audio.destination);
+      osc.start(at);
+      osc.stop(at + 0.22);
+    });
+  } catch {}
+}
 let renderer;
 try {
   renderer = new AtelierRenderer($("#scene"), {
@@ -116,6 +159,9 @@ try {
     swipe: swap,
     slot: slotClick,
     reorder: reorderSlots,
+    canInteract: () => !modal,
+    dragAllowed: () => !busy && !tool,
+    press: () => beadSound("tap"),
     context: (ok) => toast(ok ? "工作台已恢复" : "画布暂时中断，请稍候恢复。"),
   });
 } catch (e) {
@@ -414,6 +460,8 @@ function renderModal() {
 function go(s) {
   if (busy) return;
   clearToast();
+  $("#match-effects").replaceChildren();
+  queuedInput = null;
   close();
   screen = s;
   selected = -1;
@@ -474,6 +522,8 @@ function reorderSlots(a, b) {
 }
 function startMatch() {
   clearToast();
+  $("#match-effects").replaceChildren();
+  queuedInput = null;
   save = refreshEnergy(save);
   if (!save.energy) {
     open("energy");
@@ -493,7 +543,13 @@ function startMatch() {
   render();
 }
 function boardClick(i) {
-  if (busy || modal || session?.status !== "playing") return;
+  if (modal || session?.status !== "playing") return;
+  if (busy) {
+    if (queuedInput?.tap !== undefined && Math.abs(queuedInput.tap - i) > 0)
+      queuedInput = { swap: [queuedInput.tap, i] };
+    else queuedInput = { tap: i };
+    return;
+  }
   if (tool) {
     const result = useTool(session, tool, i);
     tool = null;
@@ -509,19 +565,161 @@ function boardClick(i) {
   } else swap(selected, i);
 }
 async function swap(a, b) {
-  if (screen !== "match" || busy || modal || session?.status !== "playing")
-    return;
-  const result = move(session, a, b);
-  if (!result.valid) {
-    selected = b >= 0 && b < 64 ? b : -1;
-    hint = null;
-    renderer.setBoard(session.board, selected);
-    toast("相邻的同色珠子连成三个，才能收集哦。");
+  if (screen !== "match" || modal || session?.status !== "playing") return;
+  if (busy) {
+    queuedInput = { swap: [a, b] };
     return;
   }
-  await resolveResult(result);
+  if (!Number.isInteger(b) || b < 0 || b > 63) return;
+  if (!adjacent(a, b)) {
+    selected = b;
+    renderer.updateSelection(selected);
+    return;
+  }
+  const result = move(session, a, b);
+  if (!result.valid) {
+    busy = true;
+    selected = -1;
+    hint = null;
+    await renderer.animateSwap(a, b);
+    beadSound("miss");
+    await renderer.animateSwap(a, b, true);
+    renderer.setBoard(session.board);
+    const note = $(".match-note");
+    if (note) note.textContent = "这两颗还不能相连，试试旁边的珠子。";
+    busy = false;
+    consumeQueuedInput();
+    return;
+  }
+  await resolveResult(result, [a, b]);
 }
-async function resolveResult(result) {
+function updateMatchHUD(collected = session.collected, moves = session.moves) {
+  const amount = Math.min(total(collected), session.target);
+  const movesLabel = $(".moves b");
+  if (movesLabel) movesLabel.textContent = moves;
+  const goal = $(".goal b");
+  if (goal) goal.innerHTML = `${amount}<small> / ${session.target}</small>`;
+  const bar = $(".progress-track i");
+  if (bar) bar.style.width = `${(amount / session.target) * 100}%`;
+  document
+    .querySelectorAll(".collected-row small")
+    .forEach((el, i) => (el.textContent = collected[i]));
+  document.querySelectorAll(".tool-button").forEach((el) => {
+    const id = el.dataset.action.split(":")[1];
+    el.classList.toggle("selected", tool === id);
+    if (id !== "hint") {
+      el.querySelector("small").textContent = session.tools[id];
+      el.disabled = !session.tools[id];
+    }
+  });
+  const help = $(".match-heading p");
+  if (help)
+    help.textContent = tool
+      ? tool === "hammer"
+        ? "点选一颗珠子，使用小木槌"
+        : "点选一颗珠子，收集整行整列"
+      : "交换相邻珠子，连成三个即可收集";
+}
+function matchFeedback(frame, chain) {
+  const effects = $("#match-effects"),
+    base = $("#app").getBoundingClientRect(),
+    board = $(".board-scene").getBoundingClientRect();
+  const label = document.createElement("div");
+  label.className = "combo-feedback";
+  label.style.top = `${board.top - base.top + board.height * 0.34}px`;
+  label.innerHTML = chain
+    ? `<strong>${chain + 1} 连消</strong><span>灵感绽放 · +${frame.hit.length}</span>`
+    : `<strong>+${frame.hit.length}</strong><span>收获小美好</span>`;
+  effects.append(label);
+  label
+    .animate(
+      save.reduced
+        ? [{ opacity: 1 }, { opacity: 0 }]
+        : [
+            { opacity: 0, transform: "translate(-50%,8px) scale(.8)" },
+            {
+              opacity: 1,
+              transform: "translate(-50%,-2px) scale(1.08)",
+              offset: 0.22,
+            },
+            {
+              opacity: 1,
+              transform: "translate(-50%,-6px) scale(1)",
+              offset: 0.65,
+            },
+            { opacity: 0, transform: "translate(-50%,-19px) scale(.98)" },
+          ],
+      { duration: save.reduced ? 220 : 680, easing: "ease-out" },
+    )
+    .finished.then(() => label.remove());
+  if (save.reduced) return;
+  for (let type = 0; type < 6; type++) {
+    const hits = frame.hit.filter((i) => frame.before[i] === type);
+    if (!hits.length) continue;
+    const i = hits[Math.floor(hits.length / 2)],
+      target = document
+        .querySelectorAll(".collected-row>span")
+        [type].getBoundingClientRect();
+    const x = board.left - base.left + (((i % 8) + 0.85) / 8.7) * board.width,
+      y =
+        board.top -
+        base.top +
+        ((Math.floor(i / 8) + 0.85) / 8.7) * board.height;
+    const tx = target.left - base.left + target.width / 2,
+      ty = target.top - base.top + target.height / 2;
+    const chip = document.createElement("div");
+    chip.className = "bead-pickup";
+    chip.innerHTML = `${bead(type)}<b>+${hits.length}</b>`;
+    chip.style.left = `${x}px`;
+    chip.style.top = `${y}px`;
+    effects.append(chip);
+    chip
+      .animate(
+        [
+          { opacity: 0, transform: "translate(-50%,-50%) scale(.6)" },
+          {
+            opacity: 1,
+            transform: "translate(-50%,-65%) scale(1.05)",
+            offset: 0.16,
+          },
+          {
+            opacity: 1,
+            transform: `translate(calc(-50% + ${(tx - x) * 0.4}px),calc(-50% + ${(ty - y) * 0.25 - 25}px)) scale(.85)`,
+            offset: 0.45,
+          },
+          {
+            opacity: 0.1,
+            transform: `translate(calc(-50% + ${tx - x}px),calc(-50% + ${ty - y}px)) scale(.25)`,
+          },
+        ],
+        {
+          duration: 460,
+          delay: type * 12,
+          easing: "cubic-bezier(.3,.02,.7,1)",
+        },
+      )
+      .finished.then(() => {
+        chip.remove();
+        const counter = document.querySelectorAll(".collected-row>span")[type];
+        counter?.animate(
+          [
+            { transform: "scale(1)" },
+            { transform: "scale(1.18)", offset: 0.4 },
+            { transform: "scale(1)" },
+          ],
+          { duration: 180 },
+        );
+      });
+  }
+}
+function consumeQueuedInput() {
+  const queued = queuedInput;
+  queuedInput = null;
+  if (!queued || modal || session.status !== "playing") return;
+  if (queued.swap) swap(...queued.swap);
+  else if (queued.tap !== undefined) boardClick(queued.tap);
+}
+async function resolveResult(result, pair = null) {
   if (!result.valid) {
     toast("工具已经用完啦。");
     return;
@@ -529,22 +727,44 @@ async function resolveResult(result) {
   busy = true;
   selected = -1;
   hint = null;
+  clearToast();
+  $(".board-frame")?.classList.add("resolving");
+  const note = $(".match-note");
+  if (note) note.textContent = "每关赠送手作工具 · 灵感提示免费使用";
+  if (pair) await renderer.animateSwap(...pair);
+  updateMatchHUD(session.collected, result.session.moves);
   const frames = result.frames ?? [];
-  for (const f of frames.slice(0, 5)) {
-    renderer.setBoard(f.before);
-    renderer.burst(f.hit);
-    chime(frames.length > 1 ? 1 : 0);
-    if (!save.reduced) await new Promise((r) => setTimeout(r, 190));
+  const collected = [...session.collected];
+  for (let chain = 0; chain < frames.length; chain++) {
+    const f = frames[chain];
+    beadSound("clear", chain);
+    matchFeedback(f, chain);
+    await renderer.animateClear(f.hit, chain);
+    for (const i of f.hit) collected[f.before[i]]++;
+    updateMatchHUD(collected, result.session.moves);
+    await renderer.animateFall(f, chain);
+    beadSound("land");
   }
+  if (
+    !frames.length ||
+    renderer.boardPieces.some(
+      (p, i) => p.userData.type !== result.session.board[i],
+    )
+  )
+    await renderer.animateShuffle(result.session.board);
   session = result.session;
+  renderer.setBoard(session.board);
+  updateMatchHUD();
+  $(".board-frame")?.classList.remove("resolving");
+  if (session.status !== "playing") await renderer.animate(0.16, () => {});
   busy = false;
-  render();
   if (session.status !== "playing") {
+    queuedInput = null;
     if (session.status === "won") {
       const pack = session.collected.map((n, i) => (i === 0 ? 8 : 6) + n);
       open("result", { pack });
     } else open("result");
-  }
+  } else consumeQueuedInput();
 }
 function claim() {
   if (modal?.type !== "result" || session?.status !== "won" || session.claimed)
@@ -711,7 +931,7 @@ function action(a) {
         resolveResult(useTool(session, arg));
       } else if (session.tools[arg] > 0) {
         tool = tool === arg ? null : arg;
-        render();
+        updateMatchHUD();
       }
       break;
     case "buy": {
@@ -867,6 +1087,7 @@ window.render_game_to_text = () =>
     selected,
     tool,
     busy,
+    queuedInput,
     match: session
       ? {
           board: session.board,
@@ -879,6 +1100,7 @@ window.render_game_to_text = () =>
           status: session.status,
           tools: session.tools,
           claimed: !!session.claimed,
+          animation: renderer.boardState(),
         }
       : null,
     coordinates:

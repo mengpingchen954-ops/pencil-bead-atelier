@@ -54,6 +54,30 @@ test("invalid swap is free; exhausted and completed sessions cannot move", () =>
   const won = move({ ...s, target: 3 }, ...findMove(s.board));
   assert.equal(won.session.status, "won");
 });
+test("cascade frames retain every surviving bead and describe gravity without duplicating pieces", () => {
+  for (let seed = 1; seed <= 100; seed++) {
+    const s = newSession(seed),
+      result = move(s, ...findMove(s.board));
+    for (const frame of result.frames) {
+      assert.equal(frame.falls.length, 64);
+      assert.equal(new Set(frame.falls.map((f) => f.to)).size, 64);
+      const retained = frame.falls.filter((f) => f.from !== null);
+      assert.equal(
+        new Set(retained.map((f) => f.from)).size,
+        64 - frame.hit.length,
+      );
+      for (const f of frame.falls) {
+        assert.equal(frame.after[f.to], f.type);
+        if (f.from !== null) {
+          assert.ok(!frame.hit.includes(f.from));
+          assert.equal(frame.before[f.from], f.type);
+          assert.equal(f.from % 8, f.to % 8);
+          assert.ok(f.from <= f.to);
+        } else assert.ok(f.fromRow < 0);
+      }
+    }
+  }
+});
 test("tools have finite uses, settle the board and do not spend moves", () => {
   let s = newSession(9);
   for (let i = 0; i < 2; i++) {
