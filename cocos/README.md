@@ -13,6 +13,8 @@
 
 子节点的 Position、Rotation、Scale、UITransform 尺寸，以及 Label 文字 / 字号 / 颜色 / 对齐、Sprite 的 SpriteFrame 都会在运行时读取。按钮事件与动态数值仍由 `AtelierGame.ts` 绑定：未修改的示例数值会跟随真实存档更新。请保留 AtelierLayout 组件和页面层级；重命名普通节点不影响绑定。新增按钮和修改玩法仍需配合脚本。棋盘格和手串槽可以移动；为保证网格与拖动规则，保持原有格子数量、珠槽尺寸和 UITransform 锚点。
 
+所有插画、珠材和吊坠均按 SpriteFrame 原比例等比缩放，替换美术也会自动适配。UITransform 的宽高作为容纳范围，不再把人物强行拉伸填满；首页已为完整插画增加高度，工坊采用圆形珠槽和较舒展的透视托盘。
+
 装修布局显示初始小店，升级后的新增家具细节、作品图鉴的已交付内容和弹窗由真实进度生成。矢量底板由 `AtelierLayout` 在编辑模式绘制，可编辑节点变换；复杂路径保存在 Drawing 字段中。`tools/generate-editor-layouts.cjs` 用同一套页面代码创建初始布局，已有布局默认拒绝覆盖，避免丢失编辑器里的修改。
 
 ## 铅笔2 美术细化
@@ -55,7 +57,7 @@
 
 ## 构建与验证
 
-安装 Node.js 24 后执行 `node --test tests/*.mjs`，验证实际迁移后的 TypeScript 规则模块。附带 34 项库存、三消、订单、装修、存档、剧情、心意流程和可编辑场景测试，其中一项直接运行 Creator 正式构建代码验证完整经营与回访流程；正式构建尚未生成时只跳过后一项。
+安装 Node.js 24 后执行 `node --test tests/*.mjs`，验证实际迁移后的 TypeScript 规则模块。附带 36 项库存、三消、订单、装修、存档、剧情、心意流程、美术比例和可编辑场景测试，其中一项直接运行 Creator 正式构建代码验证完整经营与回访流程；正式构建尚未生成时只跳过后一项。
 
 在 Windows PowerShell 执行 `./build-game.ps1`。它使用项目版本对应的已安装 Creator 和 `buildConfig_web-mobile.json`，等待实际构建日志结束，再检查脚本错误。也可用 `-Creator` 指定编辑器路径。正式产物位于 `build/web-mobile`。Creator 内置「构建发布」同样可选择 Web Mobile、启动场景 Atelier、竖屏构建。
 

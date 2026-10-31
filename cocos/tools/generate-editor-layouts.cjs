@@ -75,7 +75,8 @@ const textures=new Map();
 for(const folder of ['art','beads'])for(const file of fs.readdirSync(path.join(root,'assets/resources',folder))){
   if(!/\.(png|jpg)$/.test(file))continue;
   const meta=JSON.parse(fs.readFileSync(path.join(root,'assets/resources',folder,file+'.meta'),'utf8'));
-  const name=path.parse(file).name;textures.set(name,{name,uuid:meta.subMetas.f9941.uuid});
+  const name=path.parse(file).name,data=meta.subMetas.f9941.userData;
+  textures.set(name,{name,uuid:meta.subMetas.f9941.uuid,originalSize:{width:data.rawWidth,height:data.rawHeight}});
 }
 let serial=0;
 const all=[];

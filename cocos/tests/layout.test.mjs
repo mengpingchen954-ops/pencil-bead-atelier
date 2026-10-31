@@ -38,11 +38,11 @@ test('real renderer honors edited transforms, typography and sprite while keepin
   game.layouts.set(layoutKey('home',38,280,644,400,new Map()),template);
   game.textures.set('pencil-shop',{name:'pencil-shop'});
   const binding=template.addComponent(AtelierLayout);binding.originalImage='pencil-shop';
-  const art=template.addComponent(Sprite);art.spriteFrame={name:'artist-replacement'};
+  const art=template.addComponent(Sprite);art.spriteFrame={name:'artist-replacement',originalSize:{width:400,height:400}};
   const node=game.image('pencil-shop',38,280,644,400);
-  assert.deepEqual(node.position,new Vec3(95,-330));
+  assert.deepEqual(node.position,new Vec3(185,-330));
   assert.equal(node.scale.x,1.1);
-  assert.deepEqual(node.getComponent(UITransform).contentSize,{width:480,height:300});
+  assert.deepEqual(node.getComponent(UITransform).contentSize,{width:300,height:300});
   assert.equal(node.getComponent(Sprite).spriteFrame.name,'artist-replacement');
   const original=game.text('珠 5',10,20,100,50);
   const key=game.layoutKeys.get(original.node);
@@ -71,10 +71,41 @@ test('craft drag ignores the moving source when finding the nearest edited slot'
   for(let i=0;i<12;i++){const p=game.slotPos(i),n=new Node('Slot '+i);n.setPosition(p.x-37,-p.y+37);game.slotNodes.push(n);}
   const source=game.slotNodes[0];game.bindCraftDrag(source,0);
   const touch=(x,y)=>({getUILocation:()=>({x,y:1280-y})});
-  source.events.start(touch(360,565));
-  source.events.move(touch(471,579));
-  source.events.end(touch(471,579));
+  const from=game.slotPos(0),to=game.slotPos(1);
+  source.events.start(touch(from.x,from.y));
+  source.events.move(touch(to.x,to.y));
+  source.events.end(touch(to.x,to.y));
   assert.equal(game.save.draft[0],1);assert.equal(game.save.draft[1],0);
+});
+
+test('every serialized illustration, bead and charm preserves its source aspect ratio', () => {
+  const sizes=new Map();
+  for(const folder of ['art','beads'])for(const file of fs.readdirSync(root+'/assets/resources/'+folder)){
+    if(!/\.(png|jpg)\.meta$/.test(file))continue;
+    const meta=JSON.parse(fs.readFileSync(root+'/assets/resources/'+folder+'/'+file,'utf8'));
+    const frame=meta.subMetas.f9941;sizes.set(frame.uuid,frame.userData);
+  }
+  const scene=JSON.parse(fs.readFileSync(root+'/assets/scenes/Atelier.scene','utf8'));
+  for(const sprite of scene.filter(n=>n.__type__==='cc.Sprite')){
+    const source=sizes.get(sprite._spriteFrame.__uuid__),node=scene[sprite.node.__id__];
+    const transform=node._components.map(r=>scene[r.__id__]).find(c=>c.__type__==='cc.UITransform');
+    assert.ok(source,node._name);
+    assert.ok(Math.abs(transform._contentSize.width/transform._contentSize.height-source.rawWidth/source.rawHeight)<1e-6,node._name+' must not stretch');
+  }
+});
+
+test('workshop grooves are round and the bracelet has room between neighboring bead centers', () => {
+  const game=new AtelierGame(),top=game.slotPos(0),bottom=game.slotPos(6),right=game.slotPos(3),left=game.slotPos(9);
+  assert.ok((bottom.y-top.y)/(right.x-left.x)>=.6);
+  for(let i=0;i<12;i++){
+    const a=game.slotPos(i),b=game.slotPos((i+1)%12);
+    assert.ok(Math.hypot(a.x-b.x,a.y-b.y)>=60);
+  }
+  game.save=rules.freshSave();game.page=new Node('Page');game.craft();
+  for(const slot of game.slotNodes){
+    const recess=slot.children.find(n=>n.name==='Slot recess').getComponent(UITransform).contentSize;
+    assert.equal(recess.width,recess.height);
+  }
 });
 
 test('native controller connects chat, gift selection, delivery response, return visit and album memory', () => {

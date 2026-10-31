@@ -104,20 +104,20 @@ save(frame,'pencil-frame.png',(720,1280),work,None,'Outer frame and floral corne
 
 # An empty perspective tray, rebuilt from the sampled suede instead of shipping
 # a screenshot with fixed beads. Every bead remains a separate Cocos node.
-scale=2; tray=Image.new('RGBA',(640*scale,334*scale)); draw=ImageDraw.Draw(tray)
+scale=2; tray=Image.new('RGBA',(640*scale,378*scale)); draw=ImageDraw.Draw(tray)
 def poly(points,fill,outline='#aa8865',width=2):
     points=[(x*scale,y*scale) for x,y in points]
     draw.polygon(points,fill=fill)
     draw.line(points+[points[0]],fill=outline,width=width*scale,joint='curve')
-poly([(63,15),(577,15),(632,313),(617,330),(23,330),(8,313)],'#b99571')
-poly([(63,5),(577,5),(632,310),(8,310)],'#dfc7a1')
-poly([(75,17),(565,17),(612,293),(28,293)],'#f2e3c6')
-mask=Image.new('L',tray.size);ImageDraw.Draw(mask).polygon([(x*scale,y*scale) for x,y in [(86,29),(554,29),(596,280),(44,280)]],fill=255)
+poly([(63,15),(577,15),(632,357),(617,374),(23,374),(8,357)],'#b99571')
+poly([(63,5),(577,5),(632,354),(8,354)],'#dfc7a1')
+poly([(75,17),(565,17),(612,337),(28,337)],'#f2e3c6')
+mask=Image.new('L',tray.size);ImageDraw.Draw(mask).polygon([(x*scale,y*scale) for x,y in [(86,29),(554,29),(596,328),(44,328)]],fill=255)
 felt=crop(work,(520,960,650,1040)).resize(tray.size,Image.Resampling.LANCZOS).convert('RGBA')
 tray=Image.composite(felt,tray,mask);draw=ImageDraw.Draw(tray)
-for bounds,col,width in [((69,40,571,294),'#cfb892',3),((90,53,550,281),'#ae906c',2),((102,59,538,275),'#f7ebd1',3)]:
+for bounds,col,width in [((69,48,571,346),'#cfb892',3),((90,59,550,335),'#ae906c',2),((102,65,538,329),'#f7ebd1',3)]:
     draw.ellipse(tuple(v*scale for v in bounds),outline=col,width=width*scale)
-save(tray,'pencil-tray.png',(960,501),work,(520,960,650,1040),'Sampled suede; rebuilt empty trapezoid tray and groove')
+save(tray,'pencil-tray.png',(960,567),work,(520,960,650,1040),'Sampled suede; rebuilt empty trapezoid tray and groove')
 
 # Paper and hand-drawn plank strokes keep the independently upgradable room
 # surfaces close to the colored-pencil references. The native sprite is tinted.
