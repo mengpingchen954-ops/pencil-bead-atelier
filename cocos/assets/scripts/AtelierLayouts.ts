@@ -2,8 +2,8 @@ import { _decorator, Component, Enum } from 'cc';
 import { EDITOR } from 'cc/env';
 const { ccclass, property, executeInEditMode } = _decorator;
 
-const Pages = Enum({ '首页': 0, '封面': 1, '委托': 2, '手作': 3, '消除': 4, '装修': 5, '图鉴': 6, '手账': 7 });
-const pageNames = ['home','cover','orders','craft','match','decor','album','journal'];
+const Pages = Enum({ '首页': 0, '封面': 1, '委托': 2, '手作': 3, '消除': 4, '装修': 5, '图鉴': 6, '手账': 7, '比赛': 8, '参赛手作': 9 });
+const pageNames = ['home','cover','orders','craft','match','decor','album','journal','contest','contestCraft'];
 
 @ccclass('AtelierLayouts')
 @executeInEditMode

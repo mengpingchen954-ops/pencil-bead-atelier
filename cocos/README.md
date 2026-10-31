@@ -9,7 +9,7 @@
 3. 场景默认显示首页。若仍看到旧的空场景，先关闭 Atelier 场景标签，再双击重新打开；在层级选中 Canvas 后按 F 可聚焦。
 4. 点击顶部「运行 / 预览」试玩。设计尺寸为 720 × 1280，电脑横屏会保留侧边留白。
 
-场景已保存 Canvas、UI Camera 和八个页面的原生布局。展开 `AtelierGame → Canvas → Atelier → EditableLayouts`，选中 EditableLayouts，在 `AtelierLayouts` 组件的 Page 下拉框切换首页、封面、委托、手作、消除、装修、图鉴、手账。
+场景已保存 Canvas、UI Camera 和十个页面的原生布局。展开 `AtelierGame → Canvas → Atelier → EditableLayouts`，选中 EditableLayouts，在 `AtelierLayouts` 组件的 Page 下拉框切换首页、封面、委托、手作、消除、装修、图鉴、手账、比赛、参赛手作。
 
 子节点的 Position、Rotation、Scale、UITransform 尺寸，以及 Label 文字 / 字号 / 颜色 / 对齐、Sprite 的 SpriteFrame 都会在运行时读取。按钮事件与动态数值仍由 `AtelierGame.ts` 绑定：未修改的示例数值会跟随真实存档更新。请保留 AtelierLayout 组件和页面层级；重命名普通节点不影响绑定。新增按钮和修改玩法仍需配合脚本。棋盘格和手串槽可以移动；为保证网格与拖动规则，保持原有格子数量、珠槽尺寸和 UITransform 锚点。
 
@@ -41,13 +41,21 @@
 
 本轮范围为这一单的完整体验。有来历的珠子、奶奶主动日常、「我的心意」自由作品，以及其余五单的情绪扩展仍按后续批次制作，当前没有冒充已完成。
 
+## 新增 · 偶尔参加一场串珠赛
+
+首页插画右下角新增「参加比赛」，完成第 1、3、5 份委托分别收到「街角花园灵感赛」「海风配色交流赛」「小城星光手作赛」邀请。比赛板块始终可打开，尚未邀请的赛事显示解锁条件。每场可提交一件作品；提交前可以退出续做，换赛题时会先确认放下未提交的参赛草稿。
+
+赛事提供六色练习珠材，免费参加，不消耗库存与体力；使用同一套十二槽点珠、拖动换位、取下、撤销和选吊坠操作，参赛草稿独立保存，不覆盖顾客委托。评分规则：主题色至少 6 颗得 45 分，辅助色至少 3 颗得 20 分，主题吊坠 10 分，相对珠槽同色呼应最多 25 分。不足指定数量按比例评分。90 / 75 / 60 分分别获得金 / 银 / 铜奖，其余作品获得参与纪念。
+
+提交后展示作品、四项分数、街坊评语、纪念奖牌与金币。金币一次入账，重看作品不再发奖；成绩和参赛作品保存在比赛板块，随原有 JSON 存档导入导出。该版本为本地街坊评审挑战，包含三场主题赛事。
+
 ## 存档迁移
 
 原网页「设置 → 导出」得到的 JSON 可粘贴进本版「设置 → 导出 / 导入存档」。导入前会显示进度概况并要求在游戏中确认覆盖。网页与 Cocos 版使用同一套存档校验及规则；不同站点、浏览器和原生应用之间不会自动共享 localStorage。
 
 ## 构建与验证
 
-安装 Node.js 24 后执行 `node --test tests/*.mjs`，验证实际迁移后的 TypeScript 规则模块。附带 28 项库存、三消、订单、装修、存档、剧情、心意流程和可编辑场景测试，其中一项直接运行 Creator 正式构建代码验证完整经营与回访流程；正式构建尚未生成时只跳过后一项。
+安装 Node.js 24 后执行 `node --test tests/*.mjs`，验证实际迁移后的 TypeScript 规则模块。附带 34 项库存、三消、订单、装修、存档、剧情、心意流程和可编辑场景测试，其中一项直接运行 Creator 正式构建代码验证完整经营与回访流程；正式构建尚未生成时只跳过后一项。
 
 在 Windows PowerShell 执行 `./build-game.ps1`。它使用项目版本对应的已安装 Creator 和 `buildConfig_web-mobile.json`，等待实际构建日志结束，再检查脚本错误。也可用 `-Creator` 指定编辑器路径。正式产物位于 `build/web-mobile`。Creator 内置「构建发布」同样可选择 Web Mobile、启动场景 Atelier、竖屏构建。
 
@@ -63,6 +71,7 @@
 | `assets/scripts/content.ts` | 完整委托、剧情、家具与珠材数据 |
 | `assets/scripts/story.ts` | 剧情解锁、记录与重温规则 |
 | `assets/scripts/heart.ts` | 海风订单聊天、祝福包装与旅行回访 |
+| `assets/scripts/competition.ts` | 赛事邀请、独立草稿、评审、奖牌与一次性奖励 |
 | `assets/scripts/AtelierLayout.ts`、`AtelierLayouts.ts` | 编辑器绘图、页面切换与运行时布局绑定 |
 | `assets/resources/art` | 原始插画、来源说明和原生图标 |
 | `assets/resources/beads` | 从原版绘图函数生成的六种透明珠材贴图 |

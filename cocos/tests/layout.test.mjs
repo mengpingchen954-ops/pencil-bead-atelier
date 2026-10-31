@@ -9,12 +9,12 @@ const { AtelierLayout } = load(root + '/assets/scripts/AtelierLayout.ts');
 const { layoutKey } = load(root + '/assets/scripts/layout-key.ts');
 const rules = load(root + '/assets/scripts/model.ts');
 
-test('entry scene contains eight real editable layouts, visible home art, labels and UI camera', () => {
+test('entry scene contains ten real editable layouts, visible home art, labels and UI camera', () => {
   const scene = JSON.parse(fs.readFileSync(root + '/assets/scenes/Atelier.scene', 'utf8'));
   const layouts = scene.find(n => n._name === 'EditableLayouts');
   assert.ok(layouts);
   const pages = layouts._children.map(r => scene[r.__id__]);
-  assert.deepEqual(pages.map(n => n._name), ['home','cover','orders','craft','match','decor','album','journal']);
+  assert.deepEqual(pages.map(n => n._name), ['home','cover','orders','craft','match','decor','album','journal','contest','contestCraft']);
   assert.equal(pages.filter(n => n._active).length, 1);
   assert.ok(pages[0]._active);
   assert.ok(scene.some(n => n.__type__ === 'cc.Camera' && n._orthoHeight === 640));
@@ -104,4 +104,26 @@ test('native controller connects chat, gift selection, delivery response, return
   game.save=rules.normalizeSave(JSON.parse(JSON.stringify(game.save)));
   game.closeModal();game.screen='journal';game.render();
   assert.ok(actions.has('旅行留影 · 小满的第一次独行'));
+});
+
+test('competition board connects native craft, isolated undo, one-time awards and saved results', () => {
+  const game=new AtelierGame(),actions=new Map();
+  game.node=new Node('AtelierGame');game.page=new Node('Page');game.overlay=new Node('Dialogs');game.notices=new Node('Notices');
+  game.persist=()=>{};game.scheduleOnce=()=>{};
+  game.accessibility={clear(modal){if(!modal)actions.clear();},text(){},button(name,action,modal,enabled){if(enabled)actions.set(name,action);},showDialog(){actions.clear();},closeDialog(){actions.clear();},announce(){}};
+  game.save={...rules.freshSave(),started:true,reduced:true,completed:['daisy'],draft:[0,...Array(11).fill(null)],charm:'heart'};
+  const commission=game.save.draft.slice(),stock=game.save.inventory.slice(),coins=game.save.coins;
+  game.screen='home';game.render();actions.get('参加比赛')();assert.equal(game.screen,'contest');
+  actions.get('报名参加')();assert.equal(game.screen,'contestCraft');
+  actions.get('参考配色')();actions.get('以此为起点排珠')();
+  actions.get('第1槽：森绿玉珠')();actions.get('放入月光珍珠')();
+  assert.equal(game.save.competitions.draft.beads[0],0);
+  actions.get('撤销')();assert.equal(game.save.competitions.draft.beads[0],3);
+  assert.deepEqual(game.save.draft,commission);assert.equal(game.save.charm,'heart');assert.deepEqual(game.save.inventory,stock);
+  actions.get('提交参赛作品')();assert.equal(game.modal,'contest-submit');
+  actions.get('提交评审')();assert.equal(game.modal,'contest-result');assert.equal(game.save.coins,coins+60);
+  actions.get('收好这份纪念')();game.render();actions.get('查看参赛作品')();assert.equal(game.save.coins,coins+60);
+  game.save=rules.normalizeSave(JSON.parse(JSON.stringify(game.save)));
+  game.navigate('craft');assert.deepEqual(Array.from(game.workingDraft),commission);assert.equal(game.workingCharm,'heart');
+  assert.equal(game.save.competitions.entries[0].medal,'金色灵感奖');
 });

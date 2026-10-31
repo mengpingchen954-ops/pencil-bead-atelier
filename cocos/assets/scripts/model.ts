@@ -3,6 +3,7 @@
 import { ORDERS, FURNITURE, STORIES, CLEAN_SPOTS, REPAIRS } from "./content.ts";
 import { storyUnlocked } from "./story.ts";
 import { freshSeaHeart, normalizeSeaHeart } from "./heart.ts";
+import { freshCompetitions, normalizeCompetitions } from "./competition.ts";
 export const SAVE_KEY = "pencil-bead-atelier-v1";
 export function rng(seed = 1) {
   let a = seed >>> 0;
@@ -212,6 +213,7 @@ export function freshSave() {
   return {
     version: 1,
     seaHeart: freshSeaHeart(),
+    competitions: freshCompetitions(),
     started: false,
     coins: 80,
     rep: 0,
@@ -289,6 +291,7 @@ export function normalizeSave(input) {
     )
     .slice(0, 6);
   s.seaHeart = normalizeSeaHeart(input.seaHeart, s.completed);
+  s.competitions = normalizeCompetitions(input.competitions, s.completed);
   s.collection = s.collection.map(item => ({id:item.id, beads:[...item.beads], charm:item.charm,
     ...(item.id === 'sea' ? { gift:{...normalizeSeaHeart({facts:s.seaHeart.facts,gift:item.gift || s.seaHeart.gift},s.completed).gift},
       ...(s.seaHeart.visited ? {travelCharm:s.seaHeart.travelCharm} : {}) } : {})}));
