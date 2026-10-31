@@ -6605,7 +6605,7 @@
   },
   {
     "__type__": "cc.Node",
-    "_name": "Button: 开始手作",
+    "_name": "Button: 按单制作",
     "_objFlags": 0,
     "_parent": {
       "__id__": 9
@@ -6692,7 +6692,7 @@
   },
   {
     "__type__": "cc.Node",
-    "_name": "开始手作",
+    "_name": "按单制作",
     "_objFlags": 0,
     "_parent": {
       "__id__": 224
@@ -6769,7 +6769,7 @@
     },
     "_enabled": true,
     "__prefab": null,
-    "_string": "开始手作",
+    "_string": "按单制作",
     "_fontSize": 23,
     "_lineHeight": 35,
     "_fontFamily": "Microsoft YaHei",
@@ -6801,7 +6801,7 @@
     "key": "home/38,1020,311,60:0/10,0,291,60:0",
     "drawing": "",
     "originalDrawing": "",
-    "originalLabel": "{\"string\":\"开始手作\",\"fontSize\":23,\"lineHeight\":35,\"fontFamily\":\"Microsoft YaHei\",\"enableWrapText\":true,\"overflow\":2,\"horizontalAlign\":1,\"verticalAlign\":1,\"color\":\"f7f0dfff\"}",
+    "originalLabel": "{\"string\":\"按单制作\",\"fontSize\":23,\"lineHeight\":35,\"fontFamily\":\"Microsoft YaHei\",\"enableWrapText\":true,\"overflow\":2,\"horizontalAlign\":1,\"verticalAlign\":1,\"color\":\"f7f0dfff\"}",
     "originalImage": "",
     "_id": "layout-component-228"
   },
@@ -14932,7 +14932,7 @@
   },
   {
     "__type__": "cc.Node",
-    "_name": "按顺序完成六份委托；采珠与串珠进度会自动保存。",
+    "_name": "按顺序完成剧情委托，之后继续承接回头客订单。",
     "_objFlags": 0,
     "_parent": {
       "__id__": 343
@@ -15009,7 +15009,7 @@
     },
     "_enabled": true,
     "__prefab": null,
-    "_string": "按顺序完成六份委托；采珠与串珠进度会自动保存。",
+    "_string": "按顺序完成剧情委托，之后继续承接回头客订单。",
     "_fontSize": 21,
     "_lineHeight": 32,
     "_fontFamily": "Microsoft YaHei",
@@ -15041,7 +15041,7 @@
     "key": "orders/38,207,644,60:0",
     "drawing": "",
     "originalDrawing": "",
-    "originalLabel": "{\"string\":\"按顺序完成六份委托；采珠与串珠进度会自动保存。\",\"fontSize\":21,\"lineHeight\":32,\"fontFamily\":\"Microsoft YaHei\",\"enableWrapText\":true,\"overflow\":2,\"horizontalAlign\":0,\"verticalAlign\":1,\"color\":\"94846dff\"}",
+    "originalLabel": "{\"string\":\"按顺序完成剧情委托，之后继续承接回头客订单。\",\"fontSize\":21,\"lineHeight\":32,\"fontFamily\":\"Microsoft YaHei\",\"enableWrapText\":true,\"overflow\":2,\"horizontalAlign\":0,\"verticalAlign\":1,\"color\":\"94846dff\"}",
     "originalImage": "",
     "_id": "layout-component-508"
   },
@@ -15587,7 +15587,7 @@
   },
   {
     "__type__": "cc.Node",
-    "_name": "Button: 手作 180金",
+    "_name": "Button: 按单制作 180金",
     "_objFlags": 0,
     "_parent": {
       "__id__": 343
@@ -15674,7 +15674,7 @@
   },
   {
     "__type__": "cc.Node",
-    "_name": "手作 180金",
+    "_name": "按单制作 180金",
     "_objFlags": 0,
     "_parent": {
       "__id__": 530
@@ -15751,7 +15751,7 @@
     },
     "_enabled": true,
     "__prefab": null,
-    "_string": "手作 180金",
+    "_string": "按单制作 180金",
     "_fontSize": 23,
     "_lineHeight": 35,
     "_fontFamily": "Microsoft YaHei",
@@ -15783,7 +15783,7 @@
     "key": "orders/486,371,176,38:0/10,0,156,38:0",
     "drawing": "",
     "originalDrawing": "",
-    "originalLabel": "{\"string\":\"手作 180金\",\"fontSize\":23,\"lineHeight\":35,\"fontFamily\":\"Microsoft YaHei\",\"enableWrapText\":true,\"overflow\":2,\"horizontalAlign\":1,\"verticalAlign\":1,\"color\":\"f7f0dfff\"}",
+    "originalLabel": "{\"string\":\"按单制作 180金\",\"fontSize\":23,\"lineHeight\":35,\"fontFamily\":\"Microsoft YaHei\",\"enableWrapText\":true,\"overflow\":2,\"horizontalAlign\":1,\"verticalAlign\":1,\"color\":\"f7f0dfff\"}",
     "originalImage": "",
     "_id": "layout-component-534"
   },
@@ -24374,7 +24374,7 @@
   },
   {
     "__type__": "cc.Node",
-    "_name": "珍珠 0/6  ·  绿玉 0/3  ·  雏菊吊坠",
+    "_name": "林阿姨 · 珍珠 0/6 · 绿玉 0/3 · 雏菊",
     "_objFlags": 0,
     "_parent": {
       "__id__": 667
@@ -24451,7 +24451,7 @@
     },
     "_enabled": true,
     "__prefab": null,
-    "_string": "珍珠 0/6  ·  绿玉 0/3  ·  雏菊吊坠",
+    "_string": "林阿姨 · 珍珠 0/6 · 绿玉 0/3 · 雏菊吊坠",
     "_fontSize": 23,
     "_lineHeight": 35,
     "_fontFamily": "Microsoft YaHei",
@@ -24483,7 +24483,7 @@
     "key": "craft/38,212,644,50:0",
     "drawing": "",
     "originalDrawing": "",
-    "originalLabel": "{\"string\":\"珍珠 0/6  ·  绿玉 0/3  ·  雏菊吊坠\",\"fontSize\":23,\"lineHeight\":35,\"fontFamily\":\"Microsoft YaHei\",\"enableWrapText\":true,\"overflow\":2,\"horizontalAlign\":1,\"verticalAlign\":1,\"color\":\"718366ff\"}",
+    "originalLabel": "{\"string\":\"林阿姨 · 珍珠 0/6 · 绿玉 0/3 · 雏菊吊坠\",\"fontSize\":23,\"lineHeight\":35,\"fontFamily\":\"Microsoft YaHei\",\"enableWrapText\":true,\"overflow\":2,\"horizontalAlign\":1,\"verticalAlign\":1,\"color\":\"718366ff\"}",
     "originalImage": "",
     "_id": "layout-component-832"
   },
@@ -68246,7 +68246,7 @@
   },
   {
     "__type__": "cc.Node",
-    "_name": "已收藏 0/6 份心意 · 点作品可放大欣赏",
+    "_name": "剧情作品 0/6",
     "_objFlags": 0,
     "_parent": {
       "__id__": 2182
@@ -68268,7 +68268,7 @@
     "_lpos": {
       "__type__": "cc.Vec3",
       "x": 38,
-      "y": -207,
+      "y": -215,
       "z": 0
     },
     "_lrot": {
@@ -68304,8 +68304,8 @@
     "__prefab": null,
     "_contentSize": {
       "__type__": "cc.Size",
-      "width": 644,
-      "height": 60
+      "width": 350,
+      "height": 46
     },
     "_anchorPoint": {
       "__type__": "cc.Vec2",
@@ -68323,7 +68323,7 @@
     },
     "_enabled": true,
     "__prefab": null,
-    "_string": "已收藏 0/6 份心意 · 点作品可放大欣赏",
+    "_string": "剧情作品 0/6",
     "_fontSize": 21,
     "_lineHeight": 32,
     "_fontFamily": "Microsoft YaHei",
@@ -68352,10 +68352,10 @@
     },
     "_enabled": true,
     "__prefab": null,
-    "key": "album/38,207,644,60:0",
+    "key": "album/38,215,350,46:0",
     "drawing": "",
     "originalDrawing": "",
-    "originalLabel": "{\"string\":\"已收藏 0/6 份心意 · 点作品可放大欣赏\",\"fontSize\":21,\"lineHeight\":32,\"fontFamily\":\"Microsoft YaHei\",\"enableWrapText\":true,\"overflow\":2,\"horizontalAlign\":0,\"verticalAlign\":1,\"color\":\"94846dff\"}",
+    "originalLabel": "{\"string\":\"剧情作品 0/6\",\"fontSize\":21,\"lineHeight\":32,\"fontFamily\":\"Microsoft YaHei\",\"enableWrapText\":true,\"overflow\":2,\"horizontalAlign\":0,\"verticalAlign\":1,\"color\":\"94846dff\"}",
     "originalImage": "",
     "_id": "layout-component-2347"
   },
@@ -96357,7 +96357,7 @@
     },
     "_enabled": true,
     "__prefab": null,
-    "_id": "03b1c7d5-0b56-4392-afd0-ba615e6d2a5a"
+    "_id": "121aa47e-4760-4693-acc6-b49222008a10"
   },
   {
     "__type__": "cc.Camera",
@@ -96391,7 +96391,7 @@
       "width": 1,
       "height": 1
     },
-    "_id": "d3eae421-f669-47e7-a550-3b1d2c1f472d"
+    "_id": "6145f0a7-460c-4e51-82fd-aec8240dd119"
   },
   {
     "__type__": "cc.Canvas",
@@ -96406,7 +96406,7 @@
       "__id__": 3312
     },
     "_alignCanvasWithScreen": false,
-    "_id": "772e58ae-8f93-4a33-9e8e-805fa69ac841"
+    "_id": "69e6009a-7c42-49d6-9c68-faa428d71279"
   },
   {
     "__type__": "b2c31RsASNKm7zepxiVThtE",
@@ -96418,6 +96418,6 @@
     "_enabled": true,
     "__prefab": null,
     "page": 0,
-    "_id": "bc7ada5a-02cf-4f33-b14b-109a6abb5c56"
+    "_id": "1c271ab1-9f77-4367-a7c7-3c4cada2c37e"
   }
 ]

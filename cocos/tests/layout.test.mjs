@@ -158,3 +158,31 @@ test('competition board connects native craft, isolated undo, one-time awards an
   game.navigate('craft');assert.deepEqual(Array.from(game.workingDraft),commission);assert.equal(game.workingCharm,'heart');
   assert.equal(game.save.competitions.entries[0].medal,'金色灵感奖');
 });
+
+test('an old completed save opens a real customer order, delivers it and keeps receiving commissions', () => {
+  const game=new AtelierGame(),actions=new Map(),messages=[];
+  game.node=new Node('AtelierGame');game.page=new Node('Page');game.overlay=new Node('Dialogs');game.notices=new Node('Notices');
+  game.persist=()=>{};game.scheduleOnce=()=>{};game.toast=message=>messages.push(message);
+  game.startStory=()=>assert.fail('Returning orders must not replay first-time stories');
+  game.accessibility={clear(modal){if(!modal)actions.clear();},text(){},button(name,action,modal,enabled){if(enabled)actions.set(name,action);},showDialog(){actions.clear();},closeDialog(){actions.clear();},announce(){}};
+  game.save={...rules.freshSave(),started:true,reduced:true,inventory:Array(6).fill(100),completed:['daisy','sea','rose','forest','violet','promise'],orderId:'promise'};
+  game.save=rules.normalizeSave(game.save);game.screen='home';game.render();
+  assert.ok(actions.has('按单制作'));actions.get('按单制作')();
+  assert.equal(game.currentOrder().customer,'林阿姨');
+  assert.equal(actions.has('欣赏作品'),false);
+  actions.get('包装交付  ·  180 金币')();assert.equal(game.modal,'');
+  assert.match(messages.at(-1),/串满/);
+  actions.get('参考配色')();actions.get('按参考排珠')();
+  actions.get('包装交付  ·  180 金币')();assert.equal(game.modal,'delivery');
+  actions.get('确认交付')();
+  assert.equal(game.save.repeatOrders,1);assert.equal(game.save.coins,260);
+  assert.equal(game.save.completed.length,6);assert.equal(game.save.repeatCollection.length,1);
+  actions.get('按单制作')();assert.equal(game.currentOrder().customer,'花店小满');
+  assert.equal(actions.has('听故事'),false);
+  actions.get('参考配色')();actions.get('按参考排珠')();
+  actions.get('包装交付  ·  220 金币')();assert.equal(game.modal,'delivery');
+  actions.get('确认交付')();assert.equal(game.save.repeatOrders,2);
+  game.navigate('album');actions.get('查看回头客作品')();
+  assert.ok(actions.has('欣赏再送妈妈一朵花'));
+  assert.ok(actions.has('欣赏送给旅途中的朋友'));
+});

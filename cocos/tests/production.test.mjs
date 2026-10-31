@@ -63,6 +63,12 @@ test('Creator production bundle preserves collection iteration and complete game
   assert.equal(heart.finishSeaVisit(save,'daisy'),null);
   assert.equal(save.collection.find(x=>x.id==='sea').travelCharm,'heart');
   const restored=model.normalizeSave(JSON.parse(JSON.stringify(save)));
+  const nextOrder=model.currentOrder(restored);
+  assert.equal(nextOrder.customer,'林阿姨');assert.equal(nextOrder.name,'再送妈妈一朵花');
+  const repeat=model.deliver({...restored,draft:Array.from(nextOrder.palette),charm:nextOrder.charm});
+  assert.equal(repeat.repeatOrders,1);assert.equal(repeat.coins,restored.coins+nextOrder.reward);
+  assert.equal(repeat.collection.length,6);assert.equal(repeat.repeatCollection.length,1);
+  assert.equal(model.deliver(repeat),null);assert.equal(model.currentOrder(repeat).id,'sea');
   assert.equal(restored.seaHeart.facts.length,2);assert.equal(restored.seaHeart.visited,true);
   const competitions=load([...definitions.keys()].find(n=>n.endsWith('/competition.ts')));
   const originalStock=Array.from(restored.inventory),originalDraft=Array.from(restored.draft),beforeCoins=restored.coins;

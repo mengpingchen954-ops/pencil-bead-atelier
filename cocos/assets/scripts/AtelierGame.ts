@@ -5,7 +5,7 @@ import {
   input, Input, KeyCode, sys, game, Game, EditBox, JsonAsset, VideoPlayer,
   VideoClip, screen as displayScreen,
 } from 'cc';
-import { BEADS, ORDERS, CHAPTERS, STORIES, JOURNEY, FURNITURE, CHARMS, CLEAN_SPOTS, REPAIRS } from './content';
+import { BEADS, ORDERS, RETURN_ORDERS, CHAPTERS, STORIES, JOURNEY, FURNITURE, CHARMS, CLEAN_SPOTS, REPAIRS } from './content';
 import * as rules from './model';
 import { pendingStory, storyUnlocked, finishStory } from './story';
 import { BrowserAccessibility } from './BrowserAccessibility';
@@ -44,6 +44,7 @@ export class AtelierGame extends Component {
   private storyIndex = 0;
   private storyLine = 0;
   private journalPage = 0;
+  private albumRepeat = false;
   private media: any = {};
   private video: VideoPlayer | null = null;
   private videoSubtitle: Label | null = null;
@@ -334,7 +335,8 @@ export class AtelierGame extends Component {
     this.button('打开小店  →',160,1080,400,78,()=>{this.save.started=true;this.persist();this.navigate('home');this.startStory(0);},this.page,true);
     this.text('消除采珠  ·  手串定制  ·  小店经营',70,1190,580,40,21,MUTED,this.page,true);
   }
-  private currentOrder() { return ORDERS.find(o => o.id === this.save.orderId)!; }
+  private get repeatOrder() { return this.save.completed.length===ORDERS.length; }
+  private currentOrder() { return rules.currentOrder(this.save); }
   private home() {
     this.title('AH HE’S LITTLE ATELIER','一颗珠子，一段新生活','午后的阳光刚好，小店又开门了。');
     this.rect('Illustration mount',35,277,650,524,'#b7986e',this.page,10);
@@ -344,12 +346,12 @@ export class AtelierGame extends Component {
     const chapter=CHAPTERS[Math.min(2,Math.floor(this.save.completed.length/2))];
     this.text(chapter.title,38,809,530,42,23,MUTED);
     this.button('手账',586,806,96,48,()=>this.navigate('journal'));
-    const order=this.currentOrder(), done=this.save.completed.length===6;
+    const order=this.currentOrder();
     this.rect('Commission',38,867,644,140,'#fffaf0',this.page,18,'#dfd1b6');
-    this.text(done?'每一份心意，都被认真珍藏':'正在等待的心意 · '+order.customer,60,878,550,28,20,MUTED);
-    this.text(done?'继续设计自己的手串':order.name,60,910,600,42,31);
-    this.text(done?'小店开着，故事继续。':order.text,60,956,600,42,21,MUTED);
-    this.button('开始手作',38,1020,311,60,()=>this.navigate('craft'),this.page,true);
+    this.text((this.repeatOrder?'回头客追加委托 · ':'正在等待的心意 · ')+order.customer,60,878,550,28,20,MUTED);
+    this.text(order.name,60,910,600,42,31);
+    this.text(order.text,60,956,600,42,21,MUTED);
+    this.button('按单制作',38,1020,311,60,()=>this.navigate('craft'),this.page,true);
     this.button('消除采珠',371,1020,311,60,()=>this.matchIntro());
     const journey=JOURNEY[Math.min(6,this.save.completed.length)];
     this.text(journey.title,38,1088,644,34,25,SAGE);
@@ -360,16 +362,17 @@ export class AtelierGame extends Component {
     else this.button(pending?'继续剧情 · '+pending.title:'翻阅我们的故事',38,1157,644,31,()=>pending?this.startStory(STORIES.indexOf(pending)):this.navigate('journal'));
   }
   private orders() {
-    this.title('LET EVERY WISH BE SEEN','为每一份心意，认真配色','按顺序完成六份委托；采珠与串珠进度会自动保存。');
-    ORDERS.forEach((o,i)=>{
-      const y=288+i*146,done=this.save.completed.includes(o.id),unlocked=i<=this.save.completed.length;
+    const repeat=this.repeatOrder,current=this.currentOrder();
+    this.title('LET EVERY WISH BE SEEN','为每一份心意，认真配色',repeat?'回头客第 '+(this.save.repeatOrders+1)+' 单 · 交付后继续收到新的委托。':'按顺序完成剧情委托，之后继续承接回头客订单。');
+    (repeat?RETURN_ORDERS:ORDERS).forEach((o,i)=>{
+      const y=288+i*146,done=repeat?i<this.save.repeatOrders%ORDERS.length:this.save.completed.includes(o.id),unlocked=repeat?o.id===current.id:i<=this.save.completed.length;
       this.rect('Order '+o.id,38,y,644,132,done?'#e9ecdf':'#fffaf0',this.page,16,'#dfd1b6');
       this.image('bead-'+o.main,50,y+14,74,74);
       this.text(o.customer+' · '+o.occasion,139,y+8,510,29,18,MUTED);
       this.text(o.name,139,y+39,500,40,28);
       this.text(`${BEADS[o.main].short}≥${o.mainNeed} / ${BEADS[o.accent].short}≥${o.accentNeed} / ${CHARMS[o.charm]}`,139,y+83,338,32,19,MUTED);
-      if(o.id==='sea'&&unlocked)this.button('听听她的故事',430,y+8,232,30,()=>this.seaChat());
-      this.button(done?'已交付':unlocked?'手作 '+o.reward+'金':'尚未解锁',486,y+83,176,38,()=>{this.save.orderId=o.id;this.persist();this.navigate('craft');},this.page,unlocked&&!done,unlocked&&!done);
+      if(!repeat&&o.id==='sea'&&unlocked)this.button('听听她的故事',430,y+8,232,30,()=>this.seaChat());
+      this.button(done?'已交付':unlocked?'按单制作 '+o.reward+'金':repeat?'等待来店':'尚未解锁',486,y+83,176,38,()=>{this.save.orderId=o.id;this.persist();this.navigate('craft');},this.page,unlocked&&!done,unlocked&&!done);
     });
   }
   private get contestEntry() { return this.screen==='contestCraft'?this.save.competitions.draft:null; }
@@ -392,11 +395,11 @@ export class AtelierGame extends Component {
     });
   }
   private craft() {
-    const event=this.contestEntry&&COMPETITIONS.find(e=>e.id===this.contestEntry.id),o=this.currentOrder(),done=!event&&this.save.completed.length===6;
-    this.title(event?'NEIGHBOURHOOD BEAD CONTEST':done?'DESIGN YOUR OWN LIGHT':'COMMISSION · '+o.customer,event?event.theme:done?'把自己的日子，串成光':o.name);
-    if(!event&&o.id==='sea'&&!done)this.button('听故事',552,156,130,43,()=>this.seaChat());
+    const event=this.contestEntry&&COMPETITIONS.find(e=>e.id===this.contestEntry.id),o=this.currentOrder();
+    this.title(event?'NEIGHBOURHOOD BEAD CONTEST':(this.repeatOrder?'RETURNING CUSTOMER · ':'COMMISSION · ')+o.customer,event?event.theme:o.name);
+    if(!event&&o.id==='sea'&&!this.repeatOrder)this.button('听故事',552,156,130,43,()=>this.seaChat());
     const checks=rules.checkOrder(this.save),counts=rules.draftCounts(this.workingDraft);
-    this.text(event?`${BEADS[event.main].short}≥6 · ${BEADS[event.accent].short}≥3 · ${CHARMS[event.charm]} · 相对珠槽呼应`:done?'自由配珠 · 十二颗珠子，一份自己的心意':`${BEADS[o.main].short} ${counts[o.main]}/${o.mainNeed}  ·  ${BEADS[o.accent].short} ${counts[o.accent]}/${o.accentNeed}  ·  ${CHARMS[o.charm]}吊坠`,38,212,644,50,23,SAGE,this.page,true);
+    this.text(event?`${BEADS[event.main].short}≥6 · ${BEADS[event.accent].short}≥3 · ${CHARMS[event.charm]} · 相对珠槽呼应`:`${o.customer} · ${BEADS[o.main].short} ${counts[o.main]}/${o.mainNeed} · ${BEADS[o.accent].short} ${counts[o.accent]}/${o.accentNeed} · ${CHARMS[o.charm]}吊坠`,38,212,644,50,23,SAGE,this.page,true);
     this.rect('Workshop mount',105,276,510,331,'#b89c77',this.page,12);
     this.image('pencil-workshop',108,279,504,325);
     this.polygon('Counter edge',[[80,550],[640,550],[688,889],[32,889]],'#d0b18d');
@@ -432,9 +435,8 @@ export class AtelierGame extends Component {
     this.button('取下',197,1075,144,44,()=>{if(this.slot<0)return this.toast('先点选一颗珠子。');this.remember();this.workingDraft[this.slot]=null;this.slot=-1;this.persist();this.render();});
     this.button('参考配色',356,1075,160,44,()=>this.sample());
     this.button(event?'评分规则':'采珠',531,1075,151,44,()=>event?this.contestRules():this.matchIntro());
-    this.button(event?'提交参赛作品':done?'欣赏作品':'包装交付  ·  '+o.reward+' 金币',38,1133,644,52,()=>{
+    this.button(event?'提交参赛作品':'包装交付  ·  '+o.reward+' 金币',38,1133,644,52,()=>{
       if(event){if(this.workingDraft.includes(null))return this.toast('先串满十二颗珠子，再提交作品。');this.contestConfirm();return;}
-      if(done){if(this.workingDraft.includes(null))return this.toast('先串满十二颗珠子。');this.collectionPreview('我的自由作品',this.workingDraft,this.workingCharm);return;}
       if(!Object.values(checks).every(Boolean))return this.toast(!checks.full?'先串满十二颗珠子。':!checks.charm?'换成客人需要的吊坠吧。':'配色或库存还未满足，看看上方要求。');
       this.confirmDelivery();
     },this.page,true);
@@ -549,16 +551,17 @@ export class AtelierGame extends Component {
     this.button('收好这份纪念',135,970,450,56,()=>this.closeModal(),this.overlay,true);
   }
   private confirmDelivery() {
-    const o=this.currentOrder();if(o.id==='sea'){this.seaPacking();return;}this.dialog('delivery','把心意，认真送到');
+    const o=this.currentOrder();if(o.id==='sea'&&!this.repeatOrder){this.seaPacking();return;}this.dialog('delivery','把心意，认真送到');
     this.image('pencil-delivery',80,325,560,320,this.overlay);
     this.text(o.name+'\n'+o.customer+' · '+o.reward+' 金币 / '+o.rep+' 口碑',100,683,520,110,27,INK,this.overlay,true);
     this.button('确认交付',130,863,460,70,()=>this.deliverOrder(),this.overlay,true);
   }
   private deliverOrder() {
-    const o=this.currentOrder(),next=rules.deliver(this.save);
+    const o=this.currentOrder(),repeat=this.repeatOrder,next=rules.deliver(this.save);
     if(!next)return this.toast('交付条件尚未满足。');
-    this.save=next;this.save.orderId=ORDERS.find(order=>!next.completed.includes(order.id))?.id||'promise';this.undo=[];
+    this.save=next;this.undo=[];
     this.persist();this.play('success');this.closeModal();this.screen='home';this.render();
+    if(repeat){this.toast(o.customer+'收到了手串 · '+o.reward+' 金币已入账，下一份委托已送达。');return;}
     const invitation=COMPETITIONS.find(event=>event.unlock===this.save.completed.length);
     if(invitation)this.toast('收到比赛邀请：'+invitation.title+'，首页可参加。');
     const nextStory=()=>this.startStory(STORIES.findIndex(story=>story.afterOrder===o.id));
@@ -855,15 +858,19 @@ export class AtelierGame extends Component {
     this.button('查看生活支线',180,1164,360,28,()=>this.navigate('journal'));
   }
   private album() {
-    this.title('EVERY BRACELET TELLS A STORY','认真做过的，都在这里',`已收藏 ${this.save.collection.length}/6 份心意 · 点作品可放大欣赏`);
-    if(!this.save.collection.length){this.image('delivery-album',80,360,560,360);this.text('完成第一份委托，\n把我们的第一束光留在这里。',100,780,520,120,29,MUTED,this.page,true);return;}
-    this.save.collection.forEach((item:any,i:number)=>{
+    const repeat=this.albumRepeat&&this.save.repeatCollection.length>0,collection=repeat?this.save.repeatCollection:this.save.collection;
+    this.title('EVERY BRACELET TELLS A STORY','认真做过的，都在这里');
+    this.text(repeat?'回头客最近六份作品':'剧情作品 '+this.save.collection.length+'/6',38,215,350,46,21,MUTED);
+    if(this.save.repeatCollection.length)this.button(repeat?'查看剧情作品':'查看回头客作品',406,215,276,46,()=>{this.albumRepeat=!repeat;this.render();});
+    if(!collection.length){this.image('delivery-album',80,360,560,360);this.text('完成第一份委托，\n把我们的第一束光留在这里。',100,780,520,120,29,MUTED,this.page,true);return;}
+    collection.forEach((item:any,i:number)=>{
+      const title=(repeat?RETURN_ORDERS:ORDERS).find(o=>o.id===item.id)!.name;
       const x=38+(i%2)*332,y=290+Math.floor(i/2)*291;
       const n=this.rect('Collection '+item.id,x,y,312,271,'#fffaf0',this.page,16,'#dfd1b6');
       this.bracelet(item.beads,156,114,82,n);
-      this.text(ORDERS.find(o=>o.id===item.id)!.name,12,215,288,40,24,INK,n,true);
-      n.on(Node.EventType.TOUCH_END,()=>this.collectionPreview(ORDERS.find(o=>o.id===item.id)!.name,item.beads,item.charm));
-      this.accessibleButton('欣赏'+ORDERS.find(o=>o.id===item.id)!.name,()=>this.collectionPreview(ORDERS.find(o=>o.id===item.id)!.name,item.beads,item.charm));
+      this.text(title,12,215,288,40,24,INK,n,true);
+      n.on(Node.EventType.TOUCH_END,()=>this.collectionPreview(title,item.beads,item.charm));
+      this.accessibleButton('欣赏'+title,()=>this.collectionPreview(title,item.beads,item.charm));
     });
     this.button('我们的故事与回忆手账',90,1170,540,24,()=>this.navigate('journal'));
   }
@@ -938,7 +945,7 @@ export class AtelierGame extends Component {
         if(!parsed||parsed.version!==1||!Array.isArray(parsed.inventory)||parsed.inventory.length!==6||!Array.isArray(parsed.completed))throw new Error('invalid');
         const normalized=rules.refreshEnergy(rules.normalizeSave(parsed));
         this.dialog('import-confirm','使用这份存档？');
-        this.text(`已完成 ${normalized.completed.length}/6 份委托\n金币 ${normalized.coins} · 体力 ${normalized.energy}\n导入将替换本机当前进度。`,100,425,520,220,28,INK,this.overlay,true);
+        this.text(`剧情委托 ${normalized.completed.length}/6 · 回头客 ${normalized.repeatOrders} 单\n金币 ${normalized.coins} · 体力 ${normalized.energy}\n导入将替换本机当前进度。`,100,425,520,220,28,INK,this.overlay,true);
         this.button('确认导入',130,820,460,70,()=>{this.save=normalized;this.session=null;this.undo=[];this.contestUndo=[];this.persist();this.navigate(this.save.started?'home':'cover');this.toast('进度已导入。');},this.overlay,true);
       }catch{this.toast('这份存档格式不正确，请粘贴完整的 JSON。');}
     },this.overlay,true);

@@ -1,6 +1,6 @@
 // @ts-nocheck
 // Rules and narrative retained from the original game; engine-independent.
-import { ORDERS, FURNITURE, STORIES, CLEAN_SPOTS, REPAIRS } from "./content.ts";
+import { ORDERS, RETURN_ORDERS, FURNITURE, STORIES, CLEAN_SPOTS, REPAIRS } from "./content.ts";
 import { storyUnlocked } from "./story.ts";
 import { freshSeaHeart, normalizeSeaHeart } from "./heart.ts";
 import { freshCompetitions, normalizeCompetitions } from "./competition.ts";
@@ -223,6 +223,8 @@ export function freshSave() {
     inventory: [3, 0, 0, 2, 0, 0],
     completed: [],
     collection: [],
+    repeatOrders: 0,
+    repeatCollection: [],
     upgrades: { chair: 0, display: 0, desk: 0 },
     draft: Array(12).fill(null),
     charm: "daisy",
@@ -236,6 +238,14 @@ export function freshSave() {
 }
 const bounded = (v, max = 100000) =>
   Number.isFinite(v) ? Math.max(0, Math.min(max, Math.floor(v))) : 0;
+const validWork = (x) => x && ORDERS.some((o) => o.id === x.id) &&
+  Array.isArray(x.beads) && x.beads.length === 12 &&
+  Array.from(x.beads).every((n) => Number.isInteger(n) && n >= 0 && n < 6) &&
+  ["daisy", "moon", "heart"].includes(x.charm);
+export function currentOrder(save) {
+  if (save.completed.length === ORDERS.length) return RETURN_ORDERS[bounded(save.repeatOrders) % RETURN_ORDERS.length];
+  return ORDERS.find((o) => o.id === save.orderId && !save.completed.includes(o.id)) || ORDERS.find((o) => !save.completed.includes(o.id));
+}
 export function normalizeSave(input) {
   const s = freshSave();
   if (!input || input.version !== 1) return s;
@@ -276,20 +286,14 @@ export function normalizeSave(input) {
   s.charm = ["daisy", "moon", "heart"].includes(input.charm)
     ? input.charm
     : "daisy";
-  s.orderId = ORDERS.some((o) => o.id === input.orderId)
-    ? input.orderId
-    : (ORDERS.find((o) => !s.completed.includes(o.id))?.id ?? "daisy");
+  s.repeatOrders = s.completed.length === ORDERS.length ? bounded(input.repeatOrders) : 0;
+  s.orderId = currentOrder({ ...s, orderId: input.orderId }).id;
   s.collection = (Array.isArray(input.collection) ? input.collection : [])
-    .filter(
-      (x) =>
-        x &&
-        ORDERS.some((o) => o.id === x.id) &&
-        Array.isArray(x.beads) &&
-        x.beads.length === 12 &&
-        x.beads.every((n) => Number.isInteger(n) && n >= 0 && n < 6) &&
-        ["daisy", "moon", "heart"].includes(x.charm),
-    )
+    .filter(validWork)
     .slice(0, 6);
+  s.repeatCollection = (Array.isArray(input.repeatCollection) ? input.repeatCollection : [])
+    .filter((x) => validWork(x) && Number.isInteger(x.number) && x.number > 0 && x.number <= s.repeatOrders)
+    .slice(-6).map((x) => ({ id:x.id, beads:[...x.beads], charm:x.charm, number:x.number }));
   s.seaHeart = normalizeSeaHeart(input.seaHeart, s.completed);
   s.competitions = normalizeCompetitions(input.competitions, s.completed);
   s.collection = s.collection.map(item => ({id:item.id, beads:[...item.beads], charm:item.charm,
@@ -332,7 +336,7 @@ export function craftTarget(draft, selected = -1, random = Math.random) {
 }
 export function checkOrder(
   save,
-  order = ORDERS.find((o) => o.id === save.orderId),
+  order = currentOrder(save),
 ) {
   const counts = draftCounts(save.draft);
   return {
@@ -344,21 +348,26 @@ export function checkOrder(
   };
 }
 export function deliver(save) {
-  const order = ORDERS.find((o) => o.id === save.orderId);
+  const order = currentOrder(save), repeat = save.completed.length === ORDERS.length;
   const checks = checkOrder(save, order);
   if (
-    save.completed.includes(order.id) ||
+    (!repeat && save.completed.includes(order.id)) ||
     !Object.values(checks).every(Boolean)
   )
     return null;
   const counts = draftCounts(save.draft);
+  const completed = repeat ? save.completed : [...save.completed, order.id];
+  const repeatOrders = bounded(save.repeatOrders) + (repeat ? 1 : 0);
   return {
     ...save,
     coins: save.coins + order.reward,
     rep: save.rep + order.rep,
     inventory: save.inventory.map((n, i) => n - counts[i]),
-    completed: [...save.completed, order.id],
-    collection: [
+    completed,
+    repeatOrders,
+    orderId: currentOrder({ ...save, completed, repeatOrders }).id,
+    repeatCollection: repeat ? [...(save.repeatCollection || []), { id:order.id, beads:[...save.draft], charm:save.charm, number:repeatOrders }].slice(-6) : save.repeatCollection,
+    collection: repeat ? save.collection : [
       ...save.collection,
       { id: order.id, beads: [...save.draft], charm: save.charm, ...(order.id === 'sea' ? {gift:{...save.seaHeart.gift}} : {}) },
     ],
