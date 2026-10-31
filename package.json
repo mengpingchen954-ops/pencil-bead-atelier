@@ -11,7 +11,8 @@
     "test:browser": "node tests/browser.mjs",
     "test:feel": "node tests/feel.mjs",
     "test:story": "node tests/story.mjs",
-    "test:square": "node tests/square.mjs"
+    "test:square": "node tests/square.mjs",
+    "test:craft": "node tests/craft.mjs"
   },
   "dependencies": {
     "three": "^0.186.1"

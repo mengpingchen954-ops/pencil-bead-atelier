@@ -22,6 +22,7 @@ import {
   total,
   draftCounts,
   canPlace,
+  craftTarget,
   adjacent,
   checkOrder,
   deliver,
@@ -170,6 +171,7 @@ try {
     canInteract: () => !modal,
     dragAllowed: () => !busy && !tool,
     press: () => beadSound("tap"),
+    craftLand: () => beadSound("land"),
     context: (ok) => toast(ok ? "工作台已恢复" : "画布暂时中断，请稍候恢复。"),
   });
 } catch (e) {
@@ -285,7 +287,7 @@ function craftView() {
     )
     .join(
       "",
-    )}</div><div class="workbench"><div class="scene-anchor bracelet-scene" aria-label="12颗珠子组成的可编辑三维手串"></div><div class="bench-label">${save.draft.filter((n) => n !== null).length} / 12 <span>颗心意</span></div><div class="bench-tools">${ibtn("undo", "undo", "撤销上一步")}${ibtn("bin", "erase", "取下选中珠子")}${ibtn("eye", "sample", "查看配珠参考")}</div></div><p class="craft-instruction">${slot >= 0 ? `已选第 ${slot + 1} 颗 · 点珠材替换，或取下` : "点珠材依次串入 · 拖动珠子可交换位置"}</p><div class="bead-tray">${BEADS.map((b, i) => btn(`${bead(i)}<span>${b.short}</span><small>余 ${Math.max(0, save.inventory[i] - counts[i])}</small>`, `bead:${i}`, "bead-option", `aria-label="添加${b.name}"`)).join("")}</div><div class="charm-row"><span>选择吊坠</span>${Object.entries(
+    )}</div><div class="workbench"><div class="scene-anchor bracelet-scene" aria-label="12颗珠子组成的可编辑三维手串"></div><div class="bench-label">${save.draft.filter((n) => n !== null).length} / 12 <span>颗心意</span></div><div class="bench-tools">${ibtn("undo", "undo", "撤销上一步")}${ibtn("bin", "erase", "取下选中珠子")}${ibtn("eye", "sample", "查看配珠参考")}</div></div><p class="craft-instruction">${slot >= 0 ? `已选第 ${slot + 1} 颗 · 点珠材替换，或取下` : "点珠材从圆心弹出 · 拖到任意凹槽调整"}</p><div class="bead-tray">${BEADS.map((b, i) => btn(`${bead(i)}<span>${b.short}</span><small>余 ${Math.max(0, save.inventory[i] - counts[i])}</small>`, `bead:${i}`, "bead-option", `aria-label="添加${b.name}"`)).join("")}</div><div class="charm-row"><span>选择吊坠</span>${Object.entries(
     CHARMS,
   )
     .map(([id, n]) =>
@@ -494,7 +496,7 @@ function renderModal() {
   if (modal.type === "help")
     html = modalShell(
       "把日子，慢慢串成光",
-      `<ol class="help-list"><li><b>采珠</b><p>交换相邻珠子，同色直线三颗起消，2×2 四颗方块也能消除。工具不耗步数，提示可免费使用。</p></li><li><b>接单与手作</b><p>点珠材依次串入 12 个位置；点选已有珠子后可替换，拖动可换位。满足配色和吊坠要求即可交付。</p></li><li><b>小店与故事</b><p>交付推进主线，升级家具开启祖孙支线。手账可回看已解锁剧情和收集的记录。稍后阅读会保留未读状态；视频可以切换文字版。</p></li></ol>`,
+      `<ol class="help-list"><li><b>采珠</b><p>交换相邻珠子，同色直线三颗起消，2×2 四颗方块也能消除。工具不耗步数，提示可免费使用。</p></li><li><b>接单与手作</b><p>点珠材从圆心弹射，随机滚入空凹槽；拖动可移入空槽或交换位置，点选已有珠子后可替换。满足配色和吊坠要求即可交付。</p></li><li><b>小店与故事</b><p>交付推进主线，升级家具开启祖孙支线。手账可回看已解锁剧情和收集的记录。稍后阅读会保留未读状态；视频可以切换文字版。</p></li></ol>`,
       btn("知道了，开始吧", "close"),
     );
   if (modal.type === "reset")
@@ -547,11 +549,14 @@ function rememberDraft() {
   if (undo.length > 30) undo.shift();
 }
 function updateCraft() {
+  const scroll = view.scrollTop;
   persist();
   render();
+  view.scrollTop = scroll;
 }
 function placeBead(type) {
-  let index = slot >= 0 ? slot : save.draft.indexOf(null);
+  if (modal || screen !== "craft" || !Number.isInteger(type) || !BEADS[type]) return;
+  const index = craftTarget(save.draft, slot);
   if (index < 0) {
     toast("手串已经串满，点选一颗后可替换。");
     return;
@@ -565,6 +570,7 @@ function placeBead(type) {
   slot = -1;
   chime();
   updateCraft();
+  renderer.launchBead(index);
 }
 function slotClick(i) {
   if (modal || screen !== "craft") return;
@@ -578,14 +584,16 @@ function renderCraftHint() {
     p.textContent =
       slot >= 0
         ? `已选第 ${slot + 1} 颗 · 点珠材替换，或取下`
-        : "点珠材依次串入 · 拖动珠子可交换位置";
+        : "点珠材从圆心弹出 · 拖到任意凹槽调整";
 }
 function reorderSlots(a, b) {
-  if (modal || screen !== "craft") return;
+  if (modal || screen !== "craft" || a === b || save.draft[a] === null) return;
+  const positions = renderer.craftPositions();
   rememberDraft();
   [save.draft[a], save.draft[b]] = [save.draft[b], save.draft[a]];
   slot = b;
   updateCraft();
+  renderer.moveCraftBeads(a, b, positions);
 }
 function startMatch() {
   clearToast();
@@ -1185,6 +1193,7 @@ window.render_game_to_text = () =>
     tool,
     busy,
     queuedInput,
+    craft: screen === "craft" ? renderer.craftState() : null,
     match: session
       ? {
           board: session.board,

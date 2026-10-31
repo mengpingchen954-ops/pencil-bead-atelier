@@ -4,6 +4,10 @@ import { BEADS } from "./content.js";
 import { rng, adjacent } from "./model.js";
 const smooth = (t) => t * t * (3 - 2 * t);
 const cellPosition = (i) => ({ x: (i % 8) - 3.5, y: 3.5 - Math.floor(i / 8) });
+const slotPosition = (i) => {
+  const angle = Math.PI / 2 - (i / 12) * Math.PI * 2;
+  return { x: Math.cos(angle) * 2.28, y: Math.sin(angle) * 2.14 };
+};
 const makeCanvas = (w, h, draw) => {
   const c = document.createElement("canvas");
   c.width = w;
@@ -29,6 +33,8 @@ export class AtelierRenderer {
     this.phase = "idle";
     this.boardPieces = [];
     this.boardCells = [];
+    this.craftPieces = [];
+    this.craftFlights = new Map();
     this.jolt = 0;
     this.effectPool = [];
     this.ray = new THREE.Raycaster();
@@ -84,6 +90,21 @@ export class AtelierRenderer {
       ctx.fill();
     });
     this.sphere = new THREE.SphereGeometry(1, 28, 20);
+    this.grooveTexture = makeCanvas(128, 128, (ctx) => {
+      const bowl = ctx.createRadialGradient(59, 55, 5, 64, 64, 60);
+      bowl.addColorStop(0, "#e9dcc2");
+      bowl.addColorStop(0.65, "#e1d1b4");
+      bowl.addColorStop(0.84, "#bda683");
+      bowl.addColorStop(0.93, "#f9efda");
+      bowl.addColorStop(1, "#eee2cc00");
+      ctx.fillStyle = bowl;
+      ctx.fillRect(0, 0, 128, 128);
+    });
+    this.craftShadowTexture = makeCanvas(64, 64, (ctx) => {
+      const shadow = ctx.createRadialGradient(32, 32, 2, 32, 32, 30);
+      shadow.addColorStop(0, "#836c4b66"); shadow.addColorStop(1, "#836c4b00");
+      ctx.fillStyle = shadow; ctx.fillRect(0, 0, 64, 64);
+    });
     this.beadMaps = BEADS.map((b, i) =>
       makeCanvas(256, 128, (ctx) => {
         ctx.fillStyle = b.color;
@@ -145,6 +166,10 @@ export class AtelierRenderer {
     c.addEventListener("pointerdown", (e) => {
       if (this.handlers.canInteract?.() === false) return;
       this.down = { x: e.clientX, y: e.clientY, index: this.pick(e) };
+      if (this.mode === "craft" && this.craftFlights.has(this.down.index)) {
+        this.down = null;
+        return;
+      }
       c.setPointerCapture(e.pointerId);
       if (this.mode === "match" && this.phase === "idle") {
         this.pressed = this.down.index;
@@ -153,7 +178,8 @@ export class AtelierRenderer {
     });
     c.addEventListener("pointermove", (e) => {
       this.hover = this.pick(e);
-      if (this.down && this.mode === "craft") this.handlers.hover?.(this.hover);
+      if (this.down && this.mode === "craft" && this.handlers.canInteract?.() !== false)
+        this.previewCraftDrag(e);
       if (
         this.down &&
         this.mode === "match" &&
@@ -199,8 +225,10 @@ export class AtelierRenderer {
           this.handlers.board?.(down.index);
         }
       } else if (this.mode === "craft") {
-        if (end >= 0 && end !== down.index)
+        if (this.craftDrag !== null && this.craftDrag !== undefined && end >= 0 && end !== down.index) {
+          this.craftDrag = null;
           this.handlers.reorder?.(down.index, end);
+        } else if (this.craftDrag !== null && this.craftDrag !== undefined) this.resetCraftDrag();
         else this.handlers.slot?.(down.index);
       }
     });
@@ -208,6 +236,7 @@ export class AtelierRenderer {
       this.down = null;
       this.pressed = -1;
       this.resetDrag();
+      this.resetCraftDrag();
     });
   }
   swipeNeighbor(index, dx, dy, axis) {
@@ -295,6 +324,13 @@ export class AtelierRenderer {
     this.group.position.set(0, 0, 0);
     this.boardPieces = [];
     this.boardCells = [];
+    this.craftPieces = [];
+    this.craftSlots = [];
+    this.craftShadows = [];
+    this.craftSelectors = [];
+    this.craftFlights.clear();
+    this.craftDrag = null;
+    this.down = null;
     this.dragPreview = null;
     this.pressed = -1;
     for (const p of this.particles) {
@@ -595,8 +631,13 @@ export class AtelierRenderer {
     };
   }
   setBracelet(beads, charm = "daisy", selected = -1) {
+    if (this.mode === "craft" && this.craftCharm === charm && this.craftPieces.length === 12) {
+      this.syncBracelet(beads, selected);
+      return;
+    }
     this.clear();
     this.mode = "craft";
+    this.craftCharm = charm;
     const mattex = makeCanvas(512, 512, (ctx) => {
       ctx.fillStyle = "#f8efde";
       ctx.fillRect(0, 0, 512, 512);
@@ -631,29 +672,39 @@ export class AtelierRenderer {
     this.group.add(ring);
     for (let i = 0; i < 12; i++) {
       const a = Math.PI / 2 - (i / 12) * Math.PI * 2;
-      const x = Math.cos(a) * 2.28,
-        y = Math.sin(a) * 2.14;
+      const { x, y } = slotPosition(i);
       const hit = new THREE.Mesh(
         new THREE.CircleGeometry(0.48, 24),
         new THREE.MeshBasicMaterial({
-          color: 0xd8c7a9,
+          map: this.grooveTexture,
           transparent: true,
-          opacity: beads[i] === null ? 0.2 : 0,
+          opacity: 0.85,
         }),
       );
       hit.position.set(x, y, 0.03);
       hit.userData = { index: i, transient: true };
       this.group.add(hit);
       this.meshes.push(hit);
-      const type = beads[i];
-      if (type !== null && type !== undefined) {
-        const gem = new THREE.Mesh(this.sphere, this.physical[type]);
+      this.craftSlots.push(hit);
+      const shadow = new THREE.Mesh(this.plane, new THREE.MeshBasicMaterial({
+        map: this.craftShadowTexture, transparent: true, depthWrite: false, opacity: 0.65,
+      }));
+      shadow.position.set(x + 0.06, y - 0.06, 0.08);
+      shadow.scale.set(1.1, 0.8, 1);
+      shadow.userData.transient = true;
+      this.group.add(shadow);
+      this.craftShadows.push(shadow);
+      const piece = new THREE.Group();
+      piece.position.set(x, y, 0.32);
+      piece.userData = { index: i, type: null };
+      this.group.add(piece);
+      this.craftPieces.push(piece);
+      {
+        const gem = new THREE.Mesh(this.sphere, this.physical[0]);
         gem.scale.set(0.42, 0.42, 0.35);
-        gem.position.set(x, y, 0.32);
         gem.rotation.y = i * 0.7;
         gem.userData = { index: i };
-        this.group.add(gem);
-        this.meshes.push(gem);
+        piece.add(gem);
         const shine = new THREE.Mesh(
           new THREE.CircleGeometry(0.078, 20),
           new THREE.MeshBasicMaterial({
@@ -662,12 +713,12 @@ export class AtelierRenderer {
             opacity: 0.72,
           }),
         );
-        shine.position.set(x - 0.14, y + 0.16, 0.66);
+        shine.position.set(-0.14, 0.16, 0.34);
         shine.scale.y = 0.65;
         shine.userData.transient = true;
-        this.group.add(shine);
+        piece.add(shine);
       }
-      if (i === selected) {
+      {
         const selector = new THREE.Mesh(
           new THREE.RingGeometry(0.47, 0.51, 32),
           new THREE.MeshBasicMaterial({ color: 0x6c8059 }),
@@ -675,6 +726,7 @@ export class AtelierRenderer {
         selector.position.set(x, y, 0.8);
         selector.userData.transient = true;
         this.group.add(selector);
+        this.craftSelectors.push(selector);
       }
       const spacer = new THREE.Mesh(
         new THREE.SphereGeometry(0.065, 12, 8),
@@ -688,6 +740,11 @@ export class AtelierRenderer {
       spacer.userData.transient = true;
       this.group.add(spacer);
     }
+    this.launchRing = new THREE.Mesh(new THREE.RingGeometry(0.18, 0.21, 40),
+      new THREE.MeshBasicMaterial({ color: 0xc6ab78, transparent: true, opacity: 0.25 }));
+    this.launchRing.position.z = 0.04;
+    this.launchRing.userData.transient = true;
+    this.group.add(this.launchRing);
     const texture = makeCanvas(128, 128, (ctx) => {
       ctx.translate(64, 64);
       ctx.lineWidth = 3;
@@ -732,7 +789,133 @@ export class AtelierRenderer {
     pendant.scale.setScalar(0.88);
     pendant.userData.transient = true;
     this.group.add(pendant);
+    this.syncBracelet(beads, selected);
     this.render();
+  }
+  syncBracelet(beads, selected) {
+    this.craftPieces.forEach((piece, i) => {
+      const type = beads[i];
+      if (piece.userData.type !== type) {
+        this.craftFlights.delete(i);
+        const at = slotPosition(i);
+        piece.position.set(at.x, at.y, 0.32);
+        piece.scale.setScalar(1);
+        piece.children[0].rotation.set(0, i * 0.7, 0);
+      }
+      piece.userData.type = type;
+      piece.visible = type !== null;
+      if (type !== null) piece.children[0].material = this.physical[type];
+      this.craftSelectors[i].visible = i === selected;
+      this.craftSlots[i].material.opacity = type === null ? 0.85 : 0.45;
+      this.updateCraftShadow(i);
+    });
+    this.render();
+  }
+  updateCraftShadow(i) {
+    const piece = this.craftPieces[i], shadow = this.craftShadows[i];
+    shadow.visible = piece.visible;
+    const height = Math.max(0, piece.position.z - 0.32);
+    shadow.position.set(piece.position.x + 0.06, piece.position.y - height * 0.4 - 0.06, 0.08);
+    shadow.scale.set(1.1 + height * 0.35, 0.8 + height * 0.25, 1);
+    shadow.material.opacity = 0.65 - Math.min(0.4, height * 0.4);
+  }
+  launchBead(index) {
+    const piece = this.craftPieces[index];
+    if (this.mode !== "craft" || !piece?.visible || !this.motion) return;
+    this.craftFlights.set(index, { kind: "launch", elapsed: 0, duration: 0.82,
+      turn: (Math.random() < 0.5 ? -1 : 1) * (0.18 + Math.random() * 0.16) });
+    piece.position.set(0, 0, 0.65);
+    piece.scale.setScalar(0.35);
+    this.updateCraftShadow(index);
+    this.render();
+  }
+  craftPositions() {
+    return this.craftPieces.map((piece) => piece.position.clone());
+  }
+  moveCraftBeads(a, b, positions) {
+    for (const [to, from] of [[b, a], [a, b]]) {
+      const piece = this.craftPieces[to];
+      this.craftFlights.delete(to);
+      if (!piece?.visible || !this.motion) continue;
+      this.craftFlights.set(to, { kind: "move", elapsed: 0, duration: 0.25, from: positions[from] });
+      piece.position.copy(positions[from]);
+    }
+  }
+  previewCraftDrag(event) {
+    const index = this.down.index, piece = this.craftPieces[index];
+    if (!piece?.visible || this.craftFlights.has(index)) return;
+    if (this.craftDrag === null && Math.hypot(event.clientX - this.down.x, event.clientY - this.down.y) < 6) return;
+    this.craftDrag = index;
+    const rect = this.renderer.domElement.getBoundingClientRect();
+    piece.position.set(
+      this.camera.left + ((event.clientX - rect.left) / rect.width) * (this.camera.right - this.camera.left),
+      this.camera.top - ((event.clientY - rect.top) / rect.height) * (this.camera.top - this.camera.bottom),
+      0.85,
+    );
+    this.updateCraftShadow(index);
+  }
+  resetCraftDrag() {
+    if (this.craftDrag === null || this.craftDrag === undefined) return;
+    const index = this.craftDrag, piece = this.craftPieces[index];
+    if (piece) {
+      const from = piece.position.clone(), at = slotPosition(index);
+      piece.position.set(at.x, at.y, 0.32);
+      if (this.motion) this.craftFlights.set(index, { kind: "move", elapsed: 0, duration: 0.2, from });
+    }
+    this.craftDrag = null;
+  }
+  tickCraft(dt) {
+    let pulse = 0;
+    for (const [index, flight] of this.craftFlights) {
+      const piece = this.craftPieces[index], at = slotPosition(index);
+      flight.elapsed += dt;
+      const t = this.motion ? Math.min(1, flight.elapsed / flight.duration) : 1;
+      if (flight.kind === "launch") {
+        pulse = Math.max(pulse, Math.max(0, 1 - t * 2.5));
+        if (t < 0.17) {
+          const p = t / 0.17;
+          piece.position.set(0, Math.sin(p * Math.PI / 2) * 0.232, 0.65 + p * 0.25);
+          piece.scale.setScalar(0.35 + 0.75 * Math.sin(p * Math.PI / 2));
+        } else if (t < 0.78) {
+          const p = (t - 0.17) / 0.61, travel = 1 - Math.pow(1 - p, 2);
+          const curve = Math.sin(p * Math.PI) * flight.turn, lift = 0.58 * (1 - p) + Math.sin(p * Math.PI) * 0.22;
+          piece.position.set(at.x * travel - at.y * curve, at.y * travel + at.x * curve + lift * 0.4, 0.32 + lift);
+          piece.scale.setScalar(1 + 0.1 * (1 - p));
+          piece.children[0].rotation.set(at.y * travel * 3.5, index * 0.7 - at.x * travel * 3.5, travel * flight.turn * 6);
+        } else {
+          const p = (t - 0.78) / 0.22, bounce = Math.sin(p * Math.PI * 3) * (1 - p) * 0.08;
+          piece.position.set(at.x, at.y + Math.abs(bounce), 0.32 + Math.abs(bounce));
+          piece.scale.set(1 + bounce, 1 - bounce, 1);
+        }
+      } else {
+        const p = smooth(t);
+        piece.position.set(
+          flight.from.x + (at.x - flight.from.x) * p,
+          flight.from.y + (at.y - flight.from.y) * p,
+          flight.from.z + (0.32 - flight.from.z) * p,
+        );
+      }
+      this.updateCraftShadow(index);
+      if (t >= 1) {
+        piece.position.set(at.x, at.y, 0.32);
+        piece.scale.setScalar(1);
+        this.craftFlights.delete(index);
+        this.updateCraftShadow(index);
+        if (flight.kind === "launch") this.handlers.craftLand?.();
+      }
+    }
+    if (this.launchRing) {
+      this.launchRing.scale.setScalar(1 + pulse * 2.5);
+      this.launchRing.material.opacity = 0.2 + pulse * 0.35;
+    }
+  }
+  craftState() {
+    return {
+      flights: [...this.craftFlights].map(([index, f]) => ({ index, kind: f.kind, elapsed: f.elapsed, duration: f.duration })),
+      dragging: this.craftDrag ?? null,
+      pieces: this.craftPieces.map((piece, index) => ({ index, type: piece.userData.type,
+        x: piece.position.x, y: piece.position.y, z: piece.position.z, scale: piece.scale.x, visible: piece.visible })),
+    };
   }
   pick(event) {
     const targets = this.mode === "match" ? this.boardCells : this.meshes;
@@ -789,6 +972,7 @@ export class AtelierRenderer {
   tick(dt) {
     this.time += dt;
     if (this.mode === "none") return;
+    if (this.mode === "craft") this.tickCraft(dt);
     for (const tween of [...this.tweens]) {
       tween.elapsed += dt;
       const t = Math.min(1, tween.elapsed / tween.duration);

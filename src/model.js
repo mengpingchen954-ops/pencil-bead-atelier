@@ -305,6 +305,12 @@ export function canPlace(save, type, index) {
   if (save.draft[index] === type) counts[type]--;
   return counts[type] < save.inventory[type];
 }
+export function craftTarget(draft, selected = -1, random = Math.random) {
+  if (Number.isInteger(selected) && selected >= 0 && selected < 12 && draft[selected] !== null)
+    return selected;
+  const empty = Array.from({ length: 12 }, (_, i) => i).filter((i) => draft[i] === null);
+  return empty.length ? empty[Math.min(empty.length - 1, Math.max(0, Math.floor(random() * empty.length)))] : -1;
+}
 export function checkOrder(
   save,
   order = ORDERS.find((o) => o.id === save.orderId),

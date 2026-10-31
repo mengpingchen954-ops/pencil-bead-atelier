@@ -124,6 +124,7 @@ try {
   await winPuzzle(true);
   assert.equal((await state()).screen, "craft");
   for (const type of ORDERS[0].palette) await click(`bead:${type}`);
+  await page.waitForFunction(() => JSON.parse(window.render_game_to_text()).craft.flights.length === 0);
   assert.equal((await state()).draft.filter((n) => n !== null).length, 12);
   await shot("05-workshop");
   // Swap actual Three.js bracelet slots, then undo; reserve stock is never spent by editing.

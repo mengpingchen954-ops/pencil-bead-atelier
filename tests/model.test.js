@@ -11,11 +11,28 @@ import {
   freshSave,
   deliver,
   canPlace,
+  craftTarget,
   purchase,
   normalizeSave,
   refreshEnergy,
   total,
 } from "../src/model.js";
+
+test("craft launches choose only free grooves, while an occupied selection can be replaced", () => {
+  const draft = Array(12).fill(null);
+  assert.equal(craftTarget(draft, -1, () => 0), 0);
+  assert.equal(craftTarget(draft, -1, () => 0.999), 11);
+  draft[0] = 0;
+  draft[11] = 3;
+  assert.equal(craftTarget(draft, -1, () => 0), 1);
+  assert.equal(craftTarget(draft, -1, () => 0.999), 10);
+  assert.equal(craftTarget(draft, 11, () => 0), 11);
+  assert.equal(craftTarget(Array(12).fill(0)), -1);
+  assert.equal(craftTarget(Array(12).fill(0), 5), 5);
+  const save = { ...freshSave(), inventory: [1, 0, 0, 0, 0, 0], draft: [0, ...Array(11).fill(null)] };
+  assert.equal(canPlace(save, 0, 1), false);
+  assert.equal(canPlace(save, 0, 0), true);
+});
 
 test("2×2 squares clear four beads, including board corners, without row wrapping", () => {
   for (const corner of [0, 6, 48, 54]) {
