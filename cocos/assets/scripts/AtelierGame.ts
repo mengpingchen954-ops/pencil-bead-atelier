@@ -167,6 +167,18 @@ export class AtelierGame extends Component {
     if (stroke) { g.lineWidth = 1.5; g.strokeColor = color(stroke); g.roundRect(1, -h+1, w-2, h-2, radius); g.stroke(); }
     return n;
   }
+  private polygon(name: string, points: number[][], fill: string, parent=this.page, stroke='#a88b66') {
+    const n=this.box(name,0,0,720,1280,parent),g=n.addComponent(Graphics);
+    g.fillColor=color(fill);g.strokeColor=color(stroke);g.lineWidth=2;
+    g.moveTo(points[0][0],-points[0][1]);
+    for(let i=1;i<points.length;i++)g.lineTo(points[i][0],-points[i][1]);
+    g.close();g.fill();g.stroke();return n;
+  }
+  private ellipse(name:string,cx:number,cy:number,rx:number,ry:number,fill:string,parent=this.page,stroke='') {
+    const n=this.box(name,cx-rx,cy-ry,rx*2,ry*2,parent),g=n.addComponent(Graphics);
+    g.fillColor=color(fill);g.ellipse(rx,-ry,rx,ry);g.fill();
+    if(stroke){g.strokeColor=color(stroke);g.lineWidth=2;g.ellipse(rx,-ry,rx,ry);g.stroke();}return n;
+  }
   private text(value: string, x: number, y: number, w: number, h: number, size = 24, fill = INK, parent = this.page, center = false) {
     const n = this.box(value.slice(0, 26), x, y, w, h, parent), label = n.addComponent(Label);
     label.string = value; label.fontSize = size; label.lineHeight = Math.round(size * 1.5);
@@ -178,7 +190,7 @@ export class AtelierGame extends Component {
     return label;
   }
   private image(key: string, x: number, y: number, w: number, h: number, parent = this.page) {
-    const frame = this.textures.get(key);
+    const frame = this.textures.get('pencil-'+key) || this.textures.get(key);
     if (!frame) return this.box(key, x, y, w, h, parent);
     const n = this.box(key, x, y, w, h, parent), s = n.addComponent(Sprite);
     s.sizeMode = Sprite.SizeMode.CUSTOM; s.spriteFrame = frame;
@@ -187,6 +199,7 @@ export class AtelierGame extends Component {
   }
   private button(label: string, x: number, y: number, w: number, h: number, action: () => void, parent = this.page, primary = false, enabled = true) {
     const n = this.rect('Button: ' + label, x, y, w, h, enabled ? primary ? SAGE : '#eee5d2' : '#e6e0d2', parent, 14, primary ? '' : '#d9cab0');
+    if(primary&&enabled){const g=n.getComponent(Graphics)!;g.strokeColor=color('#d8c591');g.lineWidth=1.5;g.roundRect(5,-h+5,w-10,h-10,10);g.stroke();}
     this.text(label, 10, 0, w-20, h, 23, enabled ? primary ? PAPER : INK : MUTED, n, true);
     this.accessibleButton(label,action,parent,enabled);
     if (enabled) n.on(Node.EventType.TOUCH_END, (e: EventTouch) => { e.propagationStopped = true; if(this.busy)return; this.play(); action(); });
@@ -214,6 +227,8 @@ export class AtelierGame extends Component {
     this.clear(this.page);
     this.boardNodes = []; this.slotNodes = [];
     this.rect('Paper', 0, 0, 720, 1280, PAPER);
+    for(let y=0;y<1280;y+=112)this.image('pencil-paper',0,y,720,112);
+    this.image('pencil-frame',0,0,720,1280);
     // Subtle stationary paper grain, generated once per page instead of every frame.
     const grain = this.box('Paper fibres', 0, 0, 720, 1280).addComponent(Graphics);
     grain.strokeColor = color('#b6a17b14'); grain.lineWidth = 1;
@@ -252,11 +267,11 @@ export class AtelierGame extends Component {
     });
   }
   private cover() {
-    this.image('cover-display', 0, 0, 720, 830);
-    this.rect('Title paper', 0, 790, 720, 490, PAPER, this.page, 0);
-    this.image('botanical', 540, 1020, 165, 165);
-    this.text('AH HE’S LITTLE ATELIER',50,820,620,44,22,MUTED,this.page,true);
-    this.text('珠光小店物语',30,878,660,88,57,INK,this.page,true);
+    this.text('AH HE’S LITTLE ATELIER',50,110,620,44,22,MUTED,this.page,true);
+    this.text('珠光小店物语',30,167,660,88,51,INK,this.page,true);
+    this.rect('Illustration mount',35,288,650,592,'#b7986e',this.page,18);
+    this.image('pencil-cover',42,295,636,578);
+    this.text('一间小店，两代人的手作时光',60,910,600,54,28,SAGE,this.page,true);
     this.text('与奶奶一起，把日子慢慢串成光。',40,982,640,56,26,MUTED,this.page,true);
     this.button('打开小店  →',160,1080,400,78,()=>{this.save.started=true;this.persist();this.navigate('home');this.startStory(0);},this.page,true);
     this.text('消除采珠  ·  手串定制  ·  小店经营',70,1190,580,40,21,MUTED,this.page,true);
@@ -264,7 +279,8 @@ export class AtelierGame extends Component {
   private currentOrder() { return ORDERS.find(o => o.id === this.save.orderId)!; }
   private home() {
     this.title('AH HE’S LITTLE ATELIER','一颗珠子，一段新生活','午后的阳光刚好，小店又开门了。');
-    this.image('shop-home',38,280,644,400);
+    this.rect('Illustration mount',35,277,650,406,'#b7986e',this.page,10);
+    this.image('pencil-shop',38,280,644,400);
     this.rect('Shop sign',65,610,280,52,'#f9f3e7ee'); this.text('阿禾手作  ·  营业中',80,614,250,44,23,SAGE);
     this.button('布置小店',494,613,164,52,()=>this.navigate('decor'));
     const chapter=CHAPTERS[Math.min(2,Math.floor(this.save.completed.length/2))];
@@ -296,12 +312,13 @@ export class AtelierGame extends Component {
     });
   }
   private remember() { this.undo.push({draft:[...this.save.draft],charm:this.save.charm}); if(this.undo.length>60)this.undo.shift(); }
-  private slotPos(i: number) { const a=i*Math.PI/6-Math.PI/2;return {x:360+Math.cos(a)*224,y:535+Math.sin(a)*212}; }
+  private slotPos(i: number) { const a=i*Math.PI/6-Math.PI/2;return {x:360+Math.cos(a)*222,y:670+Math.sin(a)*105}; }
   private bracelet(beads: (number|null)[], cx: number, cy: number, r: number, parent=this.page) {
+    this.ellipse('Bracelet shadow',cx,cy+r*.7,r*1.05,r*.37,'#9a7f4d19',parent);
     const wire=this.box('Bracelet wire',cx-r,cy-r,r*2,r*2,parent).addComponent(Graphics);
     wire.lineWidth=4;wire.strokeColor=color(GOLD);wire.ellipse(r,-r,r,r*.95);wire.stroke();
     beads.forEach((t,i)=>{const a=i*Math.PI/6-Math.PI/2,x=cx+Math.cos(a)*r,y=cy+Math.sin(a)*r*.95;
-      if(t!==null)this.image('bead-'+t,x-r*.2,y-r*.2,r*.4,r*.4,parent);
+      if(t!==null){this.ellipse('Bead shadow',x+2,y+r*.11,r*.17,r*.08,'#8b705535',parent);this.image('bead-'+t,x-r*.2,y-r*.2,r*.4,r*.4,parent);}
     });
   }
   private craft() {
@@ -309,25 +326,33 @@ export class AtelierGame extends Component {
     this.title(done?'DESIGN YOUR OWN LIGHT':'COMMISSION · '+o.customer,done?'把自己的日子，串成光':o.name);
     const checks=rules.checkOrder(this.save),counts=rules.draftCounts(this.save.draft);
     this.text(done?'自由配珠 · 十二颗珠子，一份自己的心意':`${BEADS[o.main].short} ${counts[o.main]}/${o.mainNeed}  ·  ${BEADS[o.accent].short} ${counts[o.accent]}/${o.accentNeed}  ·  ${CHARMS[o.charm]}吊坠`,38,212,644,50,23,SAGE,this.page,true);
-    this.rect('Beading tray',40,280,640,516,'#eaddc4',this.page,42,'#c3ad87');
+    this.rect('Workshop mount',35,276,650,304,'#b89c77',this.page,12);
+    this.image('pencil-workshop',38,279,644,298);
+    this.polygon('Counter edge',[[38,510],[682,510],[704,843],[16,843]],'#d0b18d');
+    const wood=this.box('Counter grain',0,0,720,1280).addComponent(Graphics);
+    wood.strokeColor=color('#9e79583b');wood.lineWidth=1.3;
+    for(let y=531;y<840;y+=17){wood.moveTo(20,-y);wood.bezierCurveTo(185,-y-7,496,-y+8,700,-y-2);}wood.stroke();
+    this.image('pencil-tray',40,500,640,334);
     const g=this.box('Wire',0,0,720,1280).addComponent(Graphics);
-    g.strokeColor=color('#b79a68');g.lineWidth=3;g.ellipse(360,-535,224,212);g.stroke();
+    g.strokeColor=color('#c1a06b');g.lineWidth=2;g.ellipse(360,-670,222,105);g.stroke();
     g.fillColor=color('#d5b776');
-    for(let i=0;i<12;i++){const a=(i+.5)*Math.PI/6-Math.PI/2;g.ellipse(360+Math.cos(a)*224,-535-Math.sin(a)*212,7,7);g.fill();g.stroke();}
-    this.text('AH HE\nHANDMADE',258,486,204,90,27,'#b49b72',this.page,true);
+    for(let i=0;i<12;i++){const a=(i+.5)*Math.PI/6-Math.PI/2;g.ellipse(360+Math.cos(a)*222,-670-Math.sin(a)*105,6,4);g.fill();g.stroke();}
+    this.text('AH HE\nHANDMADE',258,630,204,76,23,'#ac9473',this.page,true);
     this.save.draft.forEach((type: number|null,i: number)=>{
-      const p=this.slotPos(i),n=this.rect('Slot '+i,p.x-37,p.y-37,74,74,this.slot===i?'#f9e7b0':'#d5c3a5',this.page,37,this.slot===i?GOLD:'#c5b18d');
-      if(type!==null)this.image('bead-'+type,0,0,74,74,n);else this.text(String(i+1),0,0,74,74,17,'#b29e7d',n,true);
+      const p=this.slotPos(i),n=this.box('Slot '+i,p.x-37,p.y-37,74,74);
+      this.ellipse('Slot recess',37,44,31,21,this.slot===i?'#e9d28d':'#b39a7045',n,this.slot===i?'#ac8a4b':'#c3ac88');
+      if(type!==null){const size=68+Math.sin(i*Math.PI/6-Math.PI/2)*5;this.ellipse('Bead contact shadow',39,54,26,10,'#82634250',n);this.image('bead-'+type,(74-size)/2,(74-size)/2,size,size,n);}
+      else this.text(String(i+1),0,7,74,62,17,'#a68c66',n,true);
       this.slotNodes.push(n);this.bindCraftDrag(n,i);
       this.accessibleButton(`第${i+1}槽：${type===null?'空槽':BEADS[type].name}`,()=>{this.slot=this.slot===i?-1:i;this.render();});
     });
-    this.image('charm-'+this.save.charm,339,754,42,42);
-    this.text('点珠材弹入凹槽 · 拖动珠子换位 · 点选后替换',38,807,644,37,21,MUTED,this.page,true);
+    this.image('charm-'+this.save.charm,338,780,44,49);
+    this.text('点珠材入槽 · 拖动换位 · 点选后替换',38,836,644,30,20,MUTED,this.page,true);
     BEADS.forEach((b,i)=>{
       const x=39+i*108;
-      const n=this.rect('Bead material '+i,x,855,102,130,'#fffaf0',this.page,16,'#ded0b5');
-      this.image('bead-'+i,16,5,70,70,n);
-      this.text(b.short+'\n'+Math.max(0,this.save.inventory[i]-counts[i]),0,76,102,48,19,INK,n,true);
+      const n=this.rect('Bead material '+i,x,875,102,110,'#fffaf0',this.page,13,'#cab394');
+      this.image('bead-'+i,19,0,64,64,n);
+      this.text(b.short+' '+Math.max(0,this.save.inventory[i]-counts[i]),0,69,102,35,18,INK,n,true);
       n.on(Node.EventType.TOUCH_END,()=>this.place(i));
       this.accessibleButton('放入'+b.name,()=>this.place(i));
     });
@@ -349,7 +374,7 @@ export class AtelierGame extends Component {
     if(!rules.canPlace(this.save,type,index))return this.toast('这份珠材用完了，去花园采一些吧。');
     this.remember();this.save.draft[index]=type;this.slot=-1;this.persist();this.render();this.play();
     const n=this.slotNodes[index],p=n.position.clone();
-    if(!this.save.reduced){n.setPosition(323,-498);n.setScale(.3,.3,1);tween(n).to(.18,{position:new Vec3((p.x+323)/2,-420,0),scale:new Vec3(1.12,1.12,1)}).to(.24,{position:p,scale:Vec3.ONE},{easing:'quadIn'}).to(.08,{scale:new Vec3(1.08,.92,1)}).to(.12,{scale:Vec3.ONE}).call(()=>this.play('land')).start();}
+    if(!this.save.reduced){n.setPosition(39+type*108+14,-875);n.setScale(.4,.4,1);tween(n).to(.18,{position:new Vec3((p.x+323)/2,p.y+85,0),scale:new Vec3(1.12,1.12,1)}).to(.24,{position:p,scale:Vec3.ONE},{easing:'quadIn'}).to(.08,{scale:new Vec3(1.08,.92,1)}).to(.12,{scale:Vec3.ONE}).call(()=>this.play('land')).start();}
   }
   private localPoint(e: EventTouch) {
     // getUILocation already accounts for SHOW_ALL letterboxing; page origin is top left.
@@ -385,7 +410,7 @@ export class AtelierGame extends Component {
   }
   private confirmDelivery() {
     const o=this.currentOrder();this.dialog('delivery','把心意，认真送到');
-    this.image('delivery-dialog',80,325,560,320,this.overlay);
+    this.image('pencil-delivery',80,325,560,320,this.overlay);
     this.text(o.name+'\n'+o.customer+' · '+o.reward+' 金币 / '+o.rep+' 口碑',100,683,520,110,27,INK,this.overlay,true);
     this.button('确认交付',130,863,460,70,()=>{
       const next=rules.deliver(this.save);if(!next)return this.toast('交付条件尚未满足。');
@@ -404,25 +429,27 @@ export class AtelierGame extends Component {
     this.returnScreen=this.screen==='match'?this.returnScreen:this.screen;this.save.energy--;this.save.energyAt=Date.now();this.persist();
     this.session=rules.newSession(Date.now()%1000000,this.save.level);this.selected=-1;this.tool='';this.hint=[];this.closeModal();this.screen='match';this.render();
   }
-  private boardPos(i: number) { return new Vec3(48+(i%8)*78,-(360+Math.floor(i/8)*78),0); }
+  private boardPos(i: number) { return new Vec3(48+(i%8)*78,-(440+Math.floor(i/8)*78),0); }
   private match() {
     const s=this.session;if(!s){this.screen='home';this.home();return;}
-    this.title('THE BEAD GARDEN','让灵感，一颗颗绽放',this.tool?this.tool==='hammer'?'点一颗珠子，使用小木槌':'点一颗珠子，收集整行整列':'同色直线三颗，或 2×2 四颗方块即可收集');
-    this.text('步数 '+s.moves,40,280,180,50,29,SAGE);
-    this.text('采集 '+rules.total(s.collected)+' / '+s.target,288,280,392,50,28,INK,this.page,true);
-    this.rect('Board frame',39,350,642,642,'#e6d8be',this.page,24,'#c6ae86');
+    this.text('让灵感，一颗颗绽放',38,104,644,52,32,INK,this.page,true);
+    this.image('pencil-match-banner',38,163,644,218);
+    this.rect('Match status paper',39,385,642,43,'#fff8e7',this.page,8,'#c6ae86');
+    this.text('步数 '+s.moves,54,386,180,42,26,SAGE);
+    this.text('采集 '+rules.total(s.collected)+' / '+s.target,281,386,380,42,26,INK,this.page,true);
+    this.rect('Board frame',39,430,642,642,'#e6d8be',this.page,20,'#ad8a60');
     s.board.forEach((type: number,i: number)=>{
       const p=this.boardPos(i),n=this.rect('Cell '+i,p.x,-p.y,72,72,this.selected===i||this.hint.includes(i)?'#ffe4a6':'#f9f1df',this.page,15,this.selected===i||this.hint.includes(i)?GOLD:'#ddccb0');
       this.image('bead-'+type,1,1,70,70,n);this.boardNodes.push(n);this.bindBoard(n,i);
       this.accessibleButton(`${this.hint.includes(i)?'提示格 ':''}第${Math.floor(i/8)+1}行第${i%8+1}列 ${BEADS[type].name}`,()=>this.boardClick(i));
     });
-    s.collected.forEach((count: number,i: number)=>{this.image('bead-'+i,44+i*109,1007,43,43);this.text(String(count),88+i*109,1010,53,38,21);});
+    s.collected.forEach((count: number,i: number)=>{this.image('bead-'+i,44+i*109,1080,43,43);this.text(String(count),88+i*109,1083,53,38,21);});
     ['hammer','bloom','shuffle','hint'].forEach((id,i)=>{
       const names=['小木槌','花开十字','重新排珠','灵感提示'];
-      this.button(names[i]+(id==='hint'?'':` ${s.tools[id]}`),38+i*165,1080,149,70,()=>this.selectTool(id),this.page,this.tool===id,id==='hint'||s.tools[id]>0);
+      this.button(names[i]+(id==='hint'?'':` ${s.tools[id]}`),38+i*165,1137,149,60,()=>this.selectTool(id),this.page,this.tool===id,id==='hint'||s.tools[id]>0);
     });
-    this.text('拖动交换 · 也可点选相邻两格 · 工具每关限量',38,1164,644,50,21,MUTED,this.page,true);
-    this.button('暂停',280,1220,160,44,()=>this.pauseMatch());
+    this.text(this.tool?this.tool==='hammer'?'点一颗珠子，使用小木槌':'点一颗珠子，收集整行整列':'拖动相邻珠子 · 三连或 2×2 同色方块可消',38,1200,644,34,20,MUTED,this.page,true);
+    this.button('暂停',280,1235,160,40,()=>this.pauseMatch());
   }
   private bindBoard(n: Node,i: number) {
     let start: Vec3|null=null,didSwipe=false;
@@ -481,7 +508,7 @@ export class AtelierGame extends Component {
       const next: Node[]=[], tasks: Promise<void>[]=[];
       frame.falls.forEach((fall:any)=>{
         let n=fall.from===null?null:this.boardNodes[fall.from];
-        if(!n?.isValid){const pos=this.boardPos(fall.to);n=this.rect('Falling bead',pos.x,360+fall.fromRow*78,72,72,'#f9f1df',this.page,15);this.image('bead-'+fall.type,1,1,70,70,n);this.bindBoard(n,fall.to);}
+        if(!n?.isValid){const pos=this.boardPos(fall.to);n=this.rect('Falling bead',pos.x,440+fall.fromRow*78,72,72,'#f9f1df',this.page,15);this.image('bead-'+fall.type,1,1,70,70,n);this.bindBoard(n,fall.to);}
         else {n.off(Node.EventType.TOUCH_START);n.off(Node.EventType.TOUCH_MOVE);n.off(Node.EventType.TOUCH_END);n.off(Node.EventType.TOUCH_CANCEL);this.bindBoard(n,fall.to);}
         next[fall.to]=n;tasks.push(this.animate(n,this.boardPos(fall.to),.2+Math.max(0,Math.floor(fall.to/8)-fall.fromRow)*.035));
       });
@@ -511,28 +538,64 @@ export class AtelierGame extends Component {
   }
   private drawRoom() {
     const p=this.save.renovation.repairs;
-    this.rect('Room wall',38,278,644,240,p.wall?'#efe4ca':'#d6c6a9',this.page,0);
-    this.rect('Room floor',38,518,644,162,p.floor?'#c9ad80':'#ac9678',this.page,0);
-    const g=this.box('Room details',38,278,644,402).addComponent(Graphics);
-    g.strokeColor=color('#938069');g.lineWidth=2;
-    for(let y=260;y<400;y+=36){g.moveTo(0,-y);g.lineTo(644,-y);}for(let x=25;x<644;x+=100){g.moveTo(x,-240);g.lineTo(x-25,-402);}g.stroke();
-    if(!p.wall){g.strokeColor=color('#9a8769');for(const x of [105,500]){g.moveTo(x,-20);g.lineTo(x-15,-65);g.lineTo(x+7,-90);g.lineTo(x-10,-140);}g.stroke();}
-    this.rect('Window',276,300,170,170,p.window?'#c9dbd2':'#b2b7a5',this.page,70,'#9e8968');
-    this.rect('Window mullion',357,300,7,170,'#bba47d',this.page,0);
-    this.rect('Window crossbar',277,384,167,6,'#bba47d',this.page,0);
-    if(p.window){this.rect('Left curtain',261,299,37,145,'#99ae8c');this.rect('Right curtain',429,299,37,145,'#99ae8c');}
-    else {const crack=this.box('Broken window',288,314,150,145).addComponent(Graphics);crack.strokeColor=color('#7b8070');crack.lineWidth=2;crack.moveTo(20,0);crack.lineTo(45,-40);crack.lineTo(25,-80);crack.moveTo(125,0);crack.lineTo(100,-70);crack.lineTo(115,-100);crack.stroke();}
-    this.image(FURNITURE[0].art[this.save.upgrades.chair],80,443,155,160);
+    this.ellipse('Room contact shadow',360,625,293,58,'#846d4020');
+    this.polygon('Left plaster wall',[[58,404],[360,282],[360,440],[58,562]],p.wall?'#eee1c8':'#d3c3a4');
+    this.polygon('Right plaster wall',[[360,282],[662,404],[662,562],[360,440]],p.wall?'#e5d4b5':'#c4b494');
+    this.polygon('Floor foundation',[[58,562],[360,440],[662,562],[662,576],[360,698],[58,576]],'#9b7e5d');
+    this.polygon('Wood floor',[[58,562],[360,440],[662,562],[360,684]],p.floor?'#dbbf92':'#bba582');
+    this.image('pencil-plaster',0,270,720,430);
+    this.image('pencil-floor',58,440,604,244).getComponent(Sprite)!.color=color(p.floor?'#e5cba0':'#bda98b');
+    this.polygon('Left wall coping',[[52,398],[360,273],[369,279],[61,404]],'#c6a580');
+    this.polygon('Right wall coping',[[360,273],[668,398],[659,404],[351,279]],'#c6a580');
+    const g=this.box('Pencil room grain',0,0,720,1280).addComponent(Graphics);
+    g.strokeColor=color('#9f805558');g.lineWidth=1.3;
+    for(let i=1;i<9;i++){
+      const t=i/9;g.moveTo(58+302*t,-(562-122*t));g.lineTo(360+302*t,-(684-122*t));
+      g.moveTo(58+302*t,-(562+122*t));g.lineTo(360+302*t,-(440+122*t));
+    }g.stroke();
+    g.strokeColor=color('#ac9375');g.lineWidth=4;
+    g.moveTo(58,-551);g.lineTo(360,-429);g.lineTo(662,-551);g.moveTo(360,-283);g.lineTo(360,-429);g.stroke();
+    if(!p.wall){g.strokeColor=color('#927959');g.lineWidth=2;g.moveTo(105,-405);g.lineTo(118,-432);g.lineTo(109,-458);g.lineTo(130,-480);g.moveTo(605,-419);g.lineTo(588,-443);g.lineTo(600,-478);g.stroke();}
+    this.polygon('Window oak frame',[[153,385],[300,326],[300,432],[153,491]],'#b79b74');
+    this.polygon('Window glass',[[162,390],[291,338],[291,424],[162,476]],p.window?'#caddd0':'#a7b6aa');
+    this.polygon('Window mullion',[[224,365],[230,363],[230,450],[224,452]],'#b79b74');
+    this.polygon('Window crossbar',[[162,429],[291,377],[291,383],[162,435]],'#b79b74');
+    if(p.window){
+      this.polygon('Curtain left',[[146,380],[170,370],[170,467],[153,489]],'#97ab87');
+      this.polygon('Curtain right',[[282,325],[307,315],[307,424],[291,444]],'#97ab87');
+      this.polygon('Afternoon sunlight',[[175,520],[281,478],[408,534],[301,578]],'#f9e8b750',this.page,'#f9e8b750');
+    }else{const crack=this.box('Window crack',0,0,720,1280).addComponent(Graphics);crack.strokeColor=color('#778377');crack.lineWidth=2;crack.moveTo(191,-382);crack.lineTo(206,-410);crack.lineTo(190,-445);crack.stroke();}
     const deskTier=this.save.upgrades.desk,displayTier=this.save.upgrades.display;
-    this.rect('Work table',276,535,200,25,deskTier?'#b8a078':'#967c5b',this.page,3);
-    this.rect('Table leg left',292,557,14,90,'#9f8462',this.page,1);this.rect('Table leg right',448,557,14,90,'#9f8462',this.page,1);
-    if(deskTier){this.rect('Drawer',303,565,143,34,'#ccba94',this.page,3);this.image('bead-1',315,508,32,32);this.image('bead-2',352,509,32,32);}
-    this.rect('Display cabinet',510,430,131,210,displayTier?'#b6ac8b':'#a38c67',this.page,4,'#887556');
-    for(let i=0;i<2;i++){this.rect('Cabinet glass',520,443+i*79,111,68,displayTier?'#d3ded4':'#cdbd9e',this.page,2);if(displayTier)this.bracelet(ORDERS[i].palette,574,479+i*79,25);}
-    if(displayTier===2)this.text('阿禾手作',514,609,123,28,17,SAGE,this.page,true);
+    this.polygon('Display cabinet side',[[549,409],[575,397],[575,533],[549,545]],'#998363');
+    this.polygon('Display cabinet face',[[427,360],[549,409],[549,545],[427,496]],displayTier?'#b4ad8a':'#a18c6e');
+    this.polygon('Display cabinet top',[[427,360],[453,348],[575,397],[549,409]],'#cebd99');
+    for(let i=0;i<2;i++){
+      const y=377+i*60;
+      this.polygon('Cabinet pane',[[438,y],[538,y+40],[538,y+82],[438,y+42]],displayTier?'#d1d9c7':'#bdac8d');
+      if(displayTier){this.image('bead-'+i,454,y+5,23,23);this.image('charm-daisy',500,y+26,23,23);}
+    }
+    if(displayTier===2)this.polygon('Cabinet crown',[[424,357],[485,368],[552,406],[552,415],[424,363]],'#d4bd83');
+    this.ellipse('Desk shadow',300,567,107,30,'#6a59302a');
+    for(const [x,y] of [[213,509],[299,546],[384,513]])this.polygon('Desk leg',[[x,y],[x+10,y+4],[x+8,y+72],[x,y+68]],'#9d805e');
+    this.polygon('Desk front',[[194,494],[302,538],[302,554],[194,510]],'#b29570');
+    this.polygon('Desk right',[[302,538],[401,498],[401,514],[302,554]],'#987c5b');
+    this.polygon('Worktop',[[194,494],[293,454],[401,498],[302,538]],deskTier?'#dbc9a3':'#bda17c');
+    if(deskTier){
+      this.polygon('Beading mat',[[229,492],[285,469],[359,500],[303,522]],'#f2e5c7');
+      this.ellipse('Desk bracelet',291,495,25,11,'#c7bd9e',this.page,'#9c956f');
+      this.image('bead-0',268,480,21,21);this.image('bead-3',300,488,20,20);
+    }
+    if(deskTier===2){this.image('charm-moon',342,492,22,26);this.polygon('Sketchbook',[[218,491],[244,481],[264,489],[238,500]],'#fcf5e6');}
+    this.ellipse('Chair shadow',168,586,49,17,'#66543025');
+    this.image(FURNITURE[0].art[this.save.upgrades.chair],121,465,104,151);
+    const spotPositions:Record<string,number[]>={
+      'box-left':[148,585],'box-right':[531,585],'papers':[371,630],
+      'glass-1':[195,391],'glass-2':[259,366],'glass-3':[195,436],'glass-4':[259,411],
+      'dust-1':[103,563],'dust-2':[252,610],'dust-3':[451,620],'dust-4':[599,558],
+    };
     CLEAN_SPOTS.forEach(spot=>{
       if(this.save.renovation.cleared.includes(spot.id))return;
-      const x=38+644*spot.x/100-31,y=278+402*spot.y/100-24;
+      const [cx,cy]=spotPositions[spot.id],x=cx-31,y=cy-24;
       const n=this.rect('Clean '+spot.id,x,y,62,48,spot.kind==='clutter'?'#b89b6d':'#8d826797',this.page,spot.kind==='clutter'?4:23);
       this.text(spot.kind==='clutter'?'▧':'✦',0,0,62,48,28,'#f8e7bb',n,true);
       let elapsed=0,done=false;
@@ -668,7 +731,7 @@ export class AtelierGame extends Component {
   }
   private storyText() {
     const s=STORIES[this.storyIndex],line=s.lines[this.storyLine];this.dialog('story',s.title);
-    this.image('shop-story',85,330,550,315,this.overlay);
+    this.image('pencil-counter',85,330,550,315,this.overlay);
     if(['阿禾','奶奶'].includes(line[0]))this.image(line[0]==='阿禾'?'girl':'grandma',104,502,122,140,this.overlay);
     this.text(line[0],110,667,500,46,29,SAGE,this.overlay);
     this.text(line[1],110,724,500,163,27,INK,this.overlay);
