@@ -61,3 +61,4 @@ Original prompt: 根据 E:\Game\手串\铅笔2 美术制作手机游戏原型，
 ## Restore the heroine and grandmother on the home screen
 - Restored the original home illustration of 阿禾 and her grandmother, with its original shop sign and furniture navigation button. The interactive dilapidated room stays in the renovation section; no save fields or earned progress changed.
 - Updated renovation browser coverage to assert the original character artwork loads before and after renovation at 360/390/1440 widths, while preserving all cleaning/purchase checks. Local 20 unit tests, production build and complete renovation suite passed without page/console errors or failed requests; reviewed the restored mobile home screenshot.
+- Published runtime 3d40380 via successful Pages run 41174560213; the same suite passed against the anonymous public URL, confirming the original home art and complete renovation flow with zero errors or failed requests. Physical-device Safari remains untested.
