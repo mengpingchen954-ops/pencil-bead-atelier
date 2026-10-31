@@ -1,0 +1,11 @@
+{
+  "name": "zhuguangxiaodian",
+  "uuid": "521b3f6d-51f0-4d3a-b4fc-a708969c6ab4",
+  "creator": {
+    "version": "3.8.2"
+  },
+  "scripts": {
+    "test": "node --test tests/*.mjs",
+    "typecheck": "tsc --noEmit"
+  }
+}

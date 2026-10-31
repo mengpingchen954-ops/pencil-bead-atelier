@@ -1,0 +1,4 @@
+# Preserve exact bytes used by the verified Creator build manifest.
+cocos/** -text whitespace=cr-at-eol
+cocos-web/** -text -whitespace linguist-generated
+scripts/*.mjs text eol=lf

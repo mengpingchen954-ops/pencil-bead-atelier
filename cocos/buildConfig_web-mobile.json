@@ -1,0 +1,23 @@
+{
+  "name": "zhuguangxiaodian",
+  "platform": "web-mobile",
+  "buildPath": "project://build",
+  "outputName": "web-mobile",
+  "debug": false,
+  "md5Cache": true,
+  "sourceMaps": false,
+  "startScene": "874ba68e-8895-4ea0-9aef-2b85d9ea9f12",
+  "scenes": [
+    {
+      "url": "db://assets/scenes/Atelier.scene",
+      "uuid": "874ba68e-8895-4ea0-9aef-2b85d9ea9f12"
+    }
+  ],
+  "orientation": "portrait",
+  "webOrientation": "portrait",
+  "embedWebDebugger": false,
+  "polyfills": {
+    "asyncFunctions": true
+  },
+  "experimentalEraseModules": false
+}

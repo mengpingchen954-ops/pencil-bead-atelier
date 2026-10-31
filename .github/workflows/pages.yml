@@ -21,11 +21,12 @@ jobs:
           cache: npm
       - run: npm ci
       - run: npm test
-      - run: npm run build
+      - run: node --test cocos/tests/*.mjs
+      - run: node scripts/verify-cocos-build.mjs
       - uses: actions/configure-pages@v5
       - uses: actions/upload-pages-artifact@v3
         with:
-          path: dist
+          path: cocos-web
   deploy:
     environment:
       name: github-pages
