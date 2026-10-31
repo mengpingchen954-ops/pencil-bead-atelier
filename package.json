@@ -19,7 +19,8 @@
     "three": "^0.186.1"
   },
   "devDependencies": {
-    "vite": "^8.3.4",
-    "playwright": "^1.64.1"
+    "playwright": "^1.64.1",
+    "typescript": "4.9.5",
+    "vite": "^8.3.4"
   }
 }

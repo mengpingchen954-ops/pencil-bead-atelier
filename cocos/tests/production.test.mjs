@@ -55,6 +55,14 @@ test('Creator production bundle preserves collection iteration and complete game
   assert.equal(model.shopProgress(save).percent,100);
   for(const s of content.STORIES)save=story.finishStory(save,s.id);
   assert.equal(save.seenStories.length,10);
+  const heart=load([...definitions.keys()].find(n=>n.endsWith('/heart.ts')));
+  save=heart.askSea(save,'fear');save=heart.askSea(save,'sunrise');
+  assert.equal(save.seaHeart.facts.length,2);
+  assert.equal(heart.seaVisitReady(save),true);
+  save=heart.finishSeaVisit(save,'heart');
+  assert.equal(heart.finishSeaVisit(save,'daisy'),null);
+  assert.equal(save.collection.find(x=>x.id==='sea').travelCharm,'heart');
   const restored=model.normalizeSave(JSON.parse(JSON.stringify(save)));
+  assert.equal(restored.seaHeart.facts.length,2);assert.equal(restored.seaHeart.visited,true);
   assert.equal(restored.completed.length,6);assert.equal(restored.renovation.cleared.length,11);assert.equal(restored.seenStories.length,10);
 });

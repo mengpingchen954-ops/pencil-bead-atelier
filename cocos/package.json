@@ -7,5 +7,8 @@
   "scripts": {
     "test": "node --test tests/*.mjs",
     "typecheck": "tsc --noEmit"
+  },
+  "devDependencies": {
+    "typescript": "4.9.5"
   }
 }

@@ -7,8 +7,11 @@ import {
 } from 'cc';
 import { BEADS, ORDERS, CHAPTERS, STORIES, JOURNEY, FURNITURE, CHARMS, CLEAN_SPOTS, REPAIRS } from './content';
 import * as rules from './model';
-import { pendingStory, storyUnlocked, finishStory, storyEvidence } from './story';
+import { pendingStory, storyUnlocked, finishStory } from './story';
 import { BrowserAccessibility } from './BrowserAccessibility';
+import { AtelierLayout } from './AtelierLayout';
+import { layoutKey } from './layout-key';
+import { SEA_QUESTIONS, SEA_BLESSINGS, SEA_PAPERS, SEA_RIBBONS, askSea, chooseSeaGift, seaVisitReady, finishSeaVisit, seaResponse } from './heart';
 
 const { ccclass } = _decorator;
 const PAPER = '#f7f0df', INK = '#594d3f', SAGE = '#718366', MUTED = '#94846d', GOLD = '#c2a477';
@@ -51,16 +54,30 @@ export class AtelierGame extends Component {
   private accessibility: BrowserAccessibility;
   private camera: Camera;
 
+  private layouts = new Map<string, Node>();
+  private layoutCounts = new Map<string, number>();
+  private layoutKeys = new Map<Node, string>();
+
   async onLoad() {
+    const templates = this.node.getChildByPath('Canvas/Atelier/EditableLayouts');
+    if (templates) {
+      const collect = (node: Node) => {
+        const layout = node.getComponent(AtelierLayout);
+        if (layout) this.layouts.set(layout.key, node);
+        node.children.forEach(collect);
+      };
+      collect(templates);
+      templates.active = false;
+    }
     view.setDesignResolutionSize(720, 1280, ResolutionPolicy.SHOW_ALL);
-    const canvas = new Node('Canvas');
+    const canvas = this.node.getChildByName('Canvas') || new Node('Canvas');
     canvas.layer = Layers.Enum.UI_2D;
     canvas.parent = this.node;
-    canvas.addComponent(UITransform).setContentSize(720, 1280);
-    const cameraNode = new Node('UI Camera');
+    (canvas.getComponent(UITransform) || canvas.addComponent(UITransform)).setContentSize(720, 1280);
+    const cameraNode = canvas.getChildByName('UI Camera') || new Node('UI Camera');
     cameraNode.parent = canvas;
     cameraNode.setPosition(0, 0, 1000);
-    const camera = cameraNode.addComponent(Camera);
+    const camera = cameraNode.getComponent(Camera) || cameraNode.addComponent(Camera);
     this.camera=camera;
     camera.projection = Camera.ProjectionType.ORTHO;
     camera.orthoHeight = 640;
@@ -68,16 +85,16 @@ export class AtelierGame extends Component {
     camera.far = 2000;
     camera.visibility = Layers.Enum.UI_2D;
     camera.clearColor = color('#e8dfca');
-    const c = canvas.addComponent(Canvas);
+    const c = canvas.getComponent(Canvas) || canvas.addComponent(Canvas);
     c.alignCanvasWithScreen=false;
     c.cameraComponent = camera;
     this.fitCamera();
     view.on('canvas-resize',this.fitCamera,this);
-    const root = new Node('Atelier');
+    const root = canvas.getChildByName('Atelier') || new Node('Atelier');
     root.layer = Layers.Enum.UI_2D;
     root.parent = canvas;
     root.setPosition(-360, 640);
-    root.addComponent(UITransform).setContentSize(720, 1280);
+    (root.getComponent(UITransform) || root.addComponent(UITransform)).setContentSize(720, 1280);
     this.page = this.container('Page', root);
     this.overlay = this.container('Dialogs', root);
     this.notices = this.container('Notices', root);
@@ -159,10 +176,23 @@ export class AtelierGame extends Component {
   private setBusy(value:boolean) { this.busy=value;this.accessibility?.busy(value); }
   private box(name: string, x: number, y: number, w: number, h: number, parent = this.page) {
     const n = new Node(name); n.layer = Layers.Enum.UI_2D; n.parent = parent; n.setPosition(x, -y);
-    const t = n.addComponent(UITransform); t.setAnchorPoint(0, 1); t.setContentSize(w, h); return n;
+    const t = n.addComponent(UITransform); t.setAnchorPoint(0, 1); t.setContentSize(w, h);
+    if (parent === this.page || this.layoutKeys.has(parent)) {
+      const key = layoutKey(this.layoutKeys.get(parent) || this.screen, x, y, w, h, this.layoutCounts);
+      this.layoutKeys.set(n, key);
+      const template = this.layouts.get(key);
+      if (template) {
+        n.setPosition(template.position); n.setScale(template.scale); n.setRotation(template.rotation);
+        n.active = template.active;
+        const transform = template.getComponent(UITransform)!;
+        t.setContentSize(transform.contentSize); t.setAnchorPoint(transform.anchorPoint);
+      }
+    }
+    return n;
   }
   private rect(name: string, x: number, y: number, w: number, h: number, fill: string, parent = this.page, radius = 16, stroke = '') {
     const n = this.box(name, x, y, w, h, parent), g = n.addComponent(Graphics);
+    const size=n.getComponent(UITransform)!.contentSize; w=size.width; h=size.height;
     g.fillColor = color(fill); g.roundRect(0, -h, w, h, radius); g.fill();
     if (stroke) { g.lineWidth = 1.5; g.strokeColor = color(stroke); g.roundRect(1, -h+1, w-2, h-2, radius); g.stroke(); }
     return n;
@@ -187,6 +217,15 @@ export class AtelierGame extends Component {
     label.horizontalAlign = center ? Label.HorizontalAlign.CENTER : Label.HorizontalAlign.LEFT;
     label.verticalAlign = Label.VerticalAlign.CENTER;
     if(!parent.name.startsWith('Button:')&&parent!==this.notices)this.accessibility?.text(value,this.isDialog(parent));
+    const template = this.layouts.get(this.layoutKeys.get(n) || '');
+    const style = template?.getComponent(Label), baseline = template?.getComponent(AtelierLayout);
+    if (style && baseline?.originalLabel) {
+      const original = JSON.parse(baseline.originalLabel);
+      for (const field of ['fontSize','lineHeight','fontFamily','horizontalAlign','verticalAlign','overflow','enableWrapText','string']) {
+        if ((style as any)[field] !== original[field]) (label as any)[field] = (style as any)[field];
+      }
+      if (style.color.toHEX('#rrggbbaa') !== original.color) label.color = style.color;
+    }
     return label;
   }
   private image(key: string, x: number, y: number, w: number, h: number, parent = this.page) {
@@ -194,7 +233,11 @@ export class AtelierGame extends Component {
     if (!frame) return this.box(key, x, y, w, h, parent);
     const n = this.box(key, x, y, w, h, parent), s = n.addComponent(Sprite);
     s.sizeMode = Sprite.SizeMode.CUSTOM; s.spriteFrame = frame;
-    n.getComponent(UITransform)!.setContentSize(w, h);
+    const template = this.layouts.get(this.layoutKeys.get(n) || '');
+    const artwork = template?.getComponent(Sprite), baseline = template?.getComponent(AtelierLayout);
+    if (artwork?.spriteFrame && artwork.spriteFrame.name !== baseline?.originalImage) s.spriteFrame = artwork.spriteFrame;
+    const size=template?.getComponent(UITransform)?.contentSize;
+    n.getComponent(UITransform)!.setContentSize(size?.width ?? w, size?.height ?? h);
     return n;
   }
   private button(label: string, x: number, y: number, w: number, h: number, action: () => void, parent = this.page, primary = false, enabled = true) {
@@ -224,6 +267,7 @@ export class AtelierGame extends Component {
     this.closeModal(); this.screen = page; this.slot = -1; this.selected = -1; this.hint = []; this.render();
   }
   private render() {
+    this.layoutCounts.clear(); this.layoutKeys.clear();
     this.clear(this.page);
     this.boardNodes = []; this.slotNodes = [];
     this.rect('Paper', 0, 0, 720, 1280, PAPER);
@@ -244,6 +288,10 @@ export class AtelierGame extends Component {
       case 'album': this.album(); break;
       case 'journal': this.journal(); break;
     }
+    this.layoutKeys.forEach((key,node) => {
+      const source=this.layouts.get(key)?.getComponent(AtelierLayout), drawing=node.getComponent(Graphics);
+      if(source && drawing && source.drawing !== source.originalDrawing) source.redraw(drawing);
+    });
   }
   private chrome() {
     const names = { home:'珠光小店', orders:'顾客委托', craft:'手串工坊', match:'珠材花园', decor:'小店焕新', album:'作品图鉴', journal:'我们的故事' };
@@ -297,7 +345,9 @@ export class AtelierGame extends Component {
     this.text(journey.title,38,1045,644,42,25,SAGE);
     this.text(journey.goal,38,1086,644,62,21,MUTED);
     const pending=pendingStory(this.save);
-    this.button(pending?'继续剧情 · '+pending.title:'翻阅我们的故事',38,1146,644,38,()=>pending?this.startStory(STORIES.indexOf(pending)):this.navigate('journal'));
+    if(seaVisitReady(this.save))this.button('小满回来了 · 看旅行留影',38,1146,644,38,()=>this.seaVisit());
+    else if(this.save.orderId==='sea'&&!this.save.completed.includes('sea'))this.button('听听她的故事 · 小满的第一次旅行',38,1146,644,38,()=>this.seaChat());
+    else this.button(pending?'继续剧情 · '+pending.title:'翻阅我们的故事',38,1146,644,38,()=>pending?this.startStory(STORIES.indexOf(pending)):this.navigate('journal'));
   }
   private orders() {
     this.title('LET EVERY WISH BE SEEN','为每一份心意，认真配色','按顺序完成六份委托；采珠与串珠进度会自动保存。');
@@ -308,11 +358,15 @@ export class AtelierGame extends Component {
       this.text(o.customer+' · '+o.occasion,139,y+8,510,29,18,MUTED);
       this.text(o.name,139,y+39,500,40,28);
       this.text(`${BEADS[o.main].short}≥${o.mainNeed} / ${BEADS[o.accent].short}≥${o.accentNeed} / ${CHARMS[o.charm]}`,139,y+83,338,32,19,MUTED);
+      if(o.id==='sea'&&unlocked)this.button('听听她的故事',430,y+8,232,30,()=>this.seaChat());
       this.button(done?'已交付':unlocked?'手作 '+o.reward+'金':'尚未解锁',486,y+83,176,38,()=>{this.save.orderId=o.id;this.persist();this.navigate('craft');},this.page,unlocked&&!done,unlocked&&!done);
     });
   }
   private remember() { this.undo.push({draft:[...this.save.draft],charm:this.save.charm}); if(this.undo.length>60)this.undo.shift(); }
-  private slotPos(i: number) { const a=i*Math.PI/6-Math.PI/2;return {x:360+Math.cos(a)*222,y:670+Math.sin(a)*105}; }
+  private slotPos(i: number) {
+    const a=i*Math.PI/6-Math.PI/2, x=360+Math.cos(a)*222, y=670+Math.sin(a)*105;
+    return {x,y};
+  }
   private bracelet(beads: (number|null)[], cx: number, cy: number, r: number, parent=this.page) {
     this.ellipse('Bracelet shadow',cx,cy+r*.7,r*1.05,r*.37,'#9a7f4d19',parent);
     const wire=this.box('Bracelet wire',cx-r,cy-r,r*2,r*2,parent).addComponent(Graphics);
@@ -324,6 +378,7 @@ export class AtelierGame extends Component {
   private craft() {
     const o=this.currentOrder(),done=this.save.completed.length===6;
     this.title(done?'DESIGN YOUR OWN LIGHT':'COMMISSION · '+o.customer,done?'把自己的日子，串成光':o.name);
+    if(o.id==='sea'&&!done)this.button('听故事',552,156,130,43,()=>this.seaChat());
     const checks=rules.checkOrder(this.save),counts=rules.draftCounts(this.save.draft);
     this.text(done?'自由配珠 · 十二颗珠子，一份自己的心意':`${BEADS[o.main].short} ${counts[o.main]}/${o.mainNeed}  ·  ${BEADS[o.accent].short} ${counts[o.accent]}/${o.accentNeed}  ·  ${CHARMS[o.charm]}吊坠`,38,212,644,50,23,SAGE,this.page,true);
     this.rect('Workshop mount',35,276,650,304,'#b89c77',this.page,12);
@@ -392,7 +447,7 @@ export class AtelierGame extends Component {
     });
     n.on(Node.EventType.TOUCH_END,(e: EventTouch)=>{
       if(!start||this.modal)return;
-      if(dragged){const p=this.localPoint(e);let target=-1,nearest=85;for(let i=0;i<12;i++){const s=this.slotPos(i),d=Math.hypot(s.x-p.x,s.y+p.y);if(d<nearest){target=i;nearest=d;}}
+      if(dragged){const p=this.localPoint(e);let target=-1,nearest=85;for(let i=0;i<12;i++){if(i===index)continue;const s=this.slotNodes[i].position,d=Math.hypot(s.x+37-p.x,s.y-37-p.y);if(d<nearest){target=i;nearest=d;}}
         if(target>=0&&target!==index){this.remember();[this.save.draft[index],this.save.draft[target]]=[this.save.draft[target],this.save.draft[index]];this.slot=target;this.persist();this.play('land');}
       }else this.slot=this.slot===index?-1:index;
       start=null;this.render();
@@ -409,14 +464,90 @@ export class AtelierGame extends Component {
     },this.overlay,true);
   }
   private confirmDelivery() {
-    const o=this.currentOrder();this.dialog('delivery','把心意，认真送到');
+    const o=this.currentOrder();if(o.id==='sea'){this.seaPacking();return;}this.dialog('delivery','把心意，认真送到');
     this.image('pencil-delivery',80,325,560,320,this.overlay);
     this.text(o.name+'\n'+o.customer+' · '+o.reward+' 金币 / '+o.rep+' 口碑',100,683,520,110,27,INK,this.overlay,true);
-    this.button('确认交付',130,863,460,70,()=>{
-      const next=rules.deliver(this.save);if(!next)return this.toast('交付条件尚未满足。');
-      this.save=next;this.save.orderId=ORDERS.find(order=>!next.completed.includes(order.id))?.id||'promise';this.undo=[];
-      this.persist();this.play('success');this.closeModal();this.screen='home';this.render();this.startStory(STORIES.findIndex(s=>s.afterOrder===o.id));
-    },this.overlay,true);
+    this.button('确认交付',130,863,460,70,()=>this.deliverOrder(),this.overlay,true);
+  }
+  private deliverOrder() {
+    const o=this.currentOrder(),next=rules.deliver(this.save);
+    if(!next)return this.toast('交付条件尚未满足。');
+    this.save=next;this.save.orderId=ORDERS.find(order=>!next.completed.includes(order.id))?.id||'promise';this.undo=[];
+    this.persist();this.play('success');this.closeModal();this.screen='home';this.render();
+    const nextStory=()=>this.startStory(STORIES.findIndex(story=>story.afterOrder===o.id));
+    if(o.id!=='sea'){nextStory();return;}
+    this.dialog('sea-response','小满把祝福读了两遍');
+    this.text(seaResponse(this.save),105,365,510,210,29,SAGE,this.overlay);
+    const gift=this.save.collection.find((item:any)=>item.id==='sea').gift;
+    this.rect('Blessing card',100,605,520,135,gift.paper==='sky'?'#e4edf0':'#fff9e9',this.overlay,16,'#c7b18b');
+    this.text('你写下的祝福\n'+SEA_BLESSINGS.find(b=>b.id===gift.blessing)!.text,120,620,480,105,25,INK,this.overlay,true);
+    this.text('这张卡已和作品一起收入图鉴。',105,780,510,60,23,MUTED,this.overlay,true);
+    this.button('目送她出发',135,917,450,64,()=>{this.closeModal();nextStory();},this.overlay,true);
+  }
+  private seaChat(questionId='') {
+    if(!this.save.completed.includes('daisy'))return;
+    this.dialog('sea-chat','听听小满的故事');
+    const question=SEA_QUESTIONS.find(q=>q.id===questionId);
+    this.text(question?'阿禾：'+question.ask+'\n\n小满：'+question.answer+'\n\n'+question.follow:'小满：我想要蓝色。第一次自己出远门，有点怕。\n\n阿禾把珠盒往她身边推了推，等她慢慢说。',105,342,510,300,26,INK,this.overlay);
+    SEA_QUESTIONS.forEach((q,i)=>this.button((this.save.seaHeart.facts.includes(q.id)?'✓ ':'')+q.ask,105,666+i*74,510,60,()=>{
+      const next=askSea(this.save,q.id);if(next){this.save=next;this.persist();}this.seaChat(q.id);
+    },this.overlay));
+    this.button('把这份心意记住',135,928,450,60,()=>{this.closeModal();this.render();},this.overlay,true);
+  }
+  private seaPacking() {
+    this.dialog('sea-packing','亲手写一句祝福');
+    const state=this.save.seaHeart,gift=state.gift;
+    this.rect('Sea wrapping paper',100,340,520,184,gift.paper==='sky'?'#dce9ec':'#fff8e8',this.overlay,14,'#ccb99a');
+    this.rect('Sea wrapping ribbon',112,496,496,13,gift.ribbon==='blue'?'#91b6c4':'#9bad87',this.overlay,3);
+    this.ellipse('Ribbon bow left',340,499,23,9,gift.ribbon==='blue'?'#91b6c4':'#9bad87',this.overlay);
+    this.ellipse('Ribbon bow right',382,499,23,9,gift.ribbon==='blue'?'#91b6c4':'#9bad87',this.overlay);
+    this.bracelet(this.save.draft,360,432,72,this.overlay);
+    this.text('没有标准答案，选一句你想对她说的话。',105,535,510,38,21,MUTED,this.overlay,true);
+    const choose=(field:string,id:string)=>{const next=chooseSeaGift(this.save,field,id);if(!next)return;this.save=next;this.persist();this.seaPacking();};
+    SEA_BLESSINGS.forEach((b,i)=>{
+      const open=!b.requires||state.facts.includes(b.requires);
+      this.button((gift.blessing===b.id?'✓ ':'')+b.text+(open?'':b.id==='slow'?'（聊聊担心）':'（聊聊家人）'),100,586+i*59,520,51,()=>choose('blessing',b.id),this.overlay,gift.blessing===b.id,open);
+    });
+    SEA_PAPERS.forEach((paper,i)=>this.button((gift.paper===paper.id?'✓ ':'')+paper.name,100+i*268,778,252,49,()=>choose('paper',paper.id),this.overlay,gift.paper===paper.id,!paper.requires||state.facts.includes(paper.requires)));
+    SEA_RIBBONS.forEach((ribbon,i)=>this.button((gift.ribbon===ribbon.id?'✓ ':'')+ribbon.name,100+i*268,841,252,49,()=>choose('ribbon',ribbon.id),this.overlay,gift.ribbon===ribbon.id,!ribbon.requires||state.facts.includes(ribbon.requires)));
+    this.button('再听听她的故事',100,909,252,45,()=>this.seaChat(),this.overlay);
+    this.button('确认包装交付',368,909,252,65,()=>this.deliverOrder(),this.overlay,true);
+    this.text('蓝色纸与丝带：聊过想看的风景后可选。',100,991,520,32,18,MUTED,this.overlay,true);
+  }
+  private seaPhoto(y=348) {
+    const photo=this.rect('Xiaoman travel photograph',105,y,510,260,'#fffbef',this.overlay,6,'#c9b995');
+    this.rect('Dawn sky',14,14,482,192,'#dbe4df',photo,0);
+    this.ellipse('Sunrise sun',342,88,32,32,'#ecd3a0',photo);
+    this.rect('Morning sea',14,112,482,94,'#a8c5c5',photo,0);
+    const waves=this.box('Pencil sea waves',14,112,482,94,photo).addComponent(Graphics);
+    waves.lineWidth=2;waves.strokeColor=color('#e7e8cf');
+    for(let i=0;i<9;i++){const x=23+(i*83)%400,wy=13+(i*19)%70;waves.moveTo(x,-wy);waves.bezierCurveTo(x+18,-wy-5,x+43,-wy+5,x+68,-wy);waves.stroke();}
+    this.text('小满的第一次独行 · 海边日出',20,211,470,40,22,INK,photo,true);
+  }
+  private seaVisit() {
+    if(!seaVisitReady(this.save)){this.seaRecord();return;}
+    this.dialog('sea-visit','小满带回了一阵海风');this.seaPhoto();
+    this.text('小满：这是我第一次自己看日出。\n我也坐错过车，可后来还是到了。\n\n她摊开旅行带回的小吊坠：\n“帮我把这次旅行，也留在手串上吧。”',105,638,510,225,26,INK,this.overlay);
+    this.text('选一枚旅行纪念 · 不消耗库存',105,874,510,35,21,MUTED,this.overlay,true);
+    const finish=(charm:string)=>{const next=finishSeaVisit(this.save,charm);if(!next)return;this.save=next;this.persist();this.closeModal();this.render();this.seaRecord();};
+    this.button('添一朵小雏菊',105,940,246,58,()=>finish('daisy'),this.overlay,true);
+    this.button('添一颗小爱心',369,940,246,58,()=>finish('heart'),this.overlay,true);
+  }
+  private seaRecord() {
+    this.dialog('sea-memory','海风订单 · 心意手账');
+    if(this.save.seaHeart.visited){
+      this.seaPhoto();
+      this.text('小满：“原来勇敢不一定是不害怕，\n也可以是害怕着，还是去看了日出。”\n\n旅行留影已收进手账，'+CHARMS[this.save.seaHeart.travelCharm]+'纪念挂件已添在作品上。',105,638,510,205,27,INK,this.overlay);
+      this.button('看看后来这条手串',135,920,450,62,()=>{const item=this.save.collection.find((x:any)=>x.id==='sea');if(item)this.collectionPreview('把海风戴在手上',item.beads,item.charm);},this.overlay,true);
+    }else if(seaVisitReady(this.save)){
+      this.text('门口的风铃响了。\n小满拿着一张旅行留影，站在阳光里。',105,390,510,210,29,SAGE,this.overlay,true);
+      this.button('听听她后来的故事',135,885,450,65,()=>this.seaVisit(),this.overlay,true);
+    }else{
+      const facts=this.save.seaHeart.facts.map((id:string)=>SEA_QUESTIONS.find(q=>q.id===id)?.detail).join('\n\n');
+      this.text(facts||'先完成第一份委托，再听小满聊聊她的第一次独自旅行。',105,360,510,300,27,INK,this.overlay);
+      this.text(this.save.completed.includes('sea')?'她已经出发。完成“温柔也有力量”后，留意门口的风铃。':'听过的话、写下的祝福，都会留在这里。',105,720,510,120,24,MUTED,this.overlay,true);
+      if(this.save.completed.includes('daisy'))this.button('重温出发前的聊天',135,928,450,60,()=>this.seaChat(),this.overlay);
+    }
   }
   private matchIntro() {
     if(this.busy)return;this.dialog('intro','珠材花园');
@@ -429,7 +560,11 @@ export class AtelierGame extends Component {
     this.returnScreen=this.screen==='match'?this.returnScreen:this.screen;this.save.energy--;this.save.energyAt=Date.now();this.persist();
     this.session=rules.newSession(Date.now()%1000000,this.save.level);this.selected=-1;this.tool='';this.hint=[];this.closeModal();this.screen='match';this.render();
   }
-  private boardPos(i: number) { return new Vec3(48+(i%8)*78,-(440+Math.floor(i/8)*78),0); }
+  private boardPos(i: number, edited=true) {
+    const x=48+(i%8)*78,y=440+Math.floor(i/8)*78;
+    const template=edited?this.layouts.get(layoutKey('match',x,y,72,72,new Map())):null;
+    return template?template.position.clone():new Vec3(x,-y,0);
+  }
   private match() {
     const s=this.session;if(!s){this.screen='home';this.home();return;}
     this.text('让灵感，一颗颗绽放',38,104,644,52,32,INK,this.page,true);
@@ -439,7 +574,7 @@ export class AtelierGame extends Component {
     this.text('采集 '+rules.total(s.collected)+' / '+s.target,281,386,380,42,26,INK,this.page,true);
     this.rect('Board frame',39,430,642,642,'#e6d8be',this.page,20,'#ad8a60');
     s.board.forEach((type: number,i: number)=>{
-      const p=this.boardPos(i),n=this.rect('Cell '+i,p.x,-p.y,72,72,this.selected===i||this.hint.includes(i)?'#ffe4a6':'#f9f1df',this.page,15,this.selected===i||this.hint.includes(i)?GOLD:'#ddccb0');
+      const p=this.boardPos(i,false),n=this.rect('Cell '+i,p.x,-p.y,72,72,this.selected===i||this.hint.includes(i)?'#ffe4a6':'#f9f1df',this.page,15,this.selected===i||this.hint.includes(i)?GOLD:'#ddccb0');
       this.image('bead-'+type,1,1,70,70,n);this.boardNodes.push(n);this.bindBoard(n,i);
       this.accessibleButton(`${this.hint.includes(i)?'提示格 ':''}第${Math.floor(i/8)+1}行第${i%8+1}列 ${BEADS[type].name}`,()=>this.boardClick(i));
     });
@@ -647,6 +782,11 @@ export class AtelierGame extends Component {
   }
   private collectionPreview(title:string,beads:number[],charm:string) {
     this.dialog('collection',title);this.bracelet(beads,360,560,198,this.overlay);this.image('charm-'+charm,338,752,44,44,this.overlay);this.text(CHARMS[charm]+'吊坠 · 阿禾手作',130,817,460,62,28,SAGE,this.overlay,true);
+    if(title==='把海风戴在手上'){
+      const item=this.save.collection.find((x:any)=>x.id==='sea');
+      if(item?.travelCharm)this.image('charm-'+item.travelCharm,476,692,43,48,this.overlay);
+      if(item?.gift){const card=SEA_BLESSINGS.find(b=>b.id===item.gift.blessing)!;this.text('祝福：'+card.text,100,890,520,48,23,INK,this.overlay,true);this.text((SEA_PAPERS.find(p=>p.id===item.gift.paper)?.name||'')+' · '+(SEA_RIBBONS.find(r=>r.id===item.gift.ribbon)?.name||''),100,945,520,35,21,MUTED,this.overlay,true);}
+    }
   }
   private journal() {
     this.title('OUR STORY, IN OUR OWN WORDS','把自己的名字，写进明天',`${this.save.seenStories.length}/${STORIES.length} 段已读 · 重温不会重复发放奖励`);
@@ -663,7 +803,7 @@ export class AtelierGame extends Component {
       if(s.evidence&&read)this.button('收好相关记录',404,y+52,257,40,()=>this.info(s.evidence.title,s.evidence.text));
     });
     this.button(this.journalPage?'← 前五段':'后五段 →',180,1095,360,50,()=>{this.journalPage=this.journalPage?0:1;this.render();});
-    this.text('已整理 '+storyEvidence(this.save).length+' 件记录 · 三章主线与三段生活支线',38,1155,644,35,20,MUTED,this.page,true);
+    this.button(this.save.seaHeart.visited?'旅行留影 · 小满的第一次独行':seaVisitReady(this.save)?'小满回来了 · 听听后来的故事':'海风订单 · 心意聊天与回访',38,1155,644,35,()=>this.seaRecord());
   }
   private dialog(id: string,title: string) {
     this.stopVideo();this.clear(this.overlay);this.modal=id;

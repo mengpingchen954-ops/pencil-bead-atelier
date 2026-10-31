@@ -2,6 +2,7 @@
 // Rules and narrative retained from the original game; engine-independent.
 import { ORDERS, FURNITURE, STORIES, CLEAN_SPOTS, REPAIRS } from "./content.ts";
 import { storyUnlocked } from "./story.ts";
+import { freshSeaHeart, normalizeSeaHeart } from "./heart.ts";
 export const SAVE_KEY = "pencil-bead-atelier-v1";
 export function rng(seed = 1) {
   let a = seed >>> 0;
@@ -210,6 +211,7 @@ export function useTool(session, tool, index = 0) {
 export function freshSave() {
   return {
     version: 1,
+    seaHeart: freshSeaHeart(),
     started: false,
     coins: 80,
     rep: 0,
@@ -286,6 +288,10 @@ export function normalizeSave(input) {
         ["daisy", "moon", "heart"].includes(x.charm),
     )
     .slice(0, 6);
+  s.seaHeart = normalizeSeaHeart(input.seaHeart, s.completed);
+  s.collection = s.collection.map(item => ({id:item.id, beads:[...item.beads], charm:item.charm,
+    ...(item.id === 'sea' ? { gift:{...normalizeSeaHeart({facts:s.seaHeart.facts,gift:item.gift || s.seaHeart.gift},s.completed).gift},
+      ...(s.seaHeart.visited ? {travelCharm:s.seaHeart.travelCharm} : {}) } : {})}));
   s.lastStory = Number.isInteger(input.lastStory)
     ? Math.max(-1, Math.min(6, input.lastStory))
     : -1;
@@ -351,7 +357,7 @@ export function deliver(save) {
     completed: [...save.completed, order.id],
     collection: [
       ...save.collection,
-      { id: order.id, beads: [...save.draft], charm: save.charm },
+      { id: order.id, beads: [...save.draft], charm: save.charm, ...(order.id === 'sea' ? {gift:{...save.seaHeart.gift}} : {}) },
     ],
     draft: Array(12).fill(null),
   };
