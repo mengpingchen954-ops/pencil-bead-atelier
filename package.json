@@ -12,7 +12,8 @@
     "test:feel": "node tests/feel.mjs",
     "test:story": "node tests/story.mjs",
     "test:square": "node tests/square.mjs",
-    "test:craft": "node tests/craft.mjs"
+    "test:craft": "node tests/craft.mjs",
+    "test:renovation": "node tests/renovation.mjs"
   },
   "dependencies": {
     "three": "^0.186.1"

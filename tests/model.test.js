@@ -1,6 +1,6 @@
 import test from "node:test";
 import assert from "node:assert/strict";
-import { ORDERS } from "../src/content.js";
+import { ORDERS, CLEAN_SPOTS } from "../src/content.js";
 import {
   createBoard,
   matches,
@@ -182,6 +182,7 @@ test("all six orders can be crafted and advance the collection", () => {
 });
 test("furniture purchases are sequential and cannot overspend", () => {
   const s = freshSave();
+  s.renovation.cleared = CLEAN_SPOTS.map((spot) => spot.id);
   assert.equal(purchase(s, "chair", 1), null);
   assert.equal(purchase({ ...s, coins: 1000 }, "chair", 2), null);
   const next = purchase({ ...s, coins: 200 }, "chair", 1);

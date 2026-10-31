@@ -1,7 +1,7 @@
 import { chromium } from "playwright";
 import assert from "node:assert/strict";
 import fs from "node:fs/promises";
-import { ORDERS } from "../src/content.js";
+import { ORDERS, CLEAN_SPOTS } from "../src/content.js";
 import { findMove, move, total, freshSave } from "../src/model.js";
 const url = process.env.GAME_URL || "http://127.0.0.1:5217/";
 const browser = await chromium.launch({ headless: true });
@@ -161,6 +161,7 @@ try {
   await shot("07-story");
   await click("story-close");
   await click("nav:decor");
+  for (const spot of CLEAN_SPOTS) await click(`clean:${spot.id}`);
   const coins = (await state()).resources.coins;
   await click("buy:chair");
   assert.equal((await state()).upgrades.chair, 1);

@@ -7,7 +7,10 @@ import {
   FURNITURE,
   CHARMS,
   JOURNEY,
+  CLEAN_SPOTS,
+  REPAIRS,
 } from "./content.js";
+import { shopRoom } from "./shop-room.js";
 import { storyUnlocked, pendingStory, finishStory, storyEvidence, mediaPath } from "./story.js";
 import {
   SAVE_KEY,
@@ -27,6 +30,10 @@ import {
   checkOrder,
   deliver,
   purchase,
+  cleanSpot,
+  isShopClean,
+  repairShop,
+  shopProgress,
 } from "./model.js";
 import {
   artURL,
@@ -257,7 +264,7 @@ function journeyCard() {
 function homeView() {
   const o = order(),
     chapter = currentChapter();
-  return `<section class="home-page"><div class="home-intro">${tag("AH HE’S LITTLE ATELIER")}<h1>一颗珠子，一段新生活</h1><p>午后的阳光刚好，小店又开门了。</p></div><div class="shop-illustration"><img src="${artURL("shop")}" alt="阿禾和奶奶的温暖手串小店"><div class="shop-plaque">阿禾手作 <span>营业中</span></div>${btn(`${icon("chair")} 布置小店`, "nav:decor", "floating-button")}</div><div class="home-paper"><div class="chapter-line"><span>${chapter.title}</span><button class="text-button" data-action="nav:journal">故事 ${icon("arrow")}</button></div><div class="chapter-progress"><span style="width:${(save.completed.length / 6) * 100}%"></span></div><div class="home-order"><div class="order-mark">${icon(save.completed.length === 6 ? "flower" : "orders")}</div><div><small>${save.completed.length === 6 ? "新的开始" : "正在等待的心意 · " + o.customer}</small><h2>${save.completed.length === 6 ? "我们的故事，会继续" : o.name}</h2></div>${reward(o.reward)}</div><p class="home-quote">“${save.completed.length === 6 ? "明天还要开门。先为自己做一条喜欢的手串吧。" : o.text}”</p><div class="home-actions">${btn(`${icon("craft")} ${save.completed.length === 6 ? "自由设计" : "开始手作"}`, "nav:craft", "secondary")}${btn(`${icon("flower")} 消除采珠`, "match-intro")}</div>${journeyCard()}<div class="home-footer"><span>${icon("star")} 小店口碑 ${save.rep}</span><span>已完成 ${save.completed.length}/6 份委托</span></div></div></section>`;
+  return `<section class="home-page"><div class="home-intro">${tag("AH HE’S LITTLE ATELIER")}<h1>一颗珠子，一段新生活</h1><p>${isShopClean(save) ? "午后的阳光刚好，小店又开门了。" : "从清理这间旧屋开始，和奶奶一起重新生活。"}</p></div><div class="shop-illustration live-shop">${shopRoom(save, furnitureArt)}${btn(`${icon("chair")} ${isShopClean(save) ? "装修小店" : "打扫旧店"}`, "nav:decor", "floating-button")}</div><div class="home-paper"><div class="chapter-line"><span>${chapter.title}</span><button class="text-button" data-action="nav:journal">故事 ${icon("arrow")}</button></div><div class="chapter-progress"><span style="width:${(save.completed.length / 6) * 100}%"></span></div><div class="home-order"><div class="order-mark">${icon(save.completed.length === 6 ? "flower" : "orders")}</div><div><small>${save.completed.length === 6 ? "新的开始" : "正在等待的心意 · " + o.customer}</small><h2>${save.completed.length === 6 ? "我们的故事，会继续" : o.name}</h2></div>${reward(o.reward)}</div><p class="home-quote">“${save.completed.length === 6 ? "明天还要开门。先为自己做一条喜欢的手串吧。" : o.text}”</p><div class="home-actions">${btn(`${icon("craft")} ${save.completed.length === 6 ? "自由设计" : "开始手作"}`, "nav:craft", "secondary")}${btn(`${icon("flower")} 消除采珠`, "match-intro")}</div>${journeyCard()}<div class="home-footer"><span>${icon("star")} 小店口碑 ${save.rep}</span><span>已完成 ${save.completed.length}/6 份委托</span></div></div></section>`;
 }
 function ordersView() {
   return `<section class="page">${heading("LET EVERY WISH SHINE", "每一份心意，都值得", "听听客人的故事，为她们做一条独一无二的手串。")}<div class="order-list">${ORDERS.map(
@@ -324,12 +331,23 @@ function matchView() {
     )}</div><p class="match-note">${hint ? "金色圆圈是可以交换的一组珠子。" : "每关赠送手作工具 · 无效交换不扣步数"}</p></section>`;
 }
 function decorView() {
-  return `<section class="page decor-page">${heading("A HOME FOR OUR DREAMS", "把小店，慢慢变好", "先添一把舒服的椅子，再给梦想多一点位置。")}<div class="decor-nook"><div class="nook-window">✧</div><div class="nook-furnitures">${FURNITURE.map((f) => `<div>${furnitureArt(f)}</div>`).join("")}</div><div class="nook-caption">阿禾与奶奶的小小天地</div></div><div class="furniture-list">${FURNITURE.map(
-    (f) => {
+  const clean = isShopClean(save), progress = shopProgress(save);
+  return `<section class="page decor-page">${heading("A HOME WE BUILD TOGETHER", "从破旧小屋，到温暖小店", "奶奶说：先把灰尘扫去，慢慢把日子过好。")}${shopRoom(save, furnitureArt, true)}
+    <div class="renovation-progress"><div><strong data-shop-stage>${progress.stage}</strong><span data-shop-percent>${progress.percent}%</span></div><div class="progress-track"><i data-shop-bar style="width:${progress.percent}%"></i></div></div>
+    <div class="renovation-steps"><span class="${!clean ? "active" : "done"}">01 动手打扫</span><span class="${clean ? "active" : ""}">02 挣钱修缮</span><span class="${progress.furnished ? "active" : ""}">03 添置家具</span></div>
+    <div class="cleaning-panel"><div class="renovation-section"><h2>${icon("broom")} 先给小店一个干净的开始</h2><span class="clean-count">${progress.cleaned} / ${CLEAN_SPOTS.length}</span></div><p data-clean-instruction>${clean ? "打扫完成！用订单收入修缮房间、添置家具吧。" : "点掉纸箱与废纸，按住窗渍和灰尘擦拭；也可以逐个点击清理。"}</p><div class="cleaning-tasks">${[["clutter", "收拾杂物", "bag"], ["glass", "擦净窗户", "window"], ["dust", "扫去灰尘", "broom"]].map(([kind, name, ico]) => {
+      const spots = CLEAN_SPOTS.filter((spot) => spot.kind === kind), amount = spots.filter((spot) => save.renovation.cleared.includes(spot.id)).length;
+      return `<div class="clean-task ${amount === spots.length ? "done" : ""}" data-clean-task="${kind}">${icon(ico)}<b>${name}</b><small>${amount}/${spots.length}</small></div>`;
+    }).join("")}</div><small class="clean-free">打扫免费 · 不消耗体力 · 进度自动保存</small></div>
+    <div class="decor-income"><div>${icon("coin")}<span>一份委托，一点改变<small>金币来自手串订单，先挣到钱，再把喜欢的家具带回家。</small></span></div>${btn("去接委托", "nav:orders", "small-button")}</div>
+    <div class="renovation-section"><h2>修好这间小屋</h2><span>一次购买，永久保留</span></div><div class="repair-list">${REPAIRS.map((item) => {
+      const owned = save.renovation.repairs[item.id];
+      return `<article class="repair-card ${owned ? "owned" : ""}"><div>${icon(item.icon)}<h3>${owned ? item.result : item.title}</h3></div><p>${item.text}</p>${owned ? `<span class="owned-label">${icon("check")} 已修好</span>` : btn(!clean ? "先完成打扫" : `${icon("coin")} ${item.price} · 修缮`, `repair:${item.id}`, "small-button", !clean ? "disabled" : "")}</article>`;
+    }).join("")}</div>
+    <div class="renovation-section"><h2>用手艺挣来的钱，添置家具</h2><span>旧物 → 实用 → 心仪款</span></div><div class="furniture-list">${FURNITURE.map((f) => {
       const tier = save.upgrades[f.id];
-      return `<article class="furniture-card"><div class="furniture-preview">${furnitureArt(f)}</div><div class="furniture-info"><small>${f.title}</small><h2>${f.names[tier]}</h2><p>${f.text}</p><div class="tier-dots">${[0, 1, 2].map((i) => `<i class="${i <= tier ? "filled" : ""}"></i>`).join("")}<span>${tier === 2 ? "已全部焕新" : "第 " + (tier + 1) + " 阶段"}</span></div>${tier < 2 ? btn(`${icon("coin")} ${f.prices[tier + 1]} · 升级${f.names[tier + 1]}`, `buy:${f.id}`, "small-button") : `<span class="owned-label">${icon("check")} 已拥有最终款</span>`}${tier >= 1 ? btn("翻开这件家具的故事", `story:${STORIES.findIndex((s) => s.furniture === f.id)}`, "text-button furniture-story") : ""}</div></article>`;
-    },
-  ).join("")}</div></section>`;
+      return `<article class="furniture-card"><div class="furniture-preview">${furnitureArt(f)}</div><div class="furniture-info"><small>${f.title}</small><h2>${f.names[tier]}</h2><p>${f.text}</p><div class="tier-dots">${[0, 1, 2].map((i) => `<i class="${i <= tier ? "filled" : ""}"></i>`).join("")}<span>${tier === 2 ? "已全部焕新" : "第 " + (tier + 1) + " 阶段"}</span></div>${tier < 2 ? btn(!clean ? "先打扫，再添置" : `${icon("coin")} ${f.prices[tier + 1]} · ${tier === 0 ? "添置" : "换成"}${f.names[tier + 1]}`, `buy:${f.id}`, "small-button", !clean ? "disabled" : "") : `<span class="owned-label">${icon("check")} 已拥有最终款</span>`}${tier >= 1 ? btn("翻开这件家具的故事", `story:${STORIES.findIndex((s) => s.furniture === f.id)}`, "text-button furniture-story") : ""}</div></article>`;
+    }).join("")}</div><p class="renovation-note">${progress.percent === 100 ? "阿禾：这里的每一处，都是我们一点点挣来、亲手照顾好的。" : "阿禾：今天只添一把椅子也好。属于我们的家，会慢慢变暖。"}</p></section>`;
 }
 function albumView() {
   return `<section class="page">${heading("LITTLE THINGS, PRECIOUS MEMORIES", "每一条，都有故事", `已收藏 ${save.collection.length} / 6 件作品 · 记录你亲手搭配的模样`)}${
@@ -496,7 +514,7 @@ function renderModal() {
   if (modal.type === "help")
     html = modalShell(
       "把日子，慢慢串成光",
-      `<ol class="help-list"><li><b>采珠</b><p>交换相邻珠子，同色直线三颗起消，2×2 四颗方块也能消除。工具不耗步数，提示可免费使用。</p></li><li><b>接单与手作</b><p>点珠材从圆心弹射，随机滚入空凹槽；拖动可移入空槽或交换位置，点选已有珠子后可替换。满足配色和吊坠要求即可交付。</p></li><li><b>小店与故事</b><p>交付推进主线，升级家具开启祖孙支线。手账可回看已解锁剧情和收集的记录。稍后阅读会保留未读状态；视频可以切换文字版。</p></li></ol>`,
+      `<ol class="help-list"><li><b>采珠</b><p>交换相邻珠子，同色直线三颗起消，2×2 四颗方块也能消除。工具不耗步数，提示可免费使用。</p></li><li><b>接单与手作</b><p>点珠材从圆心弹射，随机滚入空凹槽；拖动可移入空槽或交换位置，点选已有珠子后可替换。满足配色和吊坠要求即可交付。</p></li><li><b>小店与故事</b><p>先点掉杂物、擦净窗渍和灰尘，再用订单赚的金币修墙、铺地板、修窗与添置家具。交付推进主线，升级家具开启祖孙支线。手账可回看已解锁剧情和收集的记录。稍后阅读会保留未读状态；视频可以切换文字版。</p></li></ol>`,
       btn("知道了，开始吧", "close"),
     );
   if (modal.type === "reset")
@@ -594,6 +612,41 @@ function reorderSlots(a, b) {
   slot = b;
   updateCraft();
   renderer.moveCraftBeads(a, b, positions);
+}
+function refreshDecor(revealRoom = false) {
+  const scroll = view.scrollTop;
+  render();
+  view.scrollTop = scroll;
+  if (revealRoom) {
+    view.scrollTo({ top: 0, behavior: save.reduced ? "instant" : "smooth" });
+    if (!save.reduced) view.querySelector(".shop-room")?.classList.add("room-reveal");
+  }
+}
+function cleanShopSpot(id, live = false) {
+  if (screen !== "decor" || modal) return;
+  const next = cleanSpot(save, id);
+  if (!next) return;
+  save = next;
+  persist();
+  beadSound("land");
+  if (!live) {
+    refreshDecor();
+    if (isShopClean(save)) toast("打扫好了！去完成委托，给小店添置家具吧。");
+    return;
+  }
+  view.querySelector(`[data-clean="${id}"]`)?.classList.add("is-cleared");
+  const progress = shopProgress(save);
+  view.querySelector(".clean-count").textContent = `${progress.cleaned} / ${CLEAN_SPOTS.length}`;
+  view.querySelector("[data-shop-percent]").textContent = `${progress.percent}%`;
+  view.querySelector("[data-shop-bar]").style.width = `${progress.percent}%`;
+  view.querySelector("[data-shop-stage]").textContent = progress.stage;
+  view.querySelector(".room-caption").textContent = progress.stage;
+  for (const task of view.querySelectorAll("[data-clean-task]")) {
+    const spots = CLEAN_SPOTS.filter((spot) => spot.kind === task.dataset.cleanTask);
+    const count = spots.filter((spot) => save.renovation.cleared.includes(spot.id)).length;
+    task.querySelector("small").textContent = `${count}/${spots.length}`;
+    task.classList.toggle("done", count === spots.length);
+  }
 }
 function startMatch() {
   clearToast();
@@ -1013,17 +1066,37 @@ function action(a) {
     case "buy": {
       const f = FURNITURE.find((x) => x.id === arg),
         next = purchase(save, arg, save.upgrades[arg] + 1);
+      if (!f) return;
       if (!next) {
         toast(
-          `还差 ${f.prices[save.upgrades[arg] + 1] - save.coins} 金币，完成委托就能添置啦。`,
+          !isShopClean(save) ? "先动手打扫，再把新家具请进来吧。" : `还差 ${Math.max(0, f.prices[save.upgrades[arg] + 1] - save.coins)} 金币，完成委托就能添置啦。`,
         );
         break;
       }
       save = next;
       persist();
       chime(1);
-      render();
+      refreshDecor(true);
       toast("新家具已经摆好，手账里多了一段生活支线。");
+      break;
+    }
+    case "clean":
+      cleanShopSpot(arg);
+      break;
+    case "repair": {
+      const item = REPAIRS.find((repair) => repair.id === arg);
+      if (!item || screen !== "decor") return;
+      const next = repairShop(save, arg);
+      if (!next) {
+        toast(!isShopClean(save) ? "先把杂物和灰尘清理干净吧。" : `还差 ${Math.max(0, item.price - save.coins)} 金币，去完成一份委托吧。`);
+        break;
+      }
+      if (next === save) return;
+      save = next;
+      persist();
+      chime(1);
+      refreshDecor(true);
+      toast(`已换上${item.result}，小店又亮了一点。`);
       break;
     }
     case "collection":
@@ -1106,6 +1179,44 @@ document.addEventListener("click", (e) => {
   const target = e.target.closest("[data-action]");
   if (target && !target.disabled) action(target.dataset.action);
 });
+let cleaningGesture = null;
+view.addEventListener("pointerdown", (e) => {
+  const room = e.target.closest("[data-clean-room]");
+  const spot = e.target.closest("[data-clean]");
+  if (!room || !spot || modal || cleaningGesture || e.button !== 0) return;
+  if (CLEAN_SPOTS.find((item) => item.id === spot.dataset.clean)?.kind === "clutter") return;
+  e.preventDefault();
+  cleaningGesture = { room, pointerId: e.pointerId };
+  room.setPointerCapture(e.pointerId);
+  room.classList.add("is-cleaning");
+  cleanShopSpot(spot.dataset.clean, true);
+  moveCleaningTool(e);
+});
+function moveCleaningTool(e) {
+  const { room } = cleaningGesture, rect = room.getBoundingClientRect();
+  const tool = room.querySelector(".clean-tool");
+  tool.style.left = `${e.clientX - rect.left}px`;
+  tool.style.top = `${e.clientY - rect.top}px`;
+}
+view.addEventListener("pointermove", (e) => {
+  if (!cleaningGesture || cleaningGesture.pointerId !== e.pointerId) return;
+  moveCleaningTool(e);
+  const spot = document.elementFromPoint(e.clientX, e.clientY)?.closest("[data-clean]");
+  if (spot && cleaningGesture.room.contains(spot) && !spot.classList.contains("spot-clutter")) cleanShopSpot(spot.dataset.clean, true);
+});
+function endCleaning(e) {
+  if (!cleaningGesture || cleaningGesture.pointerId !== e.pointerId) return;
+  const { room, pointerId } = cleaningGesture;
+  cleaningGesture = null;
+  if (room.hasPointerCapture(pointerId)) room.releasePointerCapture(pointerId);
+  if (screen === "decor") {
+    refreshDecor();
+    if (isShopClean(save)) toast("打扫好了！现在可以修缮房间、添置家具了。");
+  }
+}
+view.addEventListener("pointerup", endCleaning);
+view.addEventListener("pointercancel", endCleaning);
+view.addEventListener("lostpointercapture", endCleaning);
 document.addEventListener("keydown", (e) => {
   if (e.key === "Escape") {
     e.preventDefault();
@@ -1188,6 +1299,8 @@ window.render_game_to_text = () =>
     seenStories: save.seenStories,
     evidence: storyEvidence(save).map((s) => s.id),
     upgrades: save.upgrades,
+    renovation: save.renovation,
+    shop: shopProgress(save),
     level: save.level,
     selected,
     tool,

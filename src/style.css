@@ -1264,6 +1264,100 @@ img {
   display: grid;
   gap: 13px;
 }
+.shop-room {
+  --room-wall: #d4c9af;
+  --room-floor: #b8a185;
+  position: relative;
+  width: 100%;
+  aspect-ratio: 1.46;
+  overflow: hidden;
+  border: 1px solid #bca781;
+  border-radius: 65px 65px 6px 6px;
+  background: #e5d7ba;
+  isolation: isolate;
+}
+.decor-room { margin: 0 0 15px; }
+.room-backdrop { position: absolute; inset: 0; width: 100%; height: 100%; }
+.room-wall { fill: var(--room-wall); }
+.room-floor { fill: var(--room-floor); }
+.room-side { fill: #9d9078; opacity: .2; }
+.room-floor-lines { stroke: #927d60; opacity: .6; }
+.room-wall-new { --room-wall: #f1e6cf; }
+.room-floor-new { --room-floor: #d8ba8e; }
+.room-wall-new .room-cracks, .room-wall-new .room-peeling,
+.room-floor-new .room-broken-floor, .room-window-new .room-window-damage { display: none; }
+.room-sunbeam, .room-curtains, .room-details { display: none; }
+.room-window-new .room-sunbeam, .room-window-new .room-curtains, .room-wall-new .room-details { display: block; }
+.room-furniture { position: absolute; inset: 0; pointer-events: none; }
+.room-piece { position: absolute; bottom: 14%; width: 29%; display: flex; align-items: flex-end; justify-content: center; }
+.room-piece-chair { left: 3%; width: 26%; }
+.room-piece-display { left: 34%; }
+.room-piece-desk { right: 3%; }
+.room-piece .furniture-art { max-height: 125px; margin: 0; }
+.room-piece.tier-0 { filter: saturate(.35) brightness(.86); transform: rotate(-2deg); opacity: .83; }
+.room-piece.tier-0::after { content: ""; width: 50%; height: 2px; background: #927b5b; opacity: .5; position: absolute; bottom: 37%; left: 25%; transform: rotate(-13deg); }
+.room-caption { position: absolute; z-index: 4; top: 12px; left: 12px; max-width: 68%; border-radius: 20px; padding: 5px 9px; background: #faf0dbd9; color: #78674d; font-size: 10px; pointer-events: none; }
+.clean-spot { position: absolute; z-index: 5; transform: translate(-50%, -50%); border: 0; padding: 0; background: none; width: 14%; height: 17%; min-width: 36px; min-height: 34px; transition: opacity .16s, filter .16s; }
+.clean-spot svg { width: 100%; height: 100%; pointer-events: none; }
+.clean-spot > span { position: absolute; right: 3%; top: 0; font-size: 17px; color: #fff5d7; text-shadow: 0 0 4px #897753; pointer-events: none; }
+.clean-spot.spot-clutter { width: 22%; height: 24%; }
+.clean-spot.spot-glass { opacity: .85; }
+.clean-spot:hover { filter: brightness(1.12); }
+.clean-spot:active { transform: translate(-50%, -50%) scale(.95); }
+.clean-spot.is-cleared { opacity: 0; pointer-events: none; }
+[data-clean-room] { touch-action: none; }
+.clean-tool { display: none; position: absolute; pointer-events: none; z-index: 8; transform: translate(-50%, -50%) rotate(-15deg); width: 35px; height: 27px; border: 2px solid #98a989; border-radius: 8px; background: #e7efd4; color: #ad945e; text-align: center; box-shadow: 0 2px 5px #53443133; }
+.is-cleaning .clean-tool { display: block; }
+.live-shop { border: 0; box-shadow: none; }
+.live-shop .shop-room { border-radius: 95px 95px 5px 5px; }
+.home-room .room-caption { top: 24px; left: 40px; }
+.room-reveal { animation: room-warmth .8s ease-out; }
+@keyframes room-warmth { from { filter: brightness(1.14); } to { filter: brightness(1); } }
+.live-shop .floating-button { z-index: 6; }
+.renovation-progress { margin: 0 0 14px; }
+.renovation-progress > div:first-child { display: flex; align-items: center; justify-content: space-between; margin-bottom: 8px; font-size: 12px; gap: 8px; }
+.renovation-progress strong { font-weight: 500; }
+.renovation-progress .progress-track { height: 7px; }
+.renovation-steps { display: flex; justify-content: space-between; gap: 5px; margin: 14px 0; font-size: 10px; color: #ad9c80; }
+.renovation-steps span { padding: 8px 3px; border-bottom: 2px solid #d9ccb2; }
+.renovation-steps .active { color: #758263; border-color: #92a17c; }
+.renovation-steps .done { color: #8c9a77; border-color: #b5c19f; }
+.cleaning-panel { padding: 15px 13px; border: 1px solid #c9b88f; background: #f6eedc; border-radius: 6px; margin-bottom: 17px; }
+.renovation-section { display: flex; align-items: center; justify-content: space-between; gap: 8px; margin: 24px 0 12px; }
+.renovation-section h2 { font-size: 16px; line-height: 1.6; }
+.renovation-section h2 .icon { width: 18px; height: 18px; vertical-align: middle; }
+.renovation-section > span { font-size: 10px; color: #9a8c70; flex-shrink: 0; }
+.cleaning-panel .renovation-section { margin: 0 0 8px; }
+.cleaning-panel .renovation-section h2 { font-size: 14px; }
+.cleaning-panel > p { font-size: 11px; color: #93836a; }
+.cleaning-tasks { display: grid; grid-template-columns: repeat(3, 1fr); gap: 7px; margin: 13px 0; }
+.clean-task { border: 1px dashed #c9bea3; display: flex; align-items: center; flex-direction: column; padding: 9px 3px; border-radius: 5px; font-size: 10px; color: #98876a; }
+.clean-task .icon { width: 20px; height: 20px; }
+.clean-task b { margin: 6px 0 4px; font-weight: 400; }
+.clean-task.done { color: #788767; background: #e9ecd9; border-style: solid; border-color: #b9c2a3; }
+.clean-free { font-size: 10px; color: #83906c; }
+.decor-income { display: flex; align-items: center; gap: 10px; padding: 13px; background: #eee8d5; border-radius: 5px; }
+.decor-income > div { display: flex; gap: 8px; align-items: center; flex: 1; font-size: 12px; }
+.decor-income .icon { flex-shrink: 0; color: #b49961; }
+.decor-income small { display: block; margin-top: 4px; font-size: 10px; color: #9a896c; line-height: 1.7; }
+.decor-income > button { flex-shrink: 0; padding: 10px; font-size: 10px; }
+.repair-list { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; }
+.repair-card { padding: 13px 8px; border: 1px solid #d0bf9a; border-radius: 5px; background: #fcf5e6; }
+.repair-card > div { text-align: center; color: #8e9471; }
+.repair-card > div .icon { width: 29px; height: 29px; }
+.repair-card h3 { font-size: 12px; line-height: 1.6; margin: 8px 0 0; }
+.repair-card p { font-size: 10px; line-height: 1.8; margin: 9px 0; color: #9d8b6d; }
+.repair-card > button { width: 100%; padding: 9px 3px; font-size: 10px; min-height: 38px; }
+.repair-card .owned-label { display: block; text-align: center; padding: 9px 0; }
+.repair-card.owned { background: #edf0df; border-color: #bfc7ab; }
+.renovation-note { text-align: center; font-size: 12px; color: #8c9273; margin: 23px 6px 10px; }
+@media (max-width: 380px) {
+  .renovation-section { flex-wrap: wrap; }
+  .cleaning-panel .renovation-section { flex-wrap: nowrap; }
+  .cleaning-panel .renovation-section h2 { font-size: 12px; }
+  .repair-list { gap: 5px; }
+  .repair-card { padding: 11px 5px; }
+}
 .furniture-card {
   display: flex;
   align-items: center;
@@ -2239,6 +2333,7 @@ img {
 }
 @media (prefers-reduced-motion: reduce) {
   * {
+    animation: none !important;
     transition: none !important;
     scroll-behavior: auto !important;
   }

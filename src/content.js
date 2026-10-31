@@ -289,3 +289,21 @@ export const FURNITURE = [
   },
 ];
 export const CHARMS = { daisy: "雏菊", moon: "月牙", heart: "爱心" };
+export const CLEAN_SPOTS = [
+  { id: "box-left", kind: "clutter", name: "收走左边的旧纸箱", x: 18, y: 73 },
+  { id: "box-right", kind: "clutter", name: "收走右边的旧纸箱", x: 82, y: 75 },
+  { id: "papers", kind: "clutter", name: "收好散落的废纸", x: 58, y: 85 },
+  { id: "glass-1", kind: "glass", name: "擦净左上窗渍", x: 44, y: 23 },
+  { id: "glass-2", kind: "glass", name: "擦净右上窗渍", x: 56, y: 24 },
+  { id: "glass-3", kind: "glass", name: "擦净左下窗渍", x: 44, y: 37 },
+  { id: "glass-4", kind: "glass", name: "擦净右下窗渍", x: 56, y: 38 },
+  { id: "dust-1", kind: "dust", name: "扫净门边灰尘", x: 12, y: 88 },
+  { id: "dust-2", kind: "dust", name: "扫净椅边灰尘", x: 35, y: 82 },
+  { id: "dust-3", kind: "dust", name: "扫净柜边灰尘", x: 70, y: 89 },
+  { id: "dust-4", kind: "dust", name: "扫净墙边灰尘", x: 90, y: 86 },
+];
+export const REPAIRS = [
+  { id: "wall", title: "修补墙面", result: "奶油色新墙面", price: 60, text: "补好裂缝，刷上温暖的奶油色。", icon: "paint" },
+  { id: "floor", title: "铺好地板", result: "蜂蜜色木地板", price: 40, text: "换掉翘起的旧板，让奶奶走得更安心。", icon: "floor" },
+  { id: "window", title: "修好窗户", result: "明亮花窗与窗帘", price: 20, text: "换好破损玻璃，让阳光重新照进来。", icon: "window" },
+];

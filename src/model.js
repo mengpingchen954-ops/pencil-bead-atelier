@@ -1,4 +1,4 @@
-import { ORDERS, FURNITURE, STORIES } from "./content.js";
+import { ORDERS, FURNITURE, STORIES, CLEAN_SPOTS, REPAIRS } from "./content.js";
 import { storyUnlocked } from "./story.js";
 export const SAVE_KEY = "pencil-bead-atelier-v1";
 export function rng(seed = 1) {
@@ -224,6 +224,7 @@ export function freshSave() {
     reduced: false,
     lastStory: -1,
     seenStories: [],
+    renovation: { cleared: [], repairs: { wall: false, floor: false, window: false } },
   };
 }
 const bounded = (v, max = 100000) =>
@@ -252,6 +253,12 @@ export function normalizeSave(input) {
   ];
   for (const f of FURNITURE)
     s.upgrades[f.id] = bounded(input.upgrades?.[f.id], 2);
+  s.renovation.cleared = input.renovation === undefined && Object.values(s.upgrades).some((tier) => tier > 0)
+    ? CLEAN_SPOTS.map((spot) => spot.id)
+    : [...new Set((Array.isArray(input.renovation?.cleared) ? input.renovation.cleared : [])
+      .filter((id) => CLEAN_SPOTS.some((spot) => spot.id === id)))];
+  for (const item of REPAIRS)
+    s.renovation.repairs[item.id] = isShopClean(s) && input.renovation?.repairs?.[item.id] === true;
   s.draft = Array.from({ length: 12 }, (_, i) =>
     Number.isInteger(input.draft?.[i]) &&
     input.draft[i] >= 0 &&
@@ -351,12 +358,36 @@ export function purchase(save, id, tier) {
   if (!item || !Number.isInteger(tier) || tier < 0 || tier > 2) return null;
   const owned = save.upgrades[id];
   if (tier <= owned) return { ...save };
+  if (!isShopClean(save)) return null;
   if (tier !== owned + 1 || save.coins < item.prices[tier]) return null;
   return {
     ...save,
     coins: save.coins - item.prices[tier],
     upgrades: { ...save.upgrades, [id]: tier },
   };
+}
+export function isShopClean(save) {
+  return CLEAN_SPOTS.every((spot) => save.renovation.cleared.includes(spot.id));
+}
+export function cleanSpot(save, id) {
+  if (!CLEAN_SPOTS.some((spot) => spot.id === id) || save.renovation.cleared.includes(id)) return null;
+  return { ...save, renovation: { ...save.renovation, cleared: [...save.renovation.cleared, id] } };
+}
+export function repairShop(save, id) {
+  const item = REPAIRS.find((repair) => repair.id === id);
+  if (!item || !isShopClean(save)) return null;
+  if (save.renovation.repairs[id]) return save;
+  if (save.coins < item.price) return null;
+  return { ...save, coins: save.coins - item.price,
+    renovation: { ...save.renovation, repairs: { ...save.renovation.repairs, [id]: true } } };
+}
+export function shopProgress(save) {
+  const cleaned = save.renovation.cleared.length;
+  const furnished = Object.values(save.upgrades).reduce((sum, tier) => sum + tier, 0);
+  const repaired = REPAIRS.filter((item) => save.renovation.repairs[item.id]).length;
+  const percent = Math.round(((cleaned + furnished + repaired) / (CLEAN_SPOTS.length + 6 + REPAIRS.length)) * 100);
+  return { cleaned, repaired, furnished, percent,
+    stage: !isShopClean(save) ? "破败小店 · 等你打扫" : repaired === 3 && furnished === 6 ? "焕然一新 · 我们的家" : "干净小店 · 一点点添置" };
 }
 export function refreshEnergy(save, now = Date.now()) {
   const recovered = Math.max(0, Math.floor((now - save.energyAt) / 180000));

@@ -61,6 +61,7 @@ try {
 
   const old = { ...freshSave(), started: true, completed: ORDERS.map((o) => o.id), coins: 721, upgrades: { chair: 1, desk: 1, display: 1 }, lastStory: 6 };
   delete old.seenStories;
+  delete old.renovation;
   const legacy = await createPage(old);
   await ready(legacy.page);
   assert.equal((await state(legacy.page)).resources.coins, 721);
