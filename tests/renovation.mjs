@@ -30,11 +30,19 @@ async function screenshot(page, name) {
   await page.locator("img").evaluateAll((images) => Promise.all(images.map((i) => i.decode().catch(() => {}))));
   await page.screenshot({ path: path.join(evidence, `${name}.png`) });
 }
+async function assertHomeIllustration(page) {
+  const illustration = page.locator('.shop-illustration > img');
+  await illustration.evaluate((img) => img.decode());
+  assert.equal(await illustration.getAttribute('alt'), '阿禾和奶奶的温暖手串小店');
+  assert.match(await illustration.getAttribute('src'), /art\/shop\.jpg$/);
+  assert.ok(await illustration.evaluate((img) => img.naturalWidth > 0));
+  assert.equal(await page.locator('.home-page .shop-room').count(), 0);
+}
 try {
   const { context, page } = await createPage({ ...freshSave(), started: true, inventory: Array(6).fill(50) });
   assert.equal((await state(page)).shop.cleaned, 0);
-  assert.equal(await page.locator(".home-room .clean-spot").count(), 11);
-  await screenshot(page, "01-dirty-home");
+  await assertHomeIllustration(page);
+  await screenshot(page, "01-home-characters");
   await click(page, "nav:decor");
   assert.equal(await page.locator("[data-clean]").count(), 11);
   assert.equal(await page.locator('[data-action="buy:chair"]').isDisabled(), true);
@@ -122,7 +130,8 @@ try {
     assert.equal(await page.evaluate(() => document.documentElement.scrollWidth > innerWidth), false);
     await screenshot(page, `04-renovated-${width}`);
     await click(page, "nav:home");
-    assert.equal(await page.locator(".home-room.room-wall-new.room-floor-new.room-window-new").count(), 1);
+    await assertHomeIllustration(page);
+    assert.equal(await page.evaluate(() => document.documentElement.scrollWidth > innerWidth), false);
     await screenshot(page, `05-renovated-home-${width}`);
   }
   await context.close();

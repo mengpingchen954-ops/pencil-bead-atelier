@@ -1308,12 +1308,8 @@ img {
 [data-clean-room] { touch-action: none; }
 .clean-tool { display: none; position: absolute; pointer-events: none; z-index: 8; transform: translate(-50%, -50%) rotate(-15deg); width: 35px; height: 27px; border: 2px solid #98a989; border-radius: 8px; background: #e7efd4; color: #ad945e; text-align: center; box-shadow: 0 2px 5px #53443133; }
 .is-cleaning .clean-tool { display: block; }
-.live-shop { border: 0; box-shadow: none; }
-.live-shop .shop-room { border-radius: 95px 95px 5px 5px; }
-.home-room .room-caption { top: 24px; left: 40px; }
 .room-reveal { animation: room-warmth .8s ease-out; }
 @keyframes room-warmth { from { filter: brightness(1.14); } to { filter: brightness(1); } }
-.live-shop .floating-button { z-index: 6; }
 .renovation-progress { margin: 0 0 14px; }
 .renovation-progress > div:first-child { display: flex; align-items: center; justify-content: space-between; margin-bottom: 8px; font-size: 12px; gap: 8px; }
 .renovation-progress strong { font-weight: 500; }
