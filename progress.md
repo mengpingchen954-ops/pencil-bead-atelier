@@ -37,3 +37,9 @@ Original prompt: 根据 E:\Game\手串\铅笔2 美术制作手机游戏原型，
 - Added docs/剧情与视频接入.md with the implemented scope, proposed eight-chapter expansion, first-session beats, scene/video map, production recommendations and exact replacement steps.
 - Local verification: 12 unit tests, the complete 6-order browser loop, and dedicated story/video tests all passed. Dedicated tests used a real in-memory video and captions, plus blocked-playback and damaged-media cases; checked 360/390/1440 widths, no page/console errors or failed requests. Reviewed opening, journal and player screenshots. Physical-device Safari and future authored MP4/caption sync remain untested.
 - Published runtime commit c081119 via successful Pages run 41043631349. Repeated both the complete six-order integration test and the story/video suite against the public repository-subpath URL in fresh anonymous browser contexts; all passed, zero console/page errors and failed requests. Source and documentation are in the existing game repository; no test videos were published.
+
+## 2×2 four-bead square matching
+- Added same-color 2×2 squares to the shared matching rule, alongside straight lines of three or more. Hint search, cascades and tools use that rule; new and shuffled boards avoid starting with pre-existing squares. Overlapping clears count each bead once.
+- Updated board instructions, introduction, help and README. No special-piece or power-up mechanic added.
+- Added corner/boundary, overlapping-match and square-only hint/move unit tests. Dedicated mobile browser test uses a deterministic normally generated board (seed 117), follows its square-only hinted swap through real touch input and checks settled board, inventory counts, one spent move and rendered piece types.
+- Local 15 unit tests, production build, square touch test and existing feel tests passed; no console errors. Reviewed square clear screenshot.

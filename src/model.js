@@ -19,6 +19,10 @@ export function matches(board) {
       const i = y * 8 + x,
         t = board[i];
       if (t < 0) continue;
+      if (x < 7 && y < 7 && board[i + 1] === t &&
+          board[i + 8] === t && board[i + 9] === t) {
+        for (const index of [i, i + 1, i + 8, i + 9]) hit.add(index);
+      }
       if (x < 6 && board[i + 1] === t && board[i + 2] === t) {
         for (let k = x; k < 8 && board[y * 8 + k] === t; k++)
           hit.add(y * 8 + k);
@@ -62,7 +66,9 @@ export function createBoard(seed = 1) {
         t = Math.floor(random() * 6);
       } while (
         (i % 8 >= 2 && board[i - 1] === t && board[i - 2] === t) ||
-        (i >= 16 && board[i - 8] === t && board[i - 16] === t)
+        (i >= 16 && board[i - 8] === t && board[i - 16] === t) ||
+        (i >= 8 && i % 8 >= 1 && board[i - 1] === t &&
+          board[i - 8] === t && board[i - 9] === t)
       );
       board.push(t);
     }

@@ -17,6 +17,43 @@ import {
   total,
 } from "../src/model.js";
 
+test("2×2 squares clear four beads, including board corners, without row wrapping", () => {
+  for (const corner of [0, 6, 48, 54]) {
+    const board = Array(64).fill(-1);
+    const square = [corner, corner + 1, corner + 8, corner + 9];
+    square.forEach((i) => board[i] = 5);
+    assert.deepEqual(matches(board).sort((a, b) => a - b), square);
+    board[corner] = 4;
+    assert.deepEqual(matches(board), []);
+  }
+  const wrapped = Array(64).fill(-1);
+  [7, 8, 15, 16].forEach((i) => wrapped[i] = 5);
+  assert.deepEqual(matches(wrapped), []);
+});
+
+test("overlapping squares and lines count each bead once", () => {
+  const board = Array(64).fill(-1);
+  [0, 1, 2, 8, 9, 10].forEach((i) => board[i] = 5);
+  assert.deepEqual(matches(board).sort((a, b) => a - b), [0, 1, 2, 8, 9, 10]);
+});
+
+test("square-only move is offered by hints, spends one move and settles all cascades", () => {
+  const board = Array.from({ length: 64 }, (_, i) => (i % 8 + Math.floor(i / 8)) % 5);
+  [7, 14, 15].forEach((i) => board[i] = 5);
+  board[6] = 4;
+  board[5] = 5;
+  assert.deepEqual(matches(board), []);
+  assert.deepEqual(findMove(board), [5, 6]);
+  const before = { ...newSession(23), board }, result = move(before, 5, 6);
+  assert.equal(result.valid, true);
+  assert.equal(result.session.moves, 15);
+  assert.deepEqual(result.frames[0].hit.sort((a, b) => a - b), [6, 7, 14, 15]);
+  assert.equal(result.frames[0].hit.length, 4);
+  assert.ok(result.session.collected[5] >= 4);
+  assert.deepEqual(matches(result.session.board), []);
+  assert.deepEqual(before.board, board);
+});
+
 test("100 seeded boards start stable with a legal move and settle after swaps", () => {
   for (let seed = 1; seed <= 100; seed++) {
     const board = createBoard(seed);

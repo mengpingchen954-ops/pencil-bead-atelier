@@ -303,7 +303,7 @@ function craftView() {
 function matchView() {
   if (!session) return "";
   const amount = Math.min(total(session.collected), session.target);
-  return `<section class="match-page"><div class="match-heading">${tag("COLLECT A LITTLE LIGHT")}<div><h1>第 ${session.level} 关 · 珠材花园</h1>${ibtn("pause", "pause", "暂停游戏")}</div><p>${tool ? (tool === "hammer" ? "点选一颗珠子，使用小木槌" : "点选一颗珠子，收集整行整列") : "交换相邻珠子，连成三个即可收集"}</p></div><div class="match-stats"><div class="moves"><b>${session.moves}</b><span>剩余步数</span></div><div class="goal"><div><span>${icon("bag")} 收集珠材</span><b>${amount}<small> / ${session.target}</small></b></div><div class="progress-track"><i style="width:${(amount / session.target) * 100}%"></i></div></div></div><div class="board-frame ${busy ? "resolving" : ""}"><div class="scene-anchor board-scene" tabindex="0" role="application" aria-label="8行8列三消棋盘，方向键移动光标，空格选珠后移动到相邻格并按空格交换"></div></div><div class="collected-row">${BEADS.map((b, i) => `<span>${bead(i)}<small>${session.collected[i]}</small></span>`).join("")}</div><div class="match-tools">${[
+  return `<section class="match-page"><div class="match-heading">${tag("COLLECT A LITTLE LIGHT")}<div><h1>第 ${session.level} 关 · 珠材花园</h1>${ibtn("pause", "pause", "暂停游戏")}</div><p>${tool ? (tool === "hammer" ? "点选一颗珠子，使用小木槌" : "点选一颗珠子，收集整行整列") : "同色直线三颗，或 2×2 四颗方块即可收集"}</p></div><div class="match-stats"><div class="moves"><b>${session.moves}</b><span>剩余步数</span></div><div class="goal"><div><span>${icon("bag")} 收集珠材</span><b>${amount}<small> / ${session.target}</small></b></div><div class="progress-track"><i style="width:${(amount / session.target) * 100}%"></i></div></div></div><div class="board-frame ${busy ? "resolving" : ""}"><div class="scene-anchor board-scene" tabindex="0" role="application" aria-label="8行8列三消棋盘，方向键移动光标，空格选珠后移动到相邻格并按空格交换"></div></div><div class="collected-row">${BEADS.map((b, i) => `<span>${bead(i)}<small>${session.collected[i]}</small></span>`).join("")}</div><div class="match-tools">${[
     ["hammer", "小木槌", "hammer"],
     ["bloom", "花开十字", "flower"],
     ["shuffle", "重新排珠", "shuffle"],
@@ -429,7 +429,7 @@ function renderModal() {
   if (modal.type === "intro")
     html = modalShell(
       "去珠材花园走走",
-      `<div class="intro-beads">${BEADS.map((_, i) => bead(i)).join("")}</div><p class="modal-copy">交换相邻的珠子，连成三个或更多。<br>收集 ${targetForLevel(save.level)} 颗，即可带回一袋手作珠材。</p><div class="reward-strip">${icon("bag")} 六色珠材包 <span>${icon("energy")} 消耗 1 体力</span></div><p class="muted centered">${journey().goal}</p>`,
+      `<div class="intro-beads">${BEADS.map((_, i) => bead(i)).join("")}</div><p class="modal-copy">交换相邻珠子：同色直线三颗起消，<br>2×2 四颗同色方块也能消除。<br>收集 ${targetForLevel(save.level)} 颗，即可带回一袋手作珠材。</p><div class="reward-strip">${icon("bag")} 六色珠材包 <span>${icon("energy")} 消耗 1 体力</span></div><p class="muted centered">${journey().goal}</p>`,
       btn("开始采珠", "match-start"),
     );
   if (modal.type === "inventory")
@@ -494,7 +494,7 @@ function renderModal() {
   if (modal.type === "help")
     html = modalShell(
       "把日子，慢慢串成光",
-      `<ol class="help-list"><li><b>采珠</b><p>交换相邻珠子，三颗同色相连就能收集。工具不耗步数，提示可免费使用。</p></li><li><b>接单与手作</b><p>点珠材依次串入 12 个位置；点选已有珠子后可替换，拖动可换位。满足配色和吊坠要求即可交付。</p></li><li><b>小店与故事</b><p>交付推进主线，升级家具开启祖孙支线。手账可回看已解锁剧情和收集的记录。稍后阅读会保留未读状态；视频可以切换文字版。</p></li></ol>`,
+      `<ol class="help-list"><li><b>采珠</b><p>交换相邻珠子，同色直线三颗起消，2×2 四颗方块也能消除。工具不耗步数，提示可免费使用。</p></li><li><b>接单与手作</b><p>点珠材依次串入 12 个位置；点选已有珠子后可替换，拖动可换位。满足配色和吊坠要求即可交付。</p></li><li><b>小店与故事</b><p>交付推进主线，升级家具开启祖孙支线。手账可回看已解锁剧情和收集的记录。稍后阅读会保留未读状态；视频可以切换文字版。</p></li></ol>`,
       btn("知道了，开始吧", "close"),
     );
   if (modal.type === "reset")
@@ -685,7 +685,7 @@ function updateMatchHUD(collected = session.collected, moves = session.moves) {
       ? tool === "hammer"
         ? "点选一颗珠子，使用小木槌"
         : "点选一颗珠子，收集整行整列"
-      : "交换相邻珠子，连成三个即可收集";
+      : "同色直线三颗，或 2×2 四颗方块即可收集";
 }
 function matchFeedback(frame, chain) {
   const effects = $("#match-effects"),
