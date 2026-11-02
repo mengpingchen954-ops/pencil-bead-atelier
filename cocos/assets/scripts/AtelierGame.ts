@@ -59,6 +59,9 @@ export class AtelierGame extends Component {
   private memoryId = 'grandma';
   private memoryIndex = -1;
   private albumRepeat = false;
+  private albumChapter = -1;
+  private albumSearch = '';
+  private albumQuery = '';
   private media: any = {};
   private video: VideoPlayer | null = null;
   private videoSubtitle: Label | null = null;
@@ -148,6 +151,7 @@ export class AtelierGame extends Component {
   }
 
   onDestroy() {
+    this.releaseInputs(this.node);
     input.off(Input.EventType.KEY_DOWN, this.onKey, this);
     game.off(Game.EVENT_HIDE, this.onHide, this);
     game.off(Game.EVENT_SHOW, this.onShow, this);
@@ -168,6 +172,7 @@ export class AtelierGame extends Component {
       delivery: rules.pendingDelivery(this.save),
       dialogue: this.dialogueState,
       incomingOrder: this.screen==='orderArrival'?{...this.currentOrder(),guide:this.orderGuide,repeatNumber:this.repeatOrder?this.save.repeatOrders+1:null,stock:this.save.inventory,deficits:this.orderMaterialDeficits(),materialNote:this.materialNeed()}:null,
+      album: this.screen==='album'?this.albumView():null,
       memory: this.screen==='memories'?this.memoryView():null,
       packing: this.screen==='packing'?{orderId:this.currentOrder().id,beads:this.save.draft,charm:this.save.charm,gift:this.currentOrder().id==='sea'&&!this.repeatOrder?this.save.seaHeart.gift:null}:null,
       storyRoute: this.screen==='storyMap'?storyRoute(this.save):null,
@@ -198,7 +203,12 @@ export class AtelierGame extends Component {
     const t = n.addComponent(UITransform); t.setAnchorPoint(0, 1); t.setContentSize(720, 1280);
     return n;
   }
+  private releaseInputs(parent: Node) {
+    // Creator 3.8.2 leaves the web EditBox resize listener registered after disposal.
+    parent.getComponentsInChildren(EditBox).forEach(edit=>{const impl=(edit as any)._impl;if(impl)view.targetOff(impl);});
+  }
   private clear(parent: Node) {
+    this.releaseInputs(parent);
     parent.children.slice().forEach(n => { n.active=false; n.removeFromParent(); n.destroy(); });
     if(parent===this.page||parent===this.overlay)this.accessibility?.clear(parent===this.overlay);
   }
@@ -315,12 +325,12 @@ export class AtelierGame extends Component {
     this.boardNodes = []; this.slotNodes = [];
     this.rect('Paper', 0, 0, 720, 1280, PAPER);
     for(let y=0;y<1280;y+=720*112/680)this.image('pencil-paper',0,y,720,720*112/680);
-    if(!['match','memories','storyMap','craft','contestCraft','orderArrival'].includes(this.screen))this.image('pencil-frame',0,0,720,1280);
+    if(!['match','memories','storyMap','craft','contestCraft','orderArrival','album'].includes(this.screen))this.image('pencil-frame',0,0,720,1280);
     // Subtle stationary paper grain, generated once per page instead of every frame.
     const grain = this.box('Paper fibres', 0, 0, 720, 1280).addComponent(Graphics);
     grain.strokeColor = color('#b6a17b14'); grain.lineWidth = 1;
     for (let i=0;i<180;i++) { const x=(i*173)%720,y=(i*97)%1280; grain.moveTo(x,-y); grain.lineTo(x+3,-y-1); } grain.stroke();
-    if (!['cover','delivery','dialogue','memories','packing','storyMap','craft','contestCraft','orderArrival'].includes(this.screen)) this.chrome();
+    if (!['cover','delivery','dialogue','memories','packing','storyMap','craft','contestCraft','orderArrival','album'].includes(this.screen)) this.chrome();
     switch (this.screen) {
       case 'cover': this.cover(); break;
       case 'home': this.home(); break;
@@ -1283,22 +1293,80 @@ export class AtelierGame extends Component {
       this.button('看看我们的新角落',344,1180,294,56,()=>this.closeModal(),stage,true);
     };show();
   }
+  private albumView() {
+    const collection=this.albumRepeat?this.save.repeatCollection:this.save.collection;
+    const series=(this.albumRepeat?RETURN_ORDERS:ORDERS).filter((_,i)=>this.albumRepeat||this.albumChapter<0||Math.floor(i/2)===this.albumChapter);
+    const works=series.map(o=>({...o,work:collection.find((item:any)=>item.id===o.id)||null}));
+    const collected=works.filter(o=>o.work).length,query=this.albumQuery.toLocaleLowerCase();
+    return {series:this.albumRepeat?'回头客 · 近六单':this.albumChapter<0?'全部剧情':['第一章','第二章','第三章'][this.albumChapter],collected,total:works.length,percent:Math.round(collected/works.length*100),query:this.albumQuery,
+      items:works.filter(o=>!query||[o.name,o.customer,BEADS[o.main].name,BEADS[o.accent].name,CHARMS[o.charm]].join(' ').toLocaleLowerCase().includes(query))};
+  }
   private album() {
-    const repeat=this.albumRepeat&&this.save.repeatCollection.length>0,collection=repeat?this.save.repeatCollection:this.save.collection;
-    this.title('EVERY BRACELET TELLS A STORY','认真做过的，都在这里');
-    this.text(repeat?'回头客最近六份作品':'剧情作品 '+this.save.collection.length+'/6',38,215,350,46,21,MUTED);
-    if(this.save.repeatCollection.length)this.button(repeat?'查看剧情作品':'查看回头客作品',406,215,276,46,()=>{this.albumRepeat=!repeat;this.render();});
-    if(!collection.length){this.image('delivery-album',80,360,560,360);this.text('完成第一份委托，\n把我们的第一束光留在这里。',100,780,520,120,29,MUTED,this.page,true);return;}
-    collection.forEach((item:any,i:number)=>{
-      const title=(repeat?RETURN_ORDERS:ORDERS).find(o=>o.id===item.id)!.name;
-      const x=38+(i%2)*332,y=290+Math.floor(i/2)*291;
-      const n=this.rect('Collection '+item.id,x,y,312,271,'#fffaf0',this.page,16,'#dfd1b6');
-      this.bracelet(item.beads,156,114,82,n);
-      this.text(title,12,215,288,40,24,INK,n,true);
-      n.on(Node.EventType.TOUCH_END,()=>this.collectionPreview(title,item.beads,item.charm));
-      this.accessibleButton('欣赏'+title,()=>this.collectionPreview(title,item.beads,item.charm));
+    const view=this.albumView();
+    this.image('pencil-album-frame',0,-5,720,1290);
+    this.text('订单收藏',220,31,280,32,23,INK,this.page,true);
+    this.button('‹',43,75,48,48,()=>this.navigate('home'));
+    const field=this.rect('Collection search',105,75,252,49,'#fffaf2',this.page,24,'#b6977e'),visible=field.active;
+    // Assign our labels before activation so EditBox does not create default labels.
+    field.active=false;const edit=field.addComponent(EditBox);
+    edit.textLabel=this.text('',14,2,224,45,21,INK,field);
+    edit.placeholderLabel=this.text('名称 / 顾客',14,2,224,45,20,MUTED,field);
+    edit.inputMode=EditBox.InputMode.SINGLE_LINE;edit.maxLength=32;edit.placeholder='名称 / 顾客';edit.string=this.albumSearch;field.active=visible;
+    const search=()=>{this.albumQuery=this.albumSearch.trim();this.render();};
+    field.on(EditBox.EventType.TEXT_CHANGED,()=>{this.albumSearch=edit.string;});
+    field.on(EditBox.EventType.EDITING_RETURN,search);
+    this.accessibility?.search?.(this.albumSearch,value=>{this.albumSearch=value.slice(0,32);edit.string=this.albumSearch;},search);
+    this.button('系列筛选 ▾',370,75,147,49,()=>this.albumFilter());
+    this.button('搜索',529,75,95,49,search,this.page,true);
+    this.text('系列完成进度',146,142,360,37,28,INK);
+    this.text(view.percent+'%',512,142,78,37,28,INK,this.page,true);
+    this.rect('Series progress track',146,187,428,18,'#ddceb8',this.page,9,'#b79674');
+    if(view.collected)this.rect('Series collected progress',149,190,422*view.collected/view.total,12,'#8fa17b',this.page,6);
+    this.text(view.series+' · '+view.collected+'/'+view.total+(view.query?' · 找到 '+view.items.length+' 件':''),92,211,540,29,21,MUTED,this.page,true);
+    if(!view.items.length){
+      this.text('没有找到这份心意',100,450,520,60,32,INK,this.page,true);
+      this.text('试试作品名称、顾客或珠材颜色。',100,530,520,72,25,MUTED,this.page,true);
+      this.button('清空搜索',220,635,280,60,()=>{this.albumSearch='';this.albumQuery='';this.render();},this.page,true);
+    }
+    view.items.forEach((o,i)=>{
+      const x=88+(i%2)*286,y=248+Math.floor(i/2)*246,n=this.box('Collection '+o.id,x,y,258,238);
+      this.image('pencil-album-card',0,0,258,238,n);
+      if(o.work){
+        this.bracelet(o.work.beads,129,98,74,n);
+        this.image('charm-'+o.work.charm,115,160,28,28,n);
+        if(o.work.travelCharm)this.image('charm-'+o.work.travelCharm,180,142,23,23,n);
+        this.image('pencil-album-flower',207,0,39,39,n);
+      }else{
+        for(let j=0;j<12;j++){const a=j*Math.PI/6-Math.PI/2;this.ellipse('Uncollected bead',129+Math.cos(a)*68,96+Math.sin(a)*68,13,13,'#dfcfb8',n);}
+        const lock=this.box('Collection lock',109,68,40,46,n).addComponent(Graphics);lock.lineWidth=4;lock.strokeColor=color('#baa68c');lock.ellipse(20,-13,10,12);lock.stroke();
+        this.rect('Lock body',109,83,40,30,'#baa68c',n,6);this.ellipse('Keyhole',129,96,3,5,PAPER,n);
+        this.text('未收集',69,117,120,37,27,'#a68b6d',n,true);
+      }
+      this.text(o.name,13,185,232,30,23,INK,n,true);
+      this.text(o.work?(this.albumRepeat?'第 '+o.work.number+' 单 · ':'已收藏 · ')+o.customer:'完成委托后收藏',13,216,232,22,17,MUTED,n,true);
+      const open=()=>o.work?this.collectionPreview(o.name,o.work.beads,o.work.charm):this.info('尚未收藏 · '+o.name,'完成「'+o.name+'」委托后，这里会保存你亲手制作的珠子、吊坠与心意。\n\n按顺序完成顾客委托，即可逐件收藏。');
+      n.on(Node.EventType.TOUCH_END,open);this.accessibleButton((o.work?'欣赏':'未收集 · ')+o.name,open);
     });
-    this.button('我们的故事与回忆手账',90,1170,540,24,()=>this.navigate('journal'));
+    this.text('继续顾客委托 · '+this.currentOrder().name,84,995,467,32,22,INK,this.page,true);
+    this.image('pencil-album-grandma',567,997,142,174);
+    this.button('制作新手串',195,1040,331,69,()=>this.navigate('orderArrival'),this.page,true);
+    this.button('我们的故事与回忆手账',84,1121,270,36,()=>this.navigate('journal'));
+    if(this.save.repeatCollection.length)this.button(this.albumRepeat?'查看剧情作品':'查看回头客作品',370,1121,260,36,()=>{this.albumRepeat=!this.albumRepeat;this.albumChapter=-1;this.render();});
+    this.rect('Collection navigation',0,1173,720,107,'#faf4e8',this.page,0,'#c5aa85');
+    (['店铺','图鉴','任务','我的'] as const).forEach((label,i)=>{
+      const target=(['home','album','orders','journal'] as Page[])[i],n=this.box('Collection navigation '+target,i*180,1175,180,105);
+      if(target==='album')this.rect('Collection active tab',6,1,168,102,'#e2e8d7',n,10);
+      this.image('pencil-album-nav-'+['shop','works','orders','journal'][i],41,2,98,70,n);
+      this.text(label,0,72,180,32,25,INK,n,true);
+      n.on(Node.EventType.TOUCH_END,()=>this.navigate(target));this.accessibleButton(label,()=>this.navigate(target));
+    });
+  }
+  private albumFilter() {
+    this.dialog('album-filter','选择收藏系列');
+    ['全部剧情','第一章','第二章','第三章','回头客 · 近六单'].forEach((name,i)=>{
+      this.button(name,130,356+i*100,460,65,()=>{this.albumRepeat=i===4;this.albumChapter=i>0&&i<4?i-1:-1;this.closeModal();this.render();},this.overlay,true);
+    });
+    this.text('按该系列的实际交付作品计算进度',100,885,520,65,22,MUTED,this.overlay,true);
   }
   private collectionPreview(title:string,beads:number[],charm:string) {
     this.dialog('collection',title);this.bracelet(beads,360,560,198,this.overlay);this.image('charm-'+charm,338,752,44,44,this.overlay);this.text(CHARMS[charm]+'吊坠 · 阿禾手作',130,817,460,62,28,SAGE,this.overlay,true);

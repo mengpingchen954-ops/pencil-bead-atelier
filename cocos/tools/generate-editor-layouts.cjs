@@ -42,6 +42,8 @@ for(const op of ['moveTo','lineTo','bezierCurveTo','roundRect','rect','ellipse',
 class Label {}
 Label.Overflow={SHRINK:2};Label.HorizontalAlign={LEFT:0,CENTER:1};Label.VerticalAlign={TOP:0,CENTER:1};
 class Sprite {}
+class EditBox {}
+EditBox.InputMode={ANY:0,SINGLE_LINE:6};EditBox.EventType={TEXT_CHANGED:'text-changed',EDITING_RETURN:'editing-return'};
 Sprite.SizeMode={CUSTOM:0};
 class Node {
   constructor(name){this.name=name;this.children=[];this.components=[];this.position=new Vec3();this.scale=new Vec3(1,1,1);this.rotation={x:0,y:0,z:0,w:1};this.active=true;}
@@ -51,13 +53,14 @@ class Node {
   setRotation(r){this.rotation={...r};}
   addComponent(Type){const c=new Type();c.node=this;this.components.push(c);return c;}
   getComponent(Type){return this.components.find(c=>c instanceof Type)||null;}
+  getComponentsInChildren(Type){return [...this.components.filter(c=>c instanceof Type),...this.children.flatMap(n=>n.getComponentsInChildren(Type))];}
   on(event,fn){(this.events ||= {})[event]=fn;}
   setSiblingIndex(){}
   removeFromParent(){this.parent.children=this.parent.children.filter(n=>n!==this);this._parent=null;}destroy(){}
 }
 Node.EventType={TOUCH_END:'end',TOUCH_START:'start',TOUCH_MOVE:'move',TOUCH_CANCEL:'cancel'};
 const decorator=(...args)=>args.length===1&&typeof args[0]==='function'?args[0]:()=>{};
-const cc={_decorator:{ccclass:()=>x=>x,property:decorator,executeInEditMode:x=>x},Component,Node,UITransform,Graphics,Color,Label,Sprite,Vec3,Enum:x=>x,Layers:{Enum:{UI_2D:1<<25}},SpriteFrame:class{},AudioSource:class{},BlockInputEvents:class{},Tween:{stopAllByTarget(){}}};
+const cc={_decorator:{ccclass:()=>x=>x,property:decorator,executeInEditMode:x=>x},Component,Node,UITransform,Graphics,Color,Label,Sprite,EditBox,Vec3,Enum:x=>x,Layers:{Enum:{UI_2D:1<<25}},SpriteFrame:class{},AudioSource:class{},BlockInputEvents:class{},Tween:{stopAllByTarget(){}}};
 const cache={};
 function load(file){
   if(file==='cc')return cc;if(file==='cc/env')return {EDITOR:false};

@@ -21,7 +21,7 @@
 
 本版使用用户提供的 `E:/Game/手串/铅笔2` 参考：人物与柜台的纵深插画、略俯视的前宽后窄关系、奶油纸纹、金色花边，以及六色彩铅珠材与三种吊坠。手作台为前宽后窄的透视托盘，珠子、空槽、接触阴影、拖动落点和投珠动画独立运行；装修房间改为斜俯视，墙、地板、窗户和家具仍随真实经营进度变化。
 
-已选取并整理 48 张小尺寸纹理，原始参考图不复制进发布包。`assets/resources/art/pencil-sources.json` 记录来源、裁剪坐标与处理方式。用 Pillow 依次运行以下命令重建素材；工具不修改参考原图，界面中的数值、委托、对白、按钮与棋盘均由游戏实时绘制。
+已选取并整理 56 张小尺寸纹理，原始参考图不复制进发布包。`assets/resources/art/pencil-sources.json` 记录来源、裁剪坐标与处理方式。用 Pillow 依次运行以下命令重建素材；工具不修改参考原图，界面中的数值、委托、对白、按钮与棋盘均由游戏实时绘制。
 
 ```sh
 python tools/prepare-pencil-art.py E:/Game/手串/铅笔2
@@ -31,6 +31,7 @@ python tools/prepare-memory-art.py E:/Game/手串/铅笔2/800c73a1bfd42b4f4fbe8f
 python tools/prepare-packing-art.py E:/Game/手串/铅笔2/3119b53bc0460f72a8cc5df8de905e28.png
 python tools/prepare-story-route-art.py E:/Game/手串/铅笔2/ab04983f8014ba7f6c380cb3a50c33ee.png
 python tools/prepare-commission-art.py E:/Game/手串/铅笔2/be9484cf9b7a02516861e64694bfe336.png
+python tools/prepare-album-art.py E:/Game/手串/铅笔2/2ac32c5a5077c1547f9e4df56786e677.png
 python tools/prepare-incoming-art.py E:/Game/手串/铅笔2/8836117846d16a995a9fffa00b7d68ce.png
 python tools/prepare-pause-art.py E:/Game/手串/铅笔2/c9cf0c4d00bb438b228f87878ffb1093.png
 ```
@@ -162,3 +163,9 @@ Page「暂停游戏」可编辑面板、字号、位置和按钮，三个开关�
 首页「按单制作」、当前委托卡和委托列表进入 Page「新订单」：奶奶提示、珠宝柜与花边、发光订单卡、阿禾构思插画、实时主辅珠材需求 / 库存及吊坠。点击订单卡或「开始制作」进入既有委托工坊；材料不足时提供「去采珠」，仅正式开始采珠才扣体力。阿禾插画不冒充顾客，订单名称、顾客、酬谢、回头客编号随存档更新。
 
 「跳过引导」收起奶奶和指引手势，保留订单及制作按钮；重新打开订单会显示引导。返回小店、预览订单、进入制作均不扣珠材、金币或体力，不改变已保存的草稿 / 吊坠。底部「手作」及采珠领奖继续直接回工坊。源场景在生成前已校验并备份到本机 artifacts/Atelier-before-incoming.scene。
+
+## 订单收藏图鉴
+
+Page「图鉴」按新参考改为金色花边相册、双列六张收藏卡、系列完成进度、原生搜索框、系列筛选与四个插画导航。已交付作品显示存档中实际十二颗珠子、吊坠及小满的旅行挂件；未交付卡显示「未收集」和对应委托名，点击查看收藏条件。点击已收藏卡继续查看原作和已保存的祝福 / 包装。
+
+搜索支持作品名、顾客、珠材和吊坠，点击「搜索」或回车应用；无结果可清空。系列分为全部剧情、第一至第三章、回头客近六单；进度只按选定系列的实际收藏计算，搜索不会改变完成比例。回头客沿用原存档最近六份作品，不伪造更多收藏。「制作新手串」进入当前顾客的新订单页，继续现有委托。搜索 / 筛选仅为当前浏览状态，刷新重置，玩家进度与草稿保持不变。源场景更新前已与仓库校验并备份到本机 artifacts/Atelier-before-album.scene。

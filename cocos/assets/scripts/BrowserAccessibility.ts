@@ -30,6 +30,10 @@ export class BrowserAccessibility {
   input(value:string,onInput:(value:string)=>void) {
     if(!this.dialog)return;const n=document.createElement('textarea');n.setAttribute('aria-label','存档 JSON');n.value=value;n.addEventListener('input',()=>onInput(n.value));this.dialog.append(n);
   }
+  search(value:string,onInput:(value:string)=>void,onSubmit:()=>void) {
+    if(!this.page)return;const n=document.createElement('input');n.type='search';n.maxLength=32;n.setAttribute('aria-label','搜索收藏名称或顾客');n.value=value;
+    n.addEventListener('input',()=>onInput(n.value));n.addEventListener('keydown',e=>{if(e.key==='Enter'){e.preventDefault();onSubmit();}});this.page.append(n);
+  }
   range(name:string,value:number,onInput:(value:number)=>void) {
     if(!this.dialog)return;const n=document.createElement('input');n.type='range';n.min='0';n.max='100';n.step='1';n.value=String(value);n.setAttribute('aria-label',name);n.addEventListener('input',()=>onInput(Number(n.value)));this.dialog.append(n);return n;
   }

@@ -385,6 +385,46 @@
       "asset": "pencil-incoming-hand.png",
       "source": "8836117846d16a995a9fffa00b7d68ce.png",
       "method": "Tutorial pointing hand only; used over a real clickable order card and hidden when guidance is skipped"
+    },
+    {
+      "asset": "pencil-album-frame.jpg",
+      "source": "2ac32c5a5077c1547f9e4df56786e677.png",
+      "method": "Gold floral/lace album border and paper; removed sample search, progress, bracelets, locks, CTA, scrollbar and navigation"
+    },
+    {
+      "asset": "pencil-album-card.jpg",
+      "source": "2ac32c5a5077c1547f9e4df56786e677.png",
+      "method": "Blank framed collectible card, with sample bracelet silhouette, lock and uncollected text removed"
+    },
+    {
+      "asset": "pencil-album-flower.png",
+      "source": "2ac32c5a5077c1547f9e4df56786e677.png",
+      "method": "Decorative flower cutout without baked new-unlock label"
+    },
+    {
+      "asset": "pencil-album-grandma.png",
+      "source": "2ac32c5a5077c1547f9e4df56786e677.png",
+      "method": "Grandmother companion cutout; no example album state or navigation"
+    },
+    {
+      "asset": "pencil-album-nav-shop.jpg",
+      "source": "2ac32c5a5077c1547f9e4df56786e677.png",
+      "method": "Navigation illustration only; label and touch action drawn natively"
+    },
+    {
+      "asset": "pencil-album-nav-works.jpg",
+      "source": "2ac32c5a5077c1547f9e4df56786e677.png",
+      "method": "Navigation illustration only; label and touch action drawn natively"
+    },
+    {
+      "asset": "pencil-album-nav-orders.jpg",
+      "source": "2ac32c5a5077c1547f9e4df56786e677.png",
+      "method": "Navigation illustration only; label and touch action drawn natively"
+    },
+    {
+      "asset": "pencil-album-nav-journal.jpg",
+      "source": "2ac32c5a5077c1547f9e4df56786e677.png",
+      "method": "Navigation illustration only; label and touch action drawn natively"
     }
   ]
 }

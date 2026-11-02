@@ -247,6 +247,41 @@ test('an old completed save opens a real customer order, delivers it and keeps r
   assert.ok(actions.has('欣赏送给旅途中的朋友'));
 });
 
+test('collection catalog derives real works, locked cards, chapter progress and native search without changing saves', () => {
+  const game=new AtelierGame(),actions=new Map();let inputSearch;
+  game.node=new Node('AtelierGame');game.page=new Node('Page');game.overlay=new Node('Dialogs');game.notices=new Node('Notices');
+  game.persist=()=>{};game.scheduleOnce=()=>{};
+  game.accessibility={clear(modal){if(!modal)actions.clear();},text(){},search(value,input){inputSearch=input;},button(name,action,modal,enabled){if(enabled)actions.set(name,action);},showDialog(){actions.clear();},closeDialog(){actions.clear();},announce(){}};
+  const {ORDERS}=load(root+'/assets/scripts/content.ts');
+  game.save={...rules.freshSave(),started:true,reduced:true,inventory:Array(6).fill(100),draft:[0,...Array(11).fill(null)],charm:'heart'};
+  game.navigate('album');assert.equal(game.snapshot().album.percent,0);assert.equal(game.snapshot().album.items.length,6);assert.ok(actions.has('未收集 · 给奶奶的一朵花'));
+  actions.get('未收集 · 给奶奶的一朵花')();assert.equal(game.modal,'info');game.closeModal();game.render();
+  const custom=[...ORDERS[0].palette].reverse();game.save=rules.deliver({...game.save,draft:custom,charm:ORDERS[0].charm});
+  game.save.deliveryReceipt=null;game.navigate('album');const before=JSON.stringify(game.save);let view=game.snapshot().album;
+  assert.equal(view.percent,17);assert.equal(view.collected,1);assert.deepEqual(Array.from(view.items[0].work.beads),custom);
+  actions.get('欣赏给奶奶的一朵花')();assert.equal(game.modal,'collection');game.closeModal();game.render();
+  actions.get('系列筛选 ▾')();actions.get('第一章')();view=game.snapshot().album;assert.equal(view.total,2);assert.equal(view.percent,50);assert.equal(view.items.length,2);
+  inputSearch('小满');actions.get('搜索')();view=game.snapshot().album;assert.equal(view.items.length,1);assert.equal(view.items[0].id,'sea');assert.equal(view.percent,50,'Search must not pretend the series completion changed');
+  inputSearch('<没有这件作品>');actions.get('搜索')();assert.equal(game.snapshot().album.items.length,0);assert.ok(actions.has('清空搜索'));actions.get('清空搜索')();assert.equal(game.snapshot().album.items.length,2);
+  const nativeField=game.page.children.find(n=>n.name==='Collection search'),edit=nativeField.components.find(c=>c.maxLength===32);edit.string='珍珠';nativeField.events['text-changed']();nativeField.events['editing-return']();assert.equal(game.albumQuery,'珍珠');
+  assert.equal(JSON.stringify(game.save),before);actions.get('制作新手串')();assert.equal(game.screen,'orderArrival');assert.equal(JSON.stringify(game.save),before);
+  game.navigate('album');actions.get('任务')();assert.equal(game.screen,'orders');game.navigate('album');actions.get('我的')();assert.equal(game.screen,'journal');game.navigate('album');actions.get('店铺')();assert.equal(game.screen,'home');
+});
+
+test('returning collection uses recent actual works and retains exact bracelets and story collection', () => {
+  const game=new AtelierGame(),actions=new Map();
+  game.node=new Node('AtelierGame');game.page=new Node('Page');game.overlay=new Node('Dialogs');game.notices=new Node('Notices');
+  game.persist=()=>{};game.scheduleOnce=()=>{};
+  game.accessibility={clear(modal){if(!modal)actions.clear();},text(){},button(name,action,modal,enabled){if(enabled)actions.set(name,action);},showDialog(){actions.clear();},closeDialog(){actions.clear();},announce(){}};
+  const {ORDERS,RETURN_ORDERS}=load(root+'/assets/scripts/content.ts');
+  game.save={...rules.freshSave(),started:true,reduced:true,inventory:Array(6).fill(100)};
+  for(const order of ORDERS)game.save=rules.deliver({...game.save,draft:Array.from(order.palette),charm:order.charm});
+  for(let i=0;i<8;i++){const o=rules.currentOrder(game.save);game.save=rules.deliver({...game.save,draft:Array.from(o.palette).reverse(),charm:o.charm});}
+  game.save.deliveryReceipt=null;const before=JSON.stringify(game.save);game.navigate('album');actions.get('查看回头客作品')();let view=game.albumView();
+  assert.equal(view.series,'回头客 · 近六单');assert.equal(view.collected,6);assert.equal(view.percent,100);assert.equal(view.items.find(o=>o.id===RETURN_ORDERS[1].id).work.number,8);
+  assert.deepEqual(Array.from(view.items[0].work.beads),Array.from(RETURN_ORDERS[0].palette).reverse());actions.get('欣赏再送妈妈一朵花')();assert.equal(game.modal,'collection');game.closeModal();game.render();actions.get('查看剧情作品')();assert.equal(game.albumView().series,'全部剧情');assert.equal(JSON.stringify(game.save),before);
+});
+
 test('incoming commission shows live requirements and skips guidance without changing the saved order or draft', () => {
   const game=new AtelierGame(),actions=new Map();
   game.node=new Node('AtelierGame');game.page=new Node('Page');game.overlay=new Node('Dialogs');game.notices=new Node('Notices');
