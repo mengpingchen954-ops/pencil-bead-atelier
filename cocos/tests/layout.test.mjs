@@ -9,12 +9,12 @@ const { AtelierLayout } = load(root + '/assets/scripts/AtelierLayout.ts');
 const { layoutKey } = load(root + '/assets/scripts/layout-key.ts');
 const rules = load(root + '/assets/scripts/model.ts');
 
-test('entry scene contains twelve real editable layouts, visible home art, labels and UI camera', () => {
+test('entry scene contains thirteen real editable layouts, visible home art, labels and UI camera', () => {
   const scene = JSON.parse(fs.readFileSync(root + '/assets/scenes/Atelier.scene', 'utf8'));
   const layouts = scene.find(n => n._name === 'EditableLayouts');
   assert.ok(layouts);
   const pages = layouts._children.map(r => scene[r.__id__]);
-  assert.deepEqual(pages.map(n => n._name), ['home','cover','orders','craft','match','decor','album','journal','contest','contestCraft','delivery','dialogue']);
+  assert.deepEqual(pages.map(n => n._name), ['home','cover','orders','craft','match','decor','album','journal','contest','contestCraft','delivery','dialogue','memories']);
   assert.equal(pages.filter(n => n._active).length, 1);
   assert.ok(pages[0]._active);
   assert.ok(scene.some(n => n.__type__ === 'cc.Camera' && n._orthoHeight === 640));
@@ -270,4 +270,17 @@ test('dialogue templates change presentation while the speaker and dialogue stay
   assert.equal(label.string,'奶奶');assert.equal(label.node.position.x,98);
   game.storyLine=3;game.storyText();
   assert.equal([...game.layoutKeys].find(([node,k])=>k===key)?.[0].getComponent(Label).string,'阿禾');
+});
+
+test('character memory navigation, locked tiles, replay and crafting preserve actual commission and economy', () => {
+ const game=new AtelierGame(),actions=new Map();
+ game.node=new Node('AtelierGame');game.page=new Node('Page');game.overlay=new Node('Dialogs');game.notices=new Node('Notices');
+ game.persist=()=>{};game.scheduleOnce=()=>{};game.toast=()=>{};
+ game.accessibility={clear(){actions.clear();},text(){},button(name,action,modal,enabled){if(enabled)actions.set(name,action);},showDialog(){actions.clear();},closeDialog(){actions.clear();},announce(){}};
+ game.save={...rules.freshSave(),started:true,reduced:true,seenStories:['old-table'],draft:[0,...Array(11).fill(null)]};game.screen='journal';game.render();
+ const before=JSON.stringify(game.save);actions.get('人物故事 · 回忆')();assert.equal(game.screen,'memories');assert.equal(game.memoryView().id,'grandma');
+ actions.get('未相识的人物 3')();assert.equal(game.memoryView().id,'grandma');
+ actions.get('重温这段回忆')();assert.equal(game.modal,'story');actions.get('跳过')();assert.equal(game.screen,'memories');
+ actions.get('回忆阿禾')();assert.equal(game.memoryView().id,'ahe');actions.get('开始制作 · 当前委托')();assert.equal(game.screen,'craft');assert.equal(game.currentOrder().id,'daisy');
+ assert.equal(JSON.stringify(game.save),before);
 });

@@ -15,12 +15,13 @@ import { MUSIC_TRACKS } from './music-settings';
 import { BackgroundMusic } from './BackgroundMusic';
 import { COMPETITIONS, beginCompetition, submitCompetition, evaluateCompetition, competitionPalette } from './competition';
 import { SEA_QUESTIONS, SEA_BLESSINGS, SEA_PAPERS, SEA_RIBBONS, askSea, chooseSeaGift, seaVisitReady, finishSeaVisit, seaResponse } from './heart';
+import { characterMemories } from './memories';
 
 const { ccclass } = _decorator;
 const PAPER = '#f7f0df', INK = '#594d3f', SAGE = '#718366', MUTED = '#94846d', GOLD = '#c2a477';
 const BOARD_Y = 340, CELL = 78;
 const color = (hex: string) => new Color().fromHEX(hex);
-type Page = 'cover' | 'home' | 'orders' | 'craft' | 'match' | 'decor' | 'album' | 'journal' | 'contest' | 'contestCraft' | 'delivery' | 'dialogue';
+type Page = 'cover' | 'home' | 'orders' | 'craft' | 'match' | 'decor' | 'album' | 'journal' | 'contest' | 'contestCraft' | 'delivery' | 'dialogue' | 'memories';
 
 @ccclass('AtelierGame')
 export class AtelierGame extends Component {
@@ -53,6 +54,8 @@ export class AtelierGame extends Component {
   private dialogueState: { title:string; speaker:string; text:string } | null = null;
   private recordReturn: (()=>void) | null = null;
   private journalPage = 0;
+  private memoryId = 'grandma';
+  private memoryIndex = -1;
   private albumRepeat = false;
   private media: any = {};
   private video: VideoPlayer | null = null;
@@ -162,6 +165,7 @@ export class AtelierGame extends Component {
       save: this.save, session: this.session, selected: this.selected, slot: this.slot,
       delivery: rules.pendingDelivery(this.save),
       dialogue: this.dialogueState,
+      memory: this.screen==='memories'?this.memoryView():null,
       music:this.music?.snapshot(),
       story: this.modal === 'story' ? { id: STORIES[this.storyIndex].id, line: this.storyLine } : null };
   }
@@ -299,12 +303,12 @@ export class AtelierGame extends Component {
     this.boardNodes = []; this.slotNodes = [];
     this.rect('Paper', 0, 0, 720, 1280, PAPER);
     for(let y=0;y<1280;y+=720*112/680)this.image('pencil-paper',0,y,720,720*112/680);
-    if(this.screen!=='match')this.image('pencil-frame',0,0,720,1280);
+    if(!['match','memories'].includes(this.screen))this.image('pencil-frame',0,0,720,1280);
     // Subtle stationary paper grain, generated once per page instead of every frame.
     const grain = this.box('Paper fibres', 0, 0, 720, 1280).addComponent(Graphics);
     grain.strokeColor = color('#b6a17b14'); grain.lineWidth = 1;
     for (let i=0;i<180;i++) { const x=(i*173)%720,y=(i*97)%1280; grain.moveTo(x,-y); grain.lineTo(x+3,-y-1); } grain.stroke();
-    if (this.screen !== 'cover' && this.screen !== 'delivery' && this.screen !== 'dialogue') this.chrome();
+    if (!['cover','delivery','dialogue','memories'].includes(this.screen)) this.chrome();
     switch (this.screen) {
       case 'cover': this.cover(); break;
       case 'home': this.home(); break;
@@ -318,6 +322,7 @@ export class AtelierGame extends Component {
       case 'contestCraft': this.craft(); break;
       case 'delivery': this.delivery(); break;
       case 'dialogue': this.storyText(); break;
+      case 'memories': this.memories(); break;
     }
     this.layoutKeys.forEach((key,node) => {
       const source=this.layouts.get(key)?.getComponent(AtelierLayout), drawing=node.getComponent(Graphics);
@@ -1152,6 +1157,7 @@ export class AtelierGame extends Component {
   }
   private journal() {
     this.title('OUR STORY, IN OUR OWN WORDS','把自己的名字，写进明天',`${this.save.seenStories.length}/${STORIES.length} 段已读 · 重温不会重复发放奖励`);
+    this.button('人物故事 · 回忆',430,215,252,48,()=>{this.memoryIndex=-1;this.navigate('memories');});
     const journey=JOURNEY[Math.min(6,this.save.completed.length)];
     this.rect('Current chapter',38,283,644,164,'#e8ecde');
     this.text(journey.title,58,297,604,38,27,SAGE);
@@ -1166,6 +1172,76 @@ export class AtelierGame extends Component {
     });
     this.button(this.journalPage?'← 前五段':'后五段 →',180,1095,360,50,()=>{this.journalPage=this.journalPage?0:1;this.render();});
     this.button(this.save.seaHeart.visited?'旅行留影 · 小满的第一次独行':seaVisitReady(this.save)?'小满回来了 · 听听后来的故事':'海风订单 · 心意聊天与回访',38,1155,644,35,()=>this.seaRecord());
+  }
+  private memoryView() {
+    const people=characterMemories(this.save),person=people.find(p=>p.id===this.memoryId&&p.unlock)||people[0];
+    const index=this.memoryIndex<0?person.known.length-1:Math.min(this.memoryIndex,person.known.length-1);
+    return {id:person.id,name:person.name,stage:person.stage,steps:person.steps,index,entry:person.known[index],count:person.known.length,
+      related:person.orders.slice(-2).map(o=>({id:o.id,name:o.name,completed:!!o.work})),people:people.map(p=>({id:p.id,name:p.name,unlocked:p.unlock}))};
+  }
+  private memories() {
+    const people=characterMemories(this.save),view=this.memoryView(),person=people.find(p=>p.id===view.id)!;
+    this.memoryId=person.id;
+    this.rect('Memory paper',20,28,680,1224,'#fff8e9',this.page,6,'#c3a986');
+    this.image('pencil-memory-frame',0,0,720,1280);
+    this.text(person.name+'的故事',180,44,390,70,40,'#69452e',this.page,true);
+    this.button('返回',596,48,84,52,()=>this.navigate('journal'));
+    if(person.id==='grandma')this.image('pencil-memory-grandma',60,137,600,443);
+    else if(person.portrait){
+      this.ellipse('Portrait wash',360,350,232,211,'#e2e7d9');
+      this.image(person.portrait,192,139,336,420);
+    }else{
+      const work=person.orders.map(o=>o.work).find(Boolean);
+      this.ellipse('Memory wash',360,350,235,192,person.id==='xiaoman'?'#dce8e7':'#e9e1d2');
+      this.image('botanical',93,184,92,249);
+      if(work){this.bracelet(work.beads,360,341,143);this.image('charm-'+work.charm,338,468,44,44);}
+      else{this.image('icon-book',292,238,136,156);this.text('从一份委托，\n慢慢认识一个人。',169,415,382,96,28,SAGE,this.page,true);}
+      this.text(person.name+'的心意',160,530,400,44,26,SAGE,this.page,true);
+    }
+    this.text('关系阶段',76,585,300,43,30,'#69452e');
+    this.rect('Relationship track',90,639,550,23,'#d7c6ae',this.page,12,'#ae8b69');
+    this.rect('Known relationship',90,639,550*view.steps/4,23,'#cc8b86',this.page,12);
+    for(let i=1;i<4;i++)this.rect('Relationship division '+i,90+550*i/4,640,2,21,'#fff8e9',this.page,0);
+    this.image('icon-heart',67,622,48,54);
+    this.text(view.stage,380,670,260,32,25,'#69452e',this.page,true);
+    this.text('已知经历',76,704,270,43,30,'#69452e');
+    this.text((view.index+1)+' / '+view.count,400,708,100,37,20,MUTED,this.page,true);
+    const previous=this.button('上一段经历',506,704,62,43,()=>{this.memoryIndex=view.index-1;this.render();},this.page,false,view.index>0);
+    const next=this.button('下一段经历',580,704,62,43,()=>{this.memoryIndex=view.index+1;this.render();},this.page,false,view.index<view.count-1);
+    previous.children.find(n=>n.getComponent(Label))!.getComponent(Label)!.string='‹';
+    next.children.find(n=>n.getComponent(Label))!.getComponent(Label)!.string='›';
+    const entry=view.entry,card=this.rect('Known experience',74,756,572,128,'#fffaf0',this.page,10,'#b89a7c');
+    this.text(entry.title,16,8,380,30,21,SAGE,card);
+    this.text(entry.text,16,42,540,78,23,'#69452e',card);
+    if(entry.storyId){
+      const replay=()=>this.startStory(STORIES.findIndex(s=>s.id===entry.storyId));
+      this.text('点此重温',420,8,135,30,18,MUTED,card,true);
+      card.on(Node.EventType.TOUCH_END,replay);this.accessibleButton('重温这段回忆',replay);
+    }
+    this.text('相关订单',76,895,340,39,28,'#69452e');
+    const orders=person.orders.slice(-2);
+    if(!orders.length)this.text('完成更多委托，慢慢留下共同的故事。',80,942,560,54,22,MUTED,this.page,true);
+    orders.forEach((order,i)=>{
+      const x=76+i*292,go=()=>order.work?this.collectionPreview(order.name,order.work.beads,order.work.charm):this.navigate('craft');
+      const tile=this.rect('Related '+order.id,x,942,276,67,'#f3ead9',this.page,9,'#cfb89b');
+      if(order.work){this.bracelet(order.work.beads,36,31,23,tile);this.image('charm-'+order.work.charm,30,47,12,14,tile);}
+      else this.image('icon-orders',14,12,44,44,tile);
+      this.text(order.name,75,4,191,32,21,INK,tile);
+      this.text(order.work?'查看已交付作品':'正在等待 · 去制作',75,35,191,27,17,SAGE,tile);
+      tile.on(Node.EventType.TOUCH_END,go);this.accessibleButton((order.work?'查看相关作品 · ':'制作相关委托 · ')+order.name,go);
+    });
+    this.rect('People strip',68,1029,590,112,'#eee2cd',this.page,15);
+    people.forEach((p,i)=>{
+      const x=80+i*115,active=p.id===person.id;
+      const tile=this.rect('Person '+p.id,x,1040,104,90,active?SAGE:'#f8efdf',this.page,10,active?'#b8ba91':'#b79a78');
+      if(p.unlock&&p.portrait)this.image(p.portrait,24,6,56,59,tile);
+      else if(p.unlock)this.text(p.name,7,9,90,42,25,active?PAPER:SAGE,tile,true);
+      else{this.ellipse('Unknown person',52,27,15,17,'#aa9a85',tile);this.ellipse('Unknown shoulders',52,52,26,19,'#aa9a85',tile);this.text('锁',31,27,42,37,22,PAPER,tile,true);}
+      this.text(p.unlock?p.name:'待相识',5,65,94,22,17,active?PAPER:MUTED,tile,true);
+      const select=()=>{if(!p.unlock){this.toast('完成'+(p.id==='teacher'?'海风':'第一份')+'委托后，就能慢慢认识她。');return;}this.memoryId=p.id;this.memoryIndex=-1;this.render();};
+      tile.on(Node.EventType.TOUCH_END,select);this.accessibleButton(p.unlock?'回忆'+p.name:'未相识的人物 '+(i+1),select);
+    });
+    this.button('开始制作 · 当前委托',178,1165,364,70,()=>this.navigate('craft'),this.page,true);
   }
   private dialog(id: string,title: string) {
     this.stopVideo();this.clear(this.overlay);this.modal=id;this.dialogueState=null;this.recordReturn=null;
@@ -1278,6 +1354,9 @@ export class AtelierGame extends Component {
     icon.strokeColor=color('#795f46');icon.fillColor=color('#fff8e8');icon.lineWidth=2.5;
     for(const x of [0,18]){icon.moveTo(x,0);icon.lineTo(x+17,-15);icon.lineTo(x,-30);icon.close();icon.fill();icon.stroke();}
     this.button('跳过',635,95,76,44,skip,stage);
+    for(const [x,action] of [[548,()=>this.dialogueRecord(title,records,resume)],[635,skip]] as const){
+      this.box('Dialogue control touch area',x,42,84,102,stage).on(Node.EventType.TOUCH_END,(e:EventTouch)=>{e.propagationStopped=true;if(!this.busy){this.play();action();}});
+    }
     const top=choices?775:925;
     this.rect('Dialogue card shadow',38,top+7,648,1250-top,'#5e59486b',stage,13);
     this.rect('Dialogue card',34,top,652,1250-top,'#fff8ed',stage,12,'#967554');

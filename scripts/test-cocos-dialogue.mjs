@@ -28,12 +28,12 @@ try{
  await page.screenshot({path:'artifacts/dialogue/grandma.png'});
  for(const [width,height] of [[360,800],[390,844],[1440,900]]){await page.setViewportSize({width,height});await page.screenshot({path:`artifacts/dialogue/layout-${width}.png`});}
  await page.setViewportSize({width:540,height:960});
- await tap(586,117);s=await state();assert.equal(s.modal,'dialogue-record');await page.screenshot({path:'artifacts/dialogue/record.png'});
+ await tap(586,68);s=await state();assert.equal(s.modal,'dialogue-record');await page.screenshot({path:'artifacts/dialogue/record.png'});
  assert.equal(await page.getByText(STORIES[0].lines[5][1],{exact:true}).count(),0);
  await action('上一页');assert.equal(await page.getByText(STORIES[0].lines[2][1],{exact:true}).count(),1);
  await page.keyboard.press('Escape');s=await state();assert.equal(s.modal,'story');assert.equal(s.story.line,4);
  await tap(516,1208);s=await state();assert.equal(s.story.line,5);assert.equal(s.dialogue.speaker,'阿禾');await page.screenshot({path:'artifacts/dialogue/ahe.png'});
- await tap(673,117);s=await state();assert.equal(s.modal,'');assert.deepEqual(s.save.seenStories,['old-table']);assert.equal(s.save.coins,initial.coins);assert.deepEqual(s.save.inventory,initial.inventory);
+ await tap(673,68);s=await state();assert.equal(s.modal,'');assert.deepEqual(s.save.seenStories,['old-table']);assert.equal(s.save.coins,initial.coins);assert.deepEqual(s.save.inventory,initial.inventory);
  await page.reload({waitUntil:'networkidle'});await ready();assert.deepEqual((await state()).save.seenStories,['old-table']);
  // Every authored story, including offscreen speakers, uses the live dialogue stage.
  const unlocked={...initial,started:true,completed:ORDERS.map(o=>o.id),orderId:'promise',upgrades:{chair:1,desk:1,display:1},seenStories:[]};
