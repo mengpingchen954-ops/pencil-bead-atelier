@@ -30,6 +30,17 @@ test('Creator production bundle preserves collection iteration and complete game
   }
   const model=load([...definitions.keys()].find(n=>n.endsWith('/model.ts')));
   const content=load([...definitions.keys()].find(n=>n.endsWith('/content.ts')));
+  assert.equal(typeof model.activateSpecial,'function');
+  const staged=model.newSession(971,15,content.ORDERS[1]);
+  assert.equal(model.goalProgress(staged).length,4);assert.ok(staged.obstacles.some(Boolean));
+  staged.specials[27]='row';staged.specials[29]='column';
+  const blast=model.activateSpecial(staged,27);
+  assert.equal(blast.valid,true);assert.equal(blast.session.moves,staged.moves-1);
+  assert.ok(blast.frames[0].activated.length>=2);
+  assert.equal(blast.frames[0].hit.length,new Set(blast.frames[0].hit).size);
+  assert.equal(blast.session.specials.length,64);
+  assert.ok(model.goalProgress(blast.session).some(g=>g.current>0));
+  assert.equal(model.sessionRewards({...blast.session,status:'won'},model.freshSave()).length,6);
   const story=load([...definitions.keys()].find(n=>n.endsWith('/story.ts')));
   const normalized=model.normalizeSave(model.freshSave());
   assert.equal(normalized.completed.length,0);

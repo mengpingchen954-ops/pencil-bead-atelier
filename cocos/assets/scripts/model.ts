@@ -1,6 +1,8 @@
 // @ts-nocheck
 // Rules and narrative retained from the original game; engine-independent.
-import { ORDERS, RETURN_ORDERS, FURNITURE, STORIES, CLEAN_SPOTS, REPAIRS } from "./content.ts";
+import { BEADS, ORDERS, RETURN_ORDERS, FURNITURE, STORIES, CLEAN_SPOTS, REPAIRS } from "./content.ts";
+import { levelConfig } from "./levels.ts";
+export { levelConfig } from "./levels.ts";
 import { storyUnlocked } from "./story.ts";
 import { freshSeaHeart, normalizeSeaHeart } from "./heart.ts";
 import { freshCompetitions, normalizeCompetitions } from "./competition.ts";
@@ -52,10 +54,12 @@ export function adjacent(a, b) {
       (Math.floor(a / 8) === Math.floor(b / 8) && Math.abs(a - b) === 1))
   );
 }
-export function findMove(board) {
+export function findMove(board, specials = [], obstacles = []) {
   for (let i = 0; i < 64; i++)
     for (const j of [i + 1, i + 8]) {
-      if (!adjacent(i, j) || board[i] === board[j]) continue;
+      if (!adjacent(i, j)) continue;
+      if (specials[i] || specials[j]) return [i, j];
+      if (board[i] === board[j]) continue;
       const b = [...board];
       [b[i], b[j]] = [b[j], b[i]];
       if (matches(b).length) return [i, j];
@@ -82,13 +86,23 @@ export function createBoard(seed = 1) {
   }
   throw new Error("Unable to create a playable board");
 }
-export const targetForLevel = (level) => 60 + Math.min(level, 6) * 6;
-export function newSession(seed = 1, level = 1) {
+export const targetForLevel = (level) => levelConfig(level).target;
+export function newSession(seed = 1, level = 1, order = null) {
+  const config = levelConfig(level, order);
   return {
     board: createBoard(seed),
     seed,
-    moves: 16,
-    target: targetForLevel(level),
+    moves: config.moves,
+    target: config.target,
+    title: config.title,
+    tip: config.tip,
+    objectives: config.objectives,
+    specials: Array(64).fill(''),
+    obstacles: [...config.obstacles],
+    initialObstacles: [...config.obstacles],
+    cleared: { paper: 0, thread: 0 },
+    rewardOrder: order ? { id: order.id, customer: order.customer, main: order.main, accent: order.accent,
+      mainNeed: order.mainNeed, accentNeed: order.accentNeed, palette: [...(order.palette || [])] } : null,
     collected: [0, 0, 0, 0, 0, 0],
     score: 0,
     tools: { hammer: 2, shuffle: 2, bloom: 1 },
@@ -96,74 +110,155 @@ export function newSession(seed = 1, level = 1) {
     level,
   };
 }
-function resolve(board, first, seed) {
+export function goalProgress(session) {
+  const objectives = session.objectives || [{ kind: 'total', target: session.target }];
+  return objectives.map(goal => {
+    const target = goal.kind === 'total' ? session.target : goal.target;
+    const current = goal.kind === 'total' ? total(session.collected) : goal.kind === 'color'
+      ? session.collected[goal.type] : session.cleared?.[goal.kind] || 0;
+    const label = goal.kind === 'total' ? '采集珠材' : goal.kind === 'color'
+      ? BEADS[goal.type].short : goal.kind === 'paper' ? '打开纸袋' : '解开线结';
+    return { ...goal, target, current, label, done: current >= target };
+  });
+}
+function statusFor(session) {
+  return goalProgress(session).every(goal => goal.done) ? 'won' : session.moves <= 0 ? 'lost' : 'playing';
+}
+function specialArea(index, kind) {
+  const row = Math.floor(index / 8), column = index % 8;
+  return Array.from({ length: 64 }, (_, i) => i).filter(i => kind === 'row'
+    ? Math.floor(i / 8) === row : kind === 'column' ? i % 8 === column
+      : Math.abs(Math.floor(i / 8) - row) <= 1 && Math.abs(i % 8 - column) <= 1);
+}
+function specialCreations(board, naturalHit, specials, preferred = []) {
+  const candidates = [];
+  for (let i = 0; i < 64; i++) {
+    for (const step of [1, 8]) {
+      const limit = step === 1 ? 8 - i % 8 : 8 - Math.floor(i / 8);
+      if (limit < 4 || board[i] < 0) continue;
+      if (step === 1 ? i % 8 > 0 && board[i - 1] === board[i] : i >= 8 && board[i - 8] === board[i]) continue;
+      const run = [];
+      for (let k = 0; k < limit && board[i + k * step] === board[i]; k++) run.push(i + k * step);
+      if (run.length >= 4 && run.every(n => naturalHit.includes(n)))
+        candidates.push({ run, kind: run.length >= 5 ? 'burst' : step === 1 ? 'row' : 'column' });
+    }
+  }
+  // Crossed long lines form a single stronger special, rather than stacking survivors.
+  candidates.sort((a, b) => b.run.length - a.run.length);
+  const covered = new Set(), created = [];
+  for (const candidate of candidates) {
+    if (candidate.run.some(i => covered.has(i))) continue;
+    candidate.run.forEach(i => covered.add(i));
+    const index = [...preferred, candidate.run[Math.floor(candidate.run.length / 2)], ...candidate.run]
+      .find(i => candidate.run.includes(i) && !specials[i]);
+    if (index !== undefined) created.push({ index, kind: candidate.kind });
+  }
+  return created;
+}
+function reshape(board, specials, seed) {
+  // Refill a dead board without silently losing any earned specials or fixed obstacles.
+  const next = createBoard(seed);
+  return { board: next, specials: [...specials] };
+}
+function resolve(board, first, seed, initialSpecials = [], initialObstacles = [], preferred = [], create = true) {
   const random = rng(seed);
   const collected = [0, 0, 0, 0, 0, 0],
     frames = [];
-  let hit = first;
-  for (let chain = 0; hit.length && chain < 40; chain++) {
-    const before = [...board];
+  let specials = Array.from({ length: 64 }, (_, i) => initialSpecials[i] || '');
+  const obstacles = Array.from({ length: 64 }, (_, i) => initialObstacles[i] || '');
+  const cleared = { paper: 0, thread: 0 };
+  let naturalHit = first;
+  for (let chain = 0; naturalHit.length && chain < 40; chain++) {
+    const before = [...board], specialsBefore = [...specials], obstaclesBefore = [...obstacles];
+    const hitSet = new Set(naturalHit), activated = [], specialHit = new Set();
+    const queue = [...naturalHit];
+    for (let cursor = 0; cursor < queue.length; cursor++) {
+      const index = queue[cursor], kind = specials[index];
+      if (!kind || activated.some(item => item.index === index)) continue;
+      activated.push({ index, kind });
+      for (const i of specialArea(index, kind)) {
+        specialHit.add(i);
+        if (!hitSet.has(i)) { hitSet.add(i); queue.push(i); }
+      }
+    }
+    const created = (chain > 0 || create ? specialCreations(board, naturalHit, specials, chain === 0 ? preferred : []) : [])
+      .filter(item => !specialHit.has(item.index));
+    created.forEach(item => { hitSet.delete(item.index); specials[item.index] = item.kind; });
+    const hit = Array.from(hitSet), frameCleared = { paper: 0, thread: 0 };
+    for (let i = 0; i < 64; i++) {
+      const kind = obstacles[i];
+      if (kind && (hitSet.has(i) || kind === 'paper' && hit.some(j => adjacent(i, j)))) {
+        obstacles[i] = ''; cleared[kind]++; frameCleared[kind]++;
+      }
+    }
     for (const i of hit) {
       if (board[i] >= 0) collected[board[i]]++;
       board[i] = -1;
+      specials[i] = '';
     }
     const falls = [];
     for (let x = 0; x < 8; x++) {
       const col = [];
       for (let y = 7; y >= 0; y--)
         if (board[y * 8 + x] >= 0)
-          col.push({ type: board[y * 8 + x], from: y * 8 + x });
+          col.push({ type: board[y * 8 + x], from: y * 8 + x, special: specials[y * 8 + x] });
       const missing = 8 - col.length;
       for (let y = 7; y >= 0; y--) {
         const retained = col[7 - y];
         const type = retained?.type ?? Math.floor(random() * 6);
         board[y * 8 + x] = type;
+        specials[y * 8 + x] = retained?.special || '';
         falls.push({
           from: retained?.from ?? null,
           fromRow: retained ? Math.floor(retained.from / 8) : y - missing,
           to: y * 8 + x,
           type,
+          special: specials[y * 8 + x],
         });
       }
     }
-    frames.push({ before, hit: Array.from(hit), after: [...board], falls });
-    hit = matches(board);
+    frames.push({ before, hit, after: [...board], falls, specialsBefore, specialsAfter: [...specials],
+      obstaclesBefore, obstaclesAfter: [...obstacles], activated, created, cleared: frameCleared });
+    naturalHit = matches(board);
   }
-  if (matches(board).length) board = createBoard(seed + 7);
-  if (!findMove(board)) board = createBoard(seed + 17);
-  return { board, collected, frames };
+  let reshuffled = false;
+  if (matches(board).length || !findMove(board, specials)) {
+    const shuffled = reshape(board, specials, seed + 17); board = shuffled.board; specials = shuffled.specials; reshuffled = true;
+  }
+  return { board, specials, obstacles, cleared, collected, frames, reshuffled };
+}
+function finishMove(session, result, moves, tools = session.tools) {
+  const next = { ...session, board: result.board, specials: result.specials, obstacles: result.obstacles,
+    cleared: { paper: (session.cleared?.paper || 0) + result.cleared.paper,
+      thread: (session.cleared?.thread || 0) + result.cleared.thread },
+    moves, tools, collected: session.collected.map((v, i) => v + result.collected[i]),
+    score: session.score + total(result.collected) * 10 };
+  next.status = statusFor(next);
+  return { valid: true, frames: result.frames, reshuffled: result.reshuffled, session: next };
 }
 export function move(session, a, b) {
-  if (session.status !== "playing" || !adjacent(a, b))
+  if (session.status !== "playing" || session.moves <= 0 || !adjacent(a, b))
     return { valid: false, session };
   const board = [...session.board];
+  const specials = Array.from({ length: 64 }, (_, i) => session.specials?.[i] || '');
   [board[a], board[b]] = [board[b], board[a]];
+  [specials[a], specials[b]] = [specials[b], specials[a]];
   const hit = matches(board);
+  if (specials[a]) hit.push(a);
+  if (specials[b]) hit.push(b);
   if (!hit.length) return { valid: false, session };
-  const result = resolve(board, hit, session.seed + session.moves * 997);
-  const collected = session.collected.map((v, i) => v + result.collected[i]);
-  const moves = session.moves - 1;
-  return {
-    valid: true,
-    frames: result.frames,
-    session: {
-      ...session,
-      board: result.board,
-      moves,
-      collected,
-      score: session.score + total(result.collected) * 10,
-      status:
-        total(collected) >= session.target
-          ? "won"
-          : moves <= 0
-            ? "lost"
-            : "playing",
-    },
-  };
+  const result = resolve(board, Array.from(new Set(hit)), session.seed + session.moves * 997, specials, session.obstacles, [b, a]);
+  return finishMove(session, result, session.moves - 1);
+}
+export function activateSpecial(session, index) {
+  if (session.status !== 'playing' || session.moves <= 0 || !Number.isInteger(index) || index < 0 || index >= 64 || !session.specials?.[index])
+    return { valid: false, session };
+  const result = resolve([...session.board], [index], session.seed + session.moves * 997, session.specials, session.obstacles, [], false);
+  return finishMove(session, result, session.moves - 1);
 }
 export function useTool(session, tool, index = 0) {
   if (
-    session.status !== "playing" ||
+    session.status !== "playing" || session.moves <= 0 ||
     !session.tools[tool] ||
     !Number.isInteger(index) ||
     index < 0 ||
@@ -171,18 +266,18 @@ export function useTool(session, tool, index = 0) {
   )
     return { valid: false, session };
   const tools = { ...session.tools, [tool]: session.tools[tool] - 1 };
-  if (tool === "shuffle")
+  if (tool === "shuffle") {
+    const shuffled = reshape(session.board, session.specials || Array(64).fill(''), session.seed + session.score + session.tools.shuffle * 31);
     return {
       valid: true,
       session: {
         ...session,
         tools,
-        board: createBoard(
-          session.seed + session.score + session.tools.shuffle * 31,
-        ),
+        ...shuffled,
       },
       frames: [],
     };
+  }
   if (!["hammer", "bloom"].includes(tool)) return { valid: false, session };
   const hit =
     tool === "bloom"
@@ -195,20 +290,21 @@ export function useTool(session, tool, index = 0) {
     [...session.board],
     hit,
     session.seed + session.score + 22,
+    session.specials,
+    session.obstacles,
+    [],
+    false,
   );
-  const collected = session.collected.map((v, i) => v + result.collected[i]);
-  return {
-    valid: true,
-    frames: result.frames,
-    session: {
-      ...session,
-      tools,
-      board: result.board,
-      collected,
-      score: session.score + total(result.collected) * 10,
-      status: total(collected) >= session.target ? "won" : "playing",
-    },
-  };
+  return finishMove(session, result, session.moves, tools);
+}
+export function sessionRewards(session, save = null) {
+  if (session?.status !== 'won') return [0, 0, 0, 0, 0, 0];
+  const reward = [...session.collected];
+  const order = session.rewardOrder || (save ? currentOrder(save) : null);
+  if (!order) return reward;
+  const needed = Array(6).fill(0);
+  (order.palette || []).forEach(type => needed[type]++);
+  return reward.map((count, type) => count + Math.min(8, Math.max(0, needed[type] - (save?.inventory?.[type] || 0) - count)));
 }
 export function freshSave() {
   return {

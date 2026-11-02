@@ -58,9 +58,9 @@ test('real renderer honors edited transforms, typography and sprite while keepin
 
 test('moved board cells remain animation targets, and generated scene is not overwritten implicitly', () => {
   const game=new AtelierGame(),cell=new Node('Cell 0');cell.setPosition(60,-450);
-  game.layouts.set(layoutKey('match',48,440,72,72,new Map()),cell);
+  game.layouts.set(layoutKey('match',48,340,72,72,new Map()),cell);
   assert.deepEqual(game.boardPos(0),new Vec3(60,-450));
-  assert.deepEqual(game.boardPos(0,false),new Vec3(48,-440));
+  assert.deepEqual(game.boardPos(0,false),new Vec3(48,-340));
   const generator=fs.readFileSync(root+'/tools/generate-editor-layouts.cjs','utf8');
   assert.match(generator,/Layouts already exist/);
 });
@@ -185,4 +185,36 @@ test('an old completed save opens a real customer order, delivers it and keeps r
   game.navigate('album');actions.get('查看回头客作品')();
   assert.ok(actions.has('欣赏再送妈妈一朵花'));
   assert.ok(actions.has('欣赏送给旅途中的朋友'));
+});
+
+test('native goal HUD supports four objectives and claiming a win grants the displayed order supply exactly once', () => {
+  const game=new AtelierGame(),actions=new Map();
+  game.node=new Node('AtelierGame');game.page=new Node('Page');game.overlay=new Node('Dialogs');game.notices=new Node('Notices');
+  game.persist=()=>{};game.scheduleOnce=()=>{};game.toast=()=>{};
+  game.accessibility={clear(){},text(){},button(name,action){actions.set(name,action);},showDialog(){},closeDialog(){},announce(){}};
+  game.save={...rules.freshSave(),started:true,reduced:true,level:15};
+  game.session=rules.newSession(19,15,game.currentOrder());game.screen='match';game.render();
+  assert.equal(game.goalLabels.length,4);assert.equal(game.boardNodes.length,64);
+  assert.ok(game.obstacleNodes.filter(Boolean).length>0);
+  game.session.status='won';game.session.collected=[4,2,1,2,0,1];
+  const before=game.save.inventory.slice(),reward=rules.sessionRewards(game.session,game.save);
+  game.result();actions.get('收好珠材 · 回工坊')();
+  assert.equal(game.screen,'craft');assert.equal(game.save.level,16);
+  assert.deepEqual(game.save.inventory,before.map((n,i)=>n+reward[i]));
+  game.claim();assert.deepEqual(game.save.inventory,before.map((n,i)=>n+reward[i]));
+});
+
+test('reduced-motion renovation commits the purchase and opens grandmother response without locking controls', async () => {
+  const game=new AtelierGame(),actions=new Map();
+  game.node=new Node('AtelierGame');game.page=new Node('Page');game.overlay=new Node('Dialogs');game.notices=new Node('Notices');
+  game.persist=()=>{};game.scheduleOnce=()=>{};
+  game.accessibility={clear(){},text(){},button(name,action){actions.set(name,action);},showDialog(){},closeDialog(){},announce(){},busy(){}};
+  game.save={...rules.freshSave(),started:true,reduced:true,coins:1000};
+  game.textures.set('pencil-floor',{name:'pencil-floor'});
+  game.save.renovation.cleared=load(root+'/assets/scripts/content.ts').CLEAN_SPOTS.map(s=>s.id);
+  game.screen='decor';const next=rules.repairShop(game.save,'window');
+  await game.revealRenovation(next,'window');
+  assert.equal(game.modal,'renovation');assert.equal(game.busy,false);assert.equal(game.save.renovation.repairs.window,true);
+  assert.equal(game.save.coins,next.coins);assert.ok(actions.has('看看我们的新角落'));
+  actions.get('看看我们的新角落')();assert.equal(game.modal,'');
 });

@@ -1,5 +1,15 @@
 Original prompt: 根据 E:\Game\手串\铅笔2 美术制作手机游戏原型，Three.js 实现，浏览器预览测试并修复；优先 imagegen，美术不可用时继续用程序化几何、Canvas、SVG、CSS 与粒子完成统一视觉。
 
+## Cocos commission and match polish — 2026-11-02
+- User approved the proposed first polish milestone, retaining pencil art and commissioned crafting: 15 authored stages, directional/burst specials, paper/thread objectives, clearer order guidance, tiered feedback and staged renovation reveals.
+- Actual editable project is E:/Game/手串/手串cocos/zhuguangxiaodian; repository cocos/ is its intended source mirror. Backed up the entry scene before refreshing layouts; its pre-edit hash matched the checked-in scene (no intervening editor changes).
+- Implemented pure match rules and stage data, HUD with up to four goals, active commission material deficits, live goal progress, collection flights/chimes, focused reward screen and claim-to-workshop. Existing save schema and commission economy transactions retained.
+- Added old-to-new room reveal and grandmother response for repairs/furniture, honoring reduced-motion settings. Six supplied music files remain unchanged.
+- Rules tested on 15 stages x multiple seeds; 54 Cocos tests and 20 retained web-model tests pass. Creator Web Mobile build generated successfully and source/build hashes verified.
+- The real browser suite completed all 15 stages using pointer gestures, checked special generation/activation/chains, invalid return, frame agreement with pure rules, claim/delivery, the sea order through blessing/response/return-photo, failure/retry/pause, staged renovation and persistence. Inspected 360/390/1440 layouts and all new screens; final run has zero console, page or network errors.
+- Returning-customer legacy-save browser regression and all six music tracks/volume/pause persistence passed. The supplied skill client also ran; its local Cocos adaptation uses compositor screenshots because Creator's WebGL drawing buffer is discarded after presentation.
+- Publish this source and verified browser build to the existing GitHub Pages URL. Public verification artifacts stay local under artifacts/polish. Next production scope: author stages beyond the opening 15 (later levels currently repeat those layouts), further room art layering and physical-phone verification.
+
 ## Decisions
 - Dedicated project and GitHub repository: pencil-bead-atelier. Existing games are preserved.
 - Three.js is responsible for match-three board rendering/picking, animated pieces, 3D bracelet and effects. DOM handles accessible mobile menus.
