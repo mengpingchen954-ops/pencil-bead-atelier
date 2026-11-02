@@ -9,12 +9,12 @@ const { AtelierLayout } = load(root + '/assets/scripts/AtelierLayout.ts');
 const { layoutKey } = load(root + '/assets/scripts/layout-key.ts');
 const rules = load(root + '/assets/scripts/model.ts');
 
-test('entry scene contains ten real editable layouts, visible home art, labels and UI camera', () => {
+test('entry scene contains eleven real editable layouts, visible home art, labels and UI camera', () => {
   const scene = JSON.parse(fs.readFileSync(root + '/assets/scenes/Atelier.scene', 'utf8'));
   const layouts = scene.find(n => n._name === 'EditableLayouts');
   assert.ok(layouts);
   const pages = layouts._children.map(r => scene[r.__id__]);
-  assert.deepEqual(pages.map(n => n._name), ['home','cover','orders','craft','match','decor','album','journal','contest','contestCraft']);
+  assert.deepEqual(pages.map(n => n._name), ['home','cover','orders','craft','match','decor','album','journal','contest','contestCraft','delivery']);
   assert.equal(pages.filter(n => n._active).length, 1);
   assert.ok(pages[0]._active);
   assert.ok(scene.some(n => n.__type__ === 'cc.Camera' && n._orthoHeight === 640));
@@ -122,7 +122,7 @@ test('native controller connects chat, gift selection, delivery response, return
   game.confirmDelivery();assert.equal(game.modal,'sea-packing');
   actions.get('害怕的时候，也可以慢慢走。')();
   actions.get('晨空蓝纸')();actions.get('海风蓝丝带')();
-  actions.get('确认包装交付')();assert.equal(game.modal,'sea-response');
+  actions.get('确认包装交付')();assert.equal(game.screen,'delivery');actions.get('继续营业')();assert.equal(game.modal,'sea-response');
   assert.equal(game.save.collection.find(x=>x.id==='sea').gift.blessing,'slow');
   actions.get('目送她出发')();
   const rose=load(root+'/assets/scripts/content.ts').ORDERS.find(o=>o.id==='rose');
@@ -177,11 +177,13 @@ test('an old completed save opens a real customer order, delivers it and keeps r
   actions.get('确认交付')();
   assert.equal(game.save.repeatOrders,1);assert.equal(game.save.coins,260);
   assert.equal(game.save.completed.length,6);assert.equal(game.save.repeatCollection.length,1);
+  assert.equal(game.screen,'delivery');actions.get('继续营业')();
   actions.get('按单制作')();assert.equal(game.currentOrder().customer,'花店小满');
   assert.equal(actions.has('听故事'),false);
   actions.get('参考配色')();actions.get('按参考排珠')();
   actions.get('包装交付  ·  220 金币')();assert.equal(game.modal,'delivery');
   actions.get('确认交付')();assert.equal(game.save.repeatOrders,2);
+  actions.get('继续营业')();
   game.navigate('album');actions.get('查看回头客作品')();
   assert.ok(actions.has('欣赏再送妈妈一朵花'));
   assert.ok(actions.has('欣赏送给旅途中的朋友'));
@@ -217,4 +219,20 @@ test('reduced-motion renovation commits the purchase and opens grandmother respo
   assert.equal(game.modal,'renovation');assert.equal(game.busy,false);assert.equal(game.save.renovation.repairs.window,true);
   assert.equal(game.save.coins,next.coins);assert.ok(actions.has('看看我们的新角落'));
   actions.get('看看我们的新角落')();assert.equal(game.modal,'');
+});
+
+test('native receipt displays the paid bracelet and only continues the story after closing settlement', () => {
+  const game=new AtelierGame(),actions=new Map();let stored=null,stories=0;
+  game.node=new Node('AtelierGame');game.page=new Node('Page');game.overlay=new Node('Dialogs');game.notices=new Node('Notices');
+  game.persist=()=>{stored=JSON.parse(JSON.stringify(game.save));};game.scheduleOnce=()=>{};game.toast=()=>{};game.startStory=()=>stories++;
+  game.accessibility={clear(){},text(){},button(name,action){actions.set(name,action);},showDialog(){},closeDialog(){},announce(){}};
+  const order=load(root+'/assets/scripts/content.ts').ORDERS[0];
+  game.save={...rules.freshSave(),started:true,reduced:true,inventory:Array(6).fill(20),draft:[...order.palette]};
+  game.screen='craft';game.deliverOrder();
+  assert.equal(game.screen,'delivery');assert.equal(game.modal,'');assert.equal(stories,0);
+  assert.equal(stored.coins,260);assert.deepEqual(rules.pendingDelivery(stored).work.beads,Array.from(order.palette));
+  game.deliverOrder();assert.equal(game.save.coins,260);assert.equal(game.save.collection.length,1);
+  game.save=rules.normalizeSave(stored);game.render();assert.ok(actions.has('继续营业'));
+  actions.get('继续营业')();assert.equal(game.screen,'home');assert.equal(stories,1);assert.equal(game.save.deliveryReceipt,null);
+  game.continueDelivery();assert.equal(stories,1);assert.equal(game.save.coins,260);
 });

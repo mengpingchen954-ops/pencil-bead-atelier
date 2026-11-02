@@ -1,5 +1,14 @@
 Original prompt: 根据 E:\Game\手串\铅笔2 美术制作手机游戏原型，Three.js 实现，浏览器预览测试并修复；优先 imagegen，美术不可用时继续用程序化几何、Canvas、SVG、CSS 与粒子完成统一视觉。
 
+## Reference-style order settlement — 2026-11-02
+- User requested the order submission screen follow 7c3cbc7c2fdd8028625e24557a283ddc.png. Added a full Cocos delivery page with a proportion-preserved handover illustration, actual customer/order, exact paid twelve-bead arrangement and charm, earned coins/reputation, collection thumbnails/locks and Continue Business.
+- Only the illustration is cropped from the reference. All rewards, previews, text, progress and controls are live native nodes. Added its reproducible extraction helper and source manifest; Creator now includes 11 editable layouts and 25 intended textures.
+- Persist a validated receipt in the same transaction as payment. Reload restores the paid receipt without changing inventory or coins; continue clears it and resumes original story/sea blessing response. Returning commissions retain the six original works and use their separate recent-work history.
+- 58 Cocos tests and 20 legacy web-model tests passed, including receipt validation and repeated submission protection. Creator production build succeeded and source/build hashes verified.
+- Dedicated production browser suite passed all six deliveries plus returning order, custom reversed draft, exact reward/stock/unlocks, two reloads, real native touch continuation, focused-canvas Escape, sea blessing response and 360/390/1440 widths; zero page/console/HTTP errors. Cocos keyboard events require canvas focus after a fresh reload; test explicitly focuses it before keyboard input.
+- Inspected first, returning and desktop settlement screenshots. Supplied skill browser client ran using the existing Cocos compositor adaptation and its cover screenshot was inspected. Physical-phone checks remain outstanding.
+- Publish to the existing GitHub repository and Pages URL, then verify public delivery and full polish flows before final handoff.
+
 ## Cocos commission and match polish — 2026-11-02
 - User approved the proposed first polish milestone, retaining pencil art and commissioned crafting: 15 authored stages, directional/burst specials, paper/thread objectives, clearer order guidance, tiered feedback and staged renovation reveals.
 - Actual editable project is E:/Game/手串/手串cocos/zhuguangxiaodian; repository cocos/ is its intended source mirror. Backed up the entry scene before refreshing layouts; its pre-edit hash matched the checked-in scene (no intervening editor changes).

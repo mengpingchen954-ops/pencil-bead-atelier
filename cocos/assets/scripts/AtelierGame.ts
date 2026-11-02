@@ -20,7 +20,7 @@ const { ccclass } = _decorator;
 const PAPER = '#f7f0df', INK = '#594d3f', SAGE = '#718366', MUTED = '#94846d', GOLD = '#c2a477';
 const BOARD_Y = 340, CELL = 78;
 const color = (hex: string) => new Color().fromHEX(hex);
-type Page = 'cover' | 'home' | 'orders' | 'craft' | 'match' | 'decor' | 'album' | 'journal' | 'contest' | 'contestCraft';
+type Page = 'cover' | 'home' | 'orders' | 'craft' | 'match' | 'decor' | 'album' | 'journal' | 'contest' | 'contestCraft' | 'delivery';
 
 @ccclass('AtelierGame')
 export class AtelierGame extends Component {
@@ -129,7 +129,7 @@ export class AtelierGame extends Component {
       this.text('珠盒暂时没有打开\n请检查 resources 素材是否完整，再重新预览。', 60, 500, 600, 180, 28);
       return;
     }
-    this.screen = this.save.started ? 'home' : 'cover';
+    this.screen = rules.pendingDelivery(this.save) ? 'delivery' : this.save.started ? 'home' : 'cover';
     this.render();
     this.music.update(this.save.music);
     input.on(Input.EventType.KEY_DOWN, this.onKey, this);
@@ -158,6 +158,7 @@ export class AtelierGame extends Component {
       coordinates: { origin:'top-left', width:720, height:1280, board:{x:48,y:BOARD_Y,step:CELL,cell:72} },
       goals: this.session ? rules.goalProgress(this.session) : [],
       save: this.save, session: this.session, selected: this.selected, slot: this.slot,
+      delivery: rules.pendingDelivery(this.save),
       music:this.music?.snapshot(),
       story: this.modal === 'story' ? { id: STORIES[this.storyIndex].id, line: this.storyLine } : null };
   }
@@ -300,7 +301,7 @@ export class AtelierGame extends Component {
     const grain = this.box('Paper fibres', 0, 0, 720, 1280).addComponent(Graphics);
     grain.strokeColor = color('#b6a17b14'); grain.lineWidth = 1;
     for (let i=0;i<180;i++) { const x=(i*173)%720,y=(i*97)%1280; grain.moveTo(x,-y); grain.lineTo(x+3,-y-1); } grain.stroke();
-    if (this.screen !== 'cover') this.chrome();
+    if (this.screen !== 'cover' && this.screen !== 'delivery') this.chrome();
     switch (this.screen) {
       case 'cover': this.cover(); break;
       case 'home': this.home(); break;
@@ -312,6 +313,7 @@ export class AtelierGame extends Component {
       case 'journal': this.journal(); break;
       case 'contest': this.contest(); break;
       case 'contestCraft': this.craft(); break;
+      case 'delivery': this.delivery(); break;
     }
     this.layoutKeys.forEach((key,node) => {
       const source=this.layouts.get(key)?.getComponent(AtelierLayout), drawing=node.getComponent(Graphics);
@@ -571,11 +573,71 @@ export class AtelierGame extends Component {
     this.button('确认交付',130,863,460,70,()=>this.deliverOrder(),this.overlay,true);
   }
   private deliverOrder() {
-    const o=this.currentOrder(),repeat=this.repeatOrder,next=rules.deliver(this.save);
+    if(rules.pendingDelivery(this.save))return;
+    const next=rules.deliver(this.save);
     if(!next)return this.toast('交付条件尚未满足。');
     this.save=next;this.undo=[];
-    this.persist();this.play('success');this.closeModal();this.screen='home';this.render();
-    if(repeat){this.toast(o.customer+'收到了手串 · '+o.reward+' 金币已入账，下一份委托已送达。');return;}
+    this.persist();this.play('success');this.closeModal();this.clear(this.notices);this.toastGeneration++;
+    this.screen='delivery';this.render();
+  }
+  private delivery() {
+    const receipt=rules.pendingDelivery(this.save);
+    if(!receipt){this.screen='home';this.home();return;}
+    const {order:o,work,repeat}=receipt,history=repeat?this.save.repeatCollection:this.save.collection;
+    this.image('pencil-handover',0,0,720,768);
+    this.rect('Delivery complete seal',264,112,192,36,'#718366ed',this.page,18);
+    this.text('委托已交付',269,112,182,36,21,PAPER,this.page,true);
+    const thanks=this.rect('Thank you note',514,752,174,70,'#fff8e8',this.page,3,'#b9946b');
+    this.rect('Thank you note lining',6,6,162,58,'#fff8e8',thanks,1,'#d6bb92');
+    this.text('感谢您的光临！',10,13,154,43,20,INK,thanks,true);
+    this.text(o.customer+' · '+o.name,38,785,466,39,23,INK,this.page,true);
+    this.rect('Delivery receipt shadow',30,840,660,300,'#b99b72',this.page,12);
+    this.rect('Delivery receipt',27,831,666,300,'#fff9ec',this.page,12,'#9b7a55');
+    this.rect('Delivery receipt lining',38,842,644,278,'#fff9ec',this.page,8,'#d4bea0');
+    this.text('交付作品',54,853,202,38,29,INK,this.page,true);
+    const preview=this.rect('Delivered work',52,901,204,194,'#efe6d4',this.page,14,'#c9b292');
+    this.bracelet(work.beads,102,89,76,preview);
+    this.image('charm-'+work.charm,88,147,28,34,preview);
+    this.text('十二颗珠子 · '+CHARMS[work.charm]+'吊坠',53,1098,202,22,16,MUTED,this.page,true);
+    const lines=this.box('Receipt dividers',0,0,720,1280).addComponent(Graphics);
+    lines.strokeColor=color('#d4bea0');lines.lineWidth=2;
+    lines.moveTo(273,-856);lines.lineTo(273,-1107);lines.moveTo(289,-976);lines.lineTo(662,-976);lines.stroke();
+    this.text('金币',290,854,155,37,27,INK,this.page,true);
+    this.ellipse('Reward coin',309,924,20,20,'#e5c278',this.page,'#b28c45');
+    this.ellipse('Reward coin inner',309,924,15,15,'#f3d494',this.page,'#cba75c');
+    this.text('✦',291,904,36,38,27,'#b38b3c',this.page,true);
+    this.text('+'+o.reward,336,898,113,48,33,INK,this.page,true);
+    this.text('信誉',476,854,173,37,27,INK,this.page,true);
+    this.text('★',472,895,45,51,38,'#d9b35f',this.page,true);
+    this.text('+'+o.rep,521,897,128,45,30,SAGE,this.page,true);
+    const milestone=Math.max(50,Math.ceil(this.save.rep/50)*50),progress=Math.min(1,this.save.rep/milestone);
+    this.rect('Reputation track',484,945,168,12,'#d4c7b2',this.page,6);
+    this.rect('Earned reputation',484,945,Math.max(4,168*progress),12,'#dfba6b',this.page,6);
+    this.text('累计 '+this.save.rep+' / '+milestone,478,958,180,20,15,MUTED,this.page,true);
+    this.text(repeat?'回头客收藏 · 第 '+receipt.number+' 单':'收藏解锁 · '+this.save.collection.length+' / '+ORDERS.length,286,982,375,37,25,INK,this.page,true);
+    for(let i=0;i<6;i++){
+      const item=history[i],x=287+i*62;
+      const n=this.rect('Receipt collection '+i,x,1030,56,70,item?'#f6ecda':'#ede4d4',this.page,9,item&&item===work?'#a58e55':'#d0bca0');
+      if(item){
+        this.bracelet(item.beads,28,30,20,n);
+        this.image('charm-'+item.charm,22,48,12,14,n);
+      }else{
+        const g=this.box('Locked collection',0,0,56,70,n).addComponent(Graphics);
+        g.strokeColor=color('#c1ac8f');g.lineWidth=3;g.ellipse(28,-28,8,12);g.stroke();
+        this.rect('Lock body',16,28,24,23,'#d3c1a5',n,5,'#bea78a');
+        this.ellipse('Lock keyhole',28,39,2,4,'#b49a78',n);
+      }
+    }
+    const button=this.button('继续营业',163,1163,394,78,()=>this.continueDelivery(),this.page,true);
+    button.children.find(n=>n.getComponent(Label))!.getComponent(Label)!.fontSize=34;
+    this.text('奖励已入账 · 作品与进度已保存',120,1250,480,25,18,MUTED,this.page,true);
+  }
+  private continueDelivery() {
+    if(this.screen!=='delivery')return;
+    const receipt=rules.pendingDelivery(this.save);if(!receipt)return;
+    const {order:o,repeat}=receipt;
+    this.save.deliveryReceipt=null;this.persist();this.navigate('home');
+    if(repeat){this.toast(o.customer+'收到了手串，下一份委托已送达。');return;}
     const invitation=COMPETITIONS.find(event=>event.unlock===this.save.completed.length);
     if(invitation)this.toast('收到比赛邀请：'+invitation.title+'，首页可参加。');
     const nextStory=()=>this.startStory(STORIES.findIndex(story=>story.afterOrder===o.id));
@@ -1173,7 +1235,7 @@ export class AtelierGame extends Component {
         const normalized=rules.refreshEnergy(rules.normalizeSave(parsed));
         this.dialog('import-confirm','使用这份存档？');
         this.text(`剧情委托 ${normalized.completed.length}/6 · 回头客 ${normalized.repeatOrders} 单\n金币 ${normalized.coins} · 体力 ${normalized.energy}\n导入将替换本机当前进度。`,100,425,520,220,28,INK,this.overlay,true);
-        this.button('确认导入',130,820,460,70,()=>{this.save=normalized;this.session=null;this.undo=[];this.contestUndo=[];this.music?.update(this.save.music);this.persist();this.navigate(this.save.started?'home':'cover');this.toast('进度已导入。');},this.overlay,true);
+        this.button('确认导入',130,820,460,70,()=>{this.save=normalized;this.session=null;this.undo=[];this.contestUndo=[];this.music?.update(this.save.music);this.persist();this.navigate(rules.pendingDelivery(this.save)?'delivery':this.save.started?'home':'cover');this.toast('进度已导入。');},this.overlay,true);
       }catch{this.toast('这份存档格式不正确，请粘贴完整的 JSON。');}
     },this.overlay,true);
   }
@@ -1225,7 +1287,7 @@ export class AtelierGame extends Component {
   private stopVideo() { if(this.video?.isValid)this.video.stop();this.video=null;this.videoSubtitle=null;this.captions=[]; }
   private onKey(e: any) {
     if(typeof document!=='undefined'&&(/^(INPUT|TEXTAREA)$/.test(document.activeElement?.tagName||'')||document.activeElement?.closest('#atelier-accessibility')))return;
-    if(e.keyCode===KeyCode.ESCAPE){if(this.modal)this.dismiss();else if(this.screen==='match')this.pauseMatch();else this.navigate(this.screen==='contestCraft'?'contest':'home');return;}
+    if(e.keyCode===KeyCode.ESCAPE){if(this.modal)this.dismiss();else if(this.screen==='delivery')this.continueDelivery();else if(this.screen==='match')this.pauseMatch();else this.navigate(this.screen==='contestCraft'?'contest':'home');return;}
     if(e.keyCode===KeyCode.KEY_F){if(displayScreen.fullScreen())displayScreen.exitFullScreen();else displayScreen.requestFullScreen();return;}
     if(this.screen!=='match'||this.modal||this.busy)return;
     const offsets:Record<number,number>={[KeyCode.ARROW_LEFT]:-1,[KeyCode.ARROW_RIGHT]:1,[KeyCode.ARROW_UP]:-8,[KeyCode.ARROW_DOWN]:8};

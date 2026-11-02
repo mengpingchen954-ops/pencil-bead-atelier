@@ -322,6 +322,7 @@ export function freshSave() {
     collection: [],
     repeatOrders: 0,
     repeatCollection: [],
+    deliveryReceipt: null,
     upgrades: { chair: 0, display: 0, desk: 0 },
     draft: Array(12).fill(null),
     charm: "daisy",
@@ -343,6 +344,16 @@ const validWork = (x) => x && ORDERS.some((o) => o.id === x.id) &&
 export function currentOrder(save) {
   if (save.completed.length === ORDERS.length) return RETURN_ORDERS[bounded(save.repeatOrders) % RETURN_ORDERS.length];
   return ORDERS.find((o) => o.id === save.orderId && !save.completed.includes(o.id)) || ORDERS.find((o) => !save.completed.includes(o.id));
+}
+export function pendingDelivery(save) {
+  const receipt=save.deliveryReceipt;
+  if(!receipt||typeof receipt.repeat!=='boolean'||!Number.isInteger(receipt.number))return null;
+  const order=(receipt.repeat?RETURN_ORDERS:ORDERS).find(o=>o.id===receipt.id);
+  if(!order)return null;
+  const work=receipt.repeat
+    ? receipt.number===save.repeatOrders && save.repeatCollection?.find(w=>w.number===receipt.number&&w.id===receipt.id)
+    : receipt.number===save.completed.length && save.completed[save.completed.length-1]===receipt.id && save.collection.find(w=>w.id===receipt.id);
+  return work?{order,work,repeat:receipt.repeat,number:receipt.number}:null;
 }
 export function normalizeSave(input) {
   const s = freshSave();
@@ -398,6 +409,8 @@ export function normalizeSave(input) {
   s.collection = s.collection.map(item => ({id:item.id, beads:[...item.beads], charm:item.charm,
     ...(item.id === 'sea' ? { gift:{...normalizeSeaHeart({facts:s.seaHeart.facts,gift:item.gift || s.seaHeart.gift},s.completed).gift},
       ...(s.seaHeart.visited ? {travelCharm:s.seaHeart.travelCharm} : {}) } : {})}));
+  const receipt=pendingDelivery({...s,deliveryReceipt:input.deliveryReceipt});
+  s.deliveryReceipt=receipt?{id:receipt.order.id,repeat:receipt.repeat,number:receipt.number}:null;
   s.lastStory = Number.isInteger(input.lastStory)
     ? Math.max(-1, Math.min(6, input.lastStory))
     : -1;
@@ -464,6 +477,7 @@ export function deliver(save) {
     inventory: save.inventory.map((n, i) => n - counts[i]),
     completed,
     repeatOrders,
+    deliveryReceipt: {id:order.id,repeat,number:repeat?repeatOrders:completed.length},
     orderId: currentOrder({ ...save, completed, repeatOrders }).id,
     repeatCollection: repeat ? [...(save.repeatCollection || []), { id:order.id, beads:[...save.draft], charm:save.charm, number:repeatOrders }].slice(-6) : save.repeatCollection,
     collection: repeat ? save.collection : [

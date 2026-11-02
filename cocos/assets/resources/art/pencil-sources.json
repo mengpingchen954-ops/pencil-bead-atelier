@@ -259,6 +259,17 @@
         1100
       ],
       "method": "Sampled colored-pencil paper on transparent room wall silhouettes"
+    },
+    {
+      "asset": "pencil-handover.jpg",
+      "source": "7c3cbc7c2fdd8028625e24557a283ddc.png",
+      "cropAt1143x2048": [
+        0,
+        0,
+        1143,
+        1220
+      ],
+      "method": "Handover illustration only; contain source proportions with a small edge crop; native live receipt UI"
     }
   ]
 }

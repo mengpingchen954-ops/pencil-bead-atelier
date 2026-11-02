@@ -9,7 +9,7 @@
 3. 场景默认显示首页。若仍看到旧的空场景，先关闭 Atelier 场景标签，再双击重新打开；在层级选中 Canvas 后按 F 可聚焦。
 4. 点击顶部「运行 / 预览」试玩。设计尺寸为 720 × 1280，电脑横屏会保留侧边留白。
 
-场景已保存 Canvas、UI Camera 和十个页面的原生布局。展开 `AtelierGame → Canvas → Atelier → EditableLayouts`，选中 EditableLayouts，在 `AtelierLayouts` 组件的 Page 下拉框切换首页、封面、委托、手作、消除、装修、图鉴、手账、比赛、参赛手作。
+场景已保存 Canvas、UI Camera 和十一个页面的原生布局。展开 `AtelierGame → Canvas → Atelier → EditableLayouts`，选中 EditableLayouts，在 `AtelierLayouts` 组件的 Page 下拉框切换首页、封面、委托、手作、消除、装修、图鉴、手账、比赛、参赛手作、订单交付。
 
 子节点的 Position、Rotation、Scale、UITransform 尺寸，以及 Label 文字 / 字号 / 颜色 / 对齐、Sprite 的 SpriteFrame 都会在运行时读取。按钮事件与动态数值仍由 `AtelierGame.ts` 绑定：未修改的示例数值会跟随真实存档更新。请保留 AtelierLayout 组件和页面层级；重命名普通节点不影响绑定。新增按钮和修改玩法仍需配合脚本。棋盘格和手串槽可以移动；为保证网格与拖动规则，保持原有格子数量、珠槽尺寸和 UITransform 锚点。
 
@@ -21,7 +21,7 @@
 
 本版使用用户提供的 `E:/Game/手串/铅笔2` 参考：人物与柜台的纵深插画、略俯视的前宽后窄关系、奶油纸纹、金色花边，以及六色彩铅珠材与三种吊坠。手作台为前宽后窄的透视托盘，珠子、空槽、接触阴影、拖动落点和投珠动画独立运行；装修房间改为斜俯视，墙、地板、窗户和家具仍随真实经营进度变化。
 
-已选取并整理 24 张小尺寸纹理，原始参考图不复制进发布包。`assets/resources/art/pencil-sources.json` 记录来源、裁剪坐标与处理方式。用 Pillow 运行 `python tools/prepare-pencil-art.py E:/Game/手串/铅笔2` 可重新提取；该工具不修改参考原图。界面中的数值、委托、按钮与棋盘均由游戏实时绘制。
+已选取并整理 25 张小尺寸纹理，原始参考图不复制进发布包。`assets/resources/art/pencil-sources.json` 记录来源、裁剪坐标与处理方式。用 Pillow 运行 `python tools/prepare-pencil-art.py E:/Game/手串/铅笔2` 可重新提取原24张，再运行 `python tools/prepare-delivery-art.py E:/Game/手串/铅笔2/7c3cbc7c2fdd8028625e24557a283ddc.png` 提取交付插画；工具不修改参考原图。界面中的数值、委托、按钮与棋盘均由游戏实时绘制。
 
 ## 已迁移内容
 
@@ -46,6 +46,8 @@
 验证：`node --test tests/*.mjs` 验证54项规则及原生控制器流程；仓库 `scripts/test-cocos-polish.mjs` 使用 Playwright 对正式构建逐关操作、检查特殊珠、领奖交付、失败重试、装修与不同宽度。运行浏览器验证前设置 `GAME_URL` 指向正式构建的HTTP地址。
 
 ## 委托经营主流程
+
+确认交付后进入参考图形式的完整结算页：上方为等比递交礼盒插画，下方展示本次实际十二颗珠子与吊坠、金币、信誉增量和真实收藏解锁。奖励与结算回执一起保存，停在这页刷新会恢复回执，不再次扣库存或发奖。「继续营业」再接顾客回应与剧情；海风订单保留祝福回应，回头客订单继续派发下一份委托。仓库 `scripts/test-cocos-delivery.mjs` 验证六单、回头客、刷新、触屏继续及360/390/1440宽度。
 
 首页「按单制作」、底部「手作」始终进入当前顾客委托，显示顾客、作品名、珠材数量与吊坠要求，并以「包装交付」结算。六份剧情委托完成后，继续轮流收到六种回头客追加订单，不再自动切换为自由 DIY。回头客订单同样检查配方、扣除实际库存、发放金币与口碑；每次交付清空当前草稿并推进下一单，重复点击不能重复结算。
 
@@ -79,7 +81,7 @@
 
 ## 构建与验证
 
-安装 Node.js 24 后执行 `node --test tests/*.mjs`，验证实际迁移后的 TypeScript 规则模块。附带 54 项库存、三消关卡、特殊珠、订单、装修、存档、剧情、心意流程、美术比例、音乐播放和可编辑场景测试，其中一项直接运行 Creator 正式构建代码验证完整经营与回访流程；正式构建尚未生成时只跳过后一项。
+安装 Node.js 24 后执行 `node --test tests/*.mjs`，验证实际迁移后的 TypeScript 规则模块。附带 58 项库存、三消关卡、特殊珠、订单、交付回执、装修、存档、剧情、心意流程、美术比例、音乐播放和可编辑场景测试，其中一项直接运行 Creator 正式构建代码验证完整经营与回访流程；正式构建尚未生成时只跳过后一项。
 
 在 Windows PowerShell 执行 `./build-game.ps1`。它使用项目版本对应的已安装 Creator 和 `buildConfig_web-mobile.json`，等待实际构建日志结束，再检查脚本错误。也可用 `-Creator` 指定编辑器路径。正式产物位于 `build/web-mobile`。Creator 内置「构建发布」同样可选择 Web Mobile、启动场景 Atelier、竖屏构建。
 
