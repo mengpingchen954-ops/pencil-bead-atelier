@@ -425,6 +425,16 @@
       "asset": "pencil-album-nav-journal.jpg",
       "source": "2ac32c5a5077c1547f9e4df56786e677.png",
       "method": "Navigation illustration only; label and touch action drawn natively"
+    },
+    {
+      "asset": "pencil-collection-detail-frame.jpg",
+      "source": "6ae1af85d86ffb235b875b03aaf35186.png",
+      "method": "Floral lace and gold frame only; removed phone status/home bars, sample work, title, portrait, stamp, materials, labels and buttons"
+    },
+    {
+      "asset": "pencil-collection-detail-card.jpg",
+      "source": "6ae1af85d86ffb235b875b03aaf35186.png",
+      "method": "Blank memory-card border; removed sample portrait and text"
     }
   ]
 }

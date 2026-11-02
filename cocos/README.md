@@ -9,7 +9,7 @@
 3. 场景默认显示首页。若仍看到旧的空场景，先关闭 Atelier 场景标签，再双击重新打开；在层级选中 Canvas 后按 F 可聚焦。
 4. 点击顶部「运行 / 预览」试玩。设计尺寸为 720 × 1280，电脑横屏会保留侧边留白。
 
-场景已保存 Canvas、UI Camera 和十七个页面的原生布局。展开 `AtelierGame → Canvas → Atelier → EditableLayouts`，选中 EditableLayouts，在 `AtelierLayouts` 组件的 Page 下拉框切换首页、封面、委托、手作、消除、装修、图鉴、手账、比赛、参赛手作、订单交付、剧情对话、人物回忆、成品包装、故事解锁、暂停游戏、新订单。
+场景已保存 Canvas、UI Camera 和十八个页面的原生布局。展开 `AtelierGame → Canvas → Atelier → EditableLayouts`，选中 EditableLayouts，在 `AtelierLayouts` 组件的 Page 下拉框切换首页、封面、委托、手作、消除、装修、图鉴、手账、比赛、参赛手作、订单交付、剧情对话、人物回忆、成品包装、故事解锁、暂停游戏、新订单、收藏详情。
 
 子节点的 Position、Rotation、Scale、UITransform 尺寸，以及 Label 文字 / 字号 / 颜色 / 对齐、Sprite 的 SpriteFrame 都会在运行时读取。按钮事件与动态数值仍由 `AtelierGame.ts` 绑定：未修改的示例数值会跟随真实存档更新。请保留 AtelierLayout 组件和页面层级；重命名普通节点不影响绑定。新增按钮和修改玩法仍需配合脚本。棋盘格和手串槽可以移动；为保证网格与拖动规则，保持原有格子数量、珠槽尺寸和 UITransform 锚点。
 
@@ -21,7 +21,7 @@
 
 本版使用用户提供的 `E:/Game/手串/铅笔2` 参考：人物与柜台的纵深插画、略俯视的前宽后窄关系、奶油纸纹、金色花边，以及六色彩铅珠材与三种吊坠。手作台为前宽后窄的透视托盘，珠子、空槽、接触阴影、拖动落点和投珠动画独立运行；装修房间改为斜俯视，墙、地板、窗户和家具仍随真实经营进度变化。
 
-已选取并整理 56 张小尺寸纹理，原始参考图不复制进发布包。`assets/resources/art/pencil-sources.json` 记录来源、裁剪坐标与处理方式。用 Pillow 依次运行以下命令重建素材；工具不修改参考原图，界面中的数值、委托、对白、按钮与棋盘均由游戏实时绘制。
+已选取并整理 58 张小尺寸纹理，原始参考图不复制进发布包。`assets/resources/art/pencil-sources.json` 记录来源、裁剪坐标与处理方式。用 Pillow 依次运行以下命令重建素材；工具不修改参考原图，界面中的数值、委托、对白、按钮与棋盘均由游戏实时绘制。
 
 ```sh
 python tools/prepare-pencil-art.py E:/Game/手串/铅笔2
@@ -32,6 +32,7 @@ python tools/prepare-packing-art.py E:/Game/手串/铅笔2/3119b53bc0460f72a8cc5
 python tools/prepare-story-route-art.py E:/Game/手串/铅笔2/ab04983f8014ba7f6c380cb3a50c33ee.png
 python tools/prepare-commission-art.py E:/Game/手串/铅笔2/be9484cf9b7a02516861e64694bfe336.png
 python tools/prepare-album-art.py E:/Game/手串/铅笔2/2ac32c5a5077c1547f9e4df56786e677.png
+python tools/prepare-collection-detail-art.py E:/Game/手串/铅笔2/6ae1af85d86ffb235b875b03aaf35186.png
 python tools/prepare-incoming-art.py E:/Game/手串/铅笔2/8836117846d16a995a9fffa00b7d68ce.png
 python tools/prepare-pause-art.py E:/Game/手串/铅笔2/c9cf0c4d00bb438b228f87878ffb1093.png
 ```
@@ -169,3 +170,12 @@ Page「暂停游戏」可编辑面板、字号、位置和按钮，三个开关�
 Page「图鉴」按新参考改为金色花边相册、双列六张收藏卡、系列完成进度、原生搜索框、系列筛选与四个插画导航。已交付作品显示存档中实际十二颗珠子、吊坠及小满的旅行挂件；未交付卡显示「未收集」和对应委托名，点击查看收藏条件。点击已收藏卡继续查看原作和已保存的祝福 / 包装。
 
 搜索支持作品名、顾客、珠材和吊坠，点击「搜索」或回车应用；无结果可清空。系列分为全部剧情、第一至第三章、回头客近六单；进度只按选定系列的实际收藏计算，搜索不会改变完成比例。回头客沿用原存档最近六份作品，不伪造更多收藏。「制作新手串」进入当前顾客的新订单页，继续现有委托。搜索 / 筛选仅为当前浏览状态，刷新重置，玩家进度与草稿保持不变。源场景更新前已与仓库校验并备份到本机 artifacts/Atelier-before-album.scene。
+
+
+## 收藏订单放大详情
+
+点击已收藏作品进入全屏花卉蕾丝与金色边框详情：上方放大存档中的真实十二颗珠子、吊坠和旅行挂件，下方展示珍藏记忆、原订单心意、实际材料种类与数量、章节或回头客单号。材料较多时自动分两行；海风订单保留原祝福、信纸与丝带。阿禾小像明确标注为制作者，不冒充顾客。原图示例手串、材料、文字、手机状态栏及底部系统手势条均不进入游戏状态。
+
+「查看订单故事」重温该顾客的委托及已解锁关联剧情，支持记录与返回，不改变已读进度、奖励或库存。回头客显示当次委托心意。返回详情、图鉴或人物回忆时保留原浏览位置与筛选。「再做一条」先说明将收藏配色用于当前顾客委托，确认才替换草稿，且可撤销；原收藏不变，交付仍需满足当前顾客和库存要求，不会重复发放历史订单奖励。
+
+Creator 新增第十八个 Page「收藏详情」可编辑布局。重生成场景前已校验仓库一致并备份本机 artifacts/Atelier-before-collection-detail.scene。两张新增素材仅含干净纸框，提取工具可重复运行。仓库 scripts/test-cocos-collection-detail.mjs 验证六份原作、真实材料、祝福与旅行挂件、对应故事、重做取消与撤销、回头客编号、浏览状态、刷新和三种屏宽；实体手机尚待实测。

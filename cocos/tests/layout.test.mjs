@@ -9,12 +9,12 @@ const { AtelierLayout } = load(root + '/assets/scripts/AtelierLayout.ts');
 const { layoutKey } = load(root + '/assets/scripts/layout-key.ts');
 const rules = load(root + '/assets/scripts/model.ts');
 
-test('entry scene contains seventeen real editable layouts, visible home art, labels and UI camera', () => {
+test('entry scene contains eighteen real editable layouts, visible home art, labels and UI camera', () => {
   const scene = JSON.parse(fs.readFileSync(root + '/assets/scenes/Atelier.scene', 'utf8'));
   const layouts = scene.find(n => n._name === 'EditableLayouts');
   assert.ok(layouts);
   const pages = layouts._children.map(r => scene[r.__id__]);
-  assert.deepEqual(pages.map(n => n._name), ['home','cover','orders','craft','match','decor','album','journal','contest','contestCraft','delivery','dialogue','memories','packing','storyMap','pause','orderArrival']);
+  assert.deepEqual(pages.map(n => n._name), ['home','cover','orders','craft','match','decor','album','journal','contest','contestCraft','delivery','dialogue','memories','packing','storyMap','pause','orderArrival','collectionDetail']);
   assert.equal(pages.filter(n => n._active).length, 1);
   assert.ok(pages[0]._active);
   assert.ok(scene.some(n => n.__type__ === 'cc.Camera' && n._orthoHeight === 640));
@@ -442,4 +442,28 @@ test('story map opens actual unlocked stories, shows locked conditions and keeps
  actions.get('阅读 · 第一张收据，我自己收着')();actions.get('跳过')();const completed=JSON.stringify(game.save);
  actions.get('查看章节 · 旧工作间')();actions.get('重温 · 第一张收据，我自己收着')();actions.get('跳过')();assert.equal(JSON.stringify(game.save),completed);
  actions.get('回忆手账')();assert.equal(game.screen,'journal');assert.ok(actions.has('人物故事 · 回忆'));
+});
+
+test('enlarged collection keeps actual materials and archive stories read-only, and remakes only the current commission with undo',()=>{
+ const {ORDERS}=load(root+'/assets/scripts/content.ts'),game=new AtelierGame(),actions=new Map();
+ game.node=new Node('AtelierGame');game.page=new Node('Page');game.overlay=new Node('Dialogs');game.notices=new Node('Notices');
+ game.persist=()=>{};game.scheduleOnce=()=>{};game.toast=()=>{};
+ game.accessibility={clear(){actions.clear();},text(){},button(name,action,modal,enabled){if(enabled)actions.set(name,action);},showDialog(){actions.clear();},closeDialog(){actions.clear();},announce(){}};
+ game.save={...rules.freshSave(),started:true,reduced:true,inventory:Array(6).fill(100)};
+ for(const o of ORDERS.slice(0,2))game.save=rules.deliver({...game.save,draft:Array.from(o.palette).reverse(),charm:o.charm});
+ game.save.deliveryReceipt=null;game.save.collection[1].gift={blessing:'slow',paper:'sky',ribbon:'blue'};game.save.collection[1].travelCharm='heart';
+ game.save.draft=[1,...Array(11).fill(null)];game.save.charm='heart';game.screen='album';game.albumQuery='小满';
+ const before=JSON.stringify(game.save);game.collectionPreview('sea');let detail=game.snapshot().collectionDetail;
+ assert.equal(game.modal,'collection');assert.equal(detail.name,ORDERS[1].name);assert.equal(detail.storyId,'stolen-design');
+ assert.deepEqual(Array.from(detail.work.beads),Array.from(ORDERS[1].palette).reverse());
+ assert.equal(detail.materials.reduce((n,m)=>n+m.count,0),14);assert.equal(detail.blessing,'害怕的时候，也可以慢慢走。');assert.match(detail.wrapping,/蓝/);
+ actions.get('查看订单故事')();assert.equal(game.modal,'collection-story');assert.equal(game.dialogueState.text,ORDERS[1].text);
+ actions.get('下一句  →')();actions.get('记录')();game.dismiss();assert.equal(game.modal,'collection-story');game.dismiss();assert.equal(game.modal,'collection');
+ assert.equal(JSON.stringify(game.save),before);assert.equal(game.albumQuery,'小满');
+ actions.get('再做一条')();assert.equal(game.modal,'collection-remake');game.dismiss();assert.equal(JSON.stringify(game.save),before);
+ actions.get('再做一条')();actions.get('按此配色继续委托')();assert.equal(game.screen,'craft');assert.equal(game.currentOrder().id,'rose');
+ assert.deepEqual(Array.from(game.save.draft),Array.from(ORDERS[1].palette).reverse());assert.equal(game.save.collection[1].charm,'moon');assert.equal(game.save.coins,JSON.parse(before).coins);
+ assert.equal(JSON.stringify(game.save.inventory),JSON.stringify(JSON.parse(before).inventory));assert.equal(Object.values(rules.checkOrder(game.save)).every(Boolean),false);
+ actions.get('撤销')();assert.equal(JSON.stringify(game.save),before);
+ game.collectionPreview('missing');assert.equal(game.modal,'info');assert.equal(game.snapshot().collectionDetail,null);assert.equal(JSON.stringify(game.save),before);
 });
