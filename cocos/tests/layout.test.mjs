@@ -9,12 +9,12 @@ const { AtelierLayout } = load(root + '/assets/scripts/AtelierLayout.ts');
 const { layoutKey } = load(root + '/assets/scripts/layout-key.ts');
 const rules = load(root + '/assets/scripts/model.ts');
 
-test('entry scene contains eleven real editable layouts, visible home art, labels and UI camera', () => {
+test('entry scene contains twelve real editable layouts, visible home art, labels and UI camera', () => {
   const scene = JSON.parse(fs.readFileSync(root + '/assets/scenes/Atelier.scene', 'utf8'));
   const layouts = scene.find(n => n._name === 'EditableLayouts');
   assert.ok(layouts);
   const pages = layouts._children.map(r => scene[r.__id__]);
-  assert.deepEqual(pages.map(n => n._name), ['home','cover','orders','craft','match','decor','album','journal','contest','contestCraft','delivery']);
+  assert.deepEqual(pages.map(n => n._name), ['home','cover','orders','craft','match','decor','album','journal','contest','contestCraft','delivery','dialogue']);
   assert.equal(pages.filter(n => n._active).length, 1);
   assert.ok(pages[0]._active);
   assert.ok(scene.some(n => n.__type__ === 'cc.Camera' && n._orthoHeight === 640));
@@ -235,4 +235,39 @@ test('native receipt displays the paid bracelet and only continues the story aft
   game.save=rules.normalizeSave(stored);game.render();assert.ok(actions.has('继续营业'));
   actions.get('继续营业')();assert.equal(game.screen,'home');assert.equal(stories,1);assert.equal(game.save.deliveryReceipt,null);
   game.continueDelivery();assert.equal(stories,1);assert.equal(game.save.coins,260);
+});
+
+test('dialogue records only reveal read lines and returning or dismissing keeps the current story state', () => {
+  const game=new AtelierGame(),actions=new Map();
+  game.node=new Node('AtelierGame');game.page=new Node('Page');game.overlay=new Node('Dialogs');game.notices=new Node('Notices');
+  game.persist=()=>{};game.scheduleOnce=()=>{};game.toast=()=>{};
+  game.accessibility={clear(){actions.clear();},text(){},button(name,action,modal,enabled){if(enabled)actions.set(name,action);},showDialog(){actions.clear();},closeDialog(){actions.clear();},announce(){}};
+  game.save={...rules.freshSave(),started:true,reduced:true};game.screen='home';
+  const story=load(root+'/assets/scripts/content.ts').STORIES[0],coins=game.save.coins,stock=game.save.inventory.slice();
+  game.startStory(0);assert.equal(game.dialogueState.speaker,'往事');
+  for(let i=0;i<4;i++)actions.get('下一句  →')();
+  assert.equal(game.storyLine,4);assert.equal(game.dialogueState.speaker,'奶奶');
+  actions.get('记录')();assert.equal(game.modal,'dialogue-record');
+  const strings=n=>[...n.components.filter(c=>c instanceof Label).map(c=>c.string),...n.children.flatMap(strings)];
+  assert.ok(strings(game.overlay).includes(story.lines[4][1]));assert.equal(strings(game.overlay).includes(story.lines[5][1]),false);
+  actions.get('上一页')();assert.ok(strings(game.overlay).includes(story.lines[2][1]));
+  game.dismiss();assert.equal(game.modal,'story');assert.equal(game.storyLine,4);
+  actions.get('记录')();actions.get('返回对话')();assert.equal(game.storyLine,4);
+  game.dismiss();assert.equal(game.modal,'');assert.equal(game.save.seenStories.length,0);
+  game.startStory(0);actions.get('跳过')();assert.equal(game.modal,'');assert.equal(game.save.seenStories.length,1);
+  game.startStory(0);actions.get('跳过')();assert.equal(game.save.seenStories.length,1);
+  assert.equal(game.save.coins,coins);assert.deepEqual(game.save.inventory,stock);
+});
+
+test('dialogue templates change presentation while the speaker and dialogue stay live', () => {
+  const game=new AtelierGame();game.page=new Node('Page');game.overlay=new Node('Dialogs');game.notices=new Node('Notices');
+  game.save=rules.freshSave();game.screen='home';game.storyLine=4;
+  const template=new Node('Moved speaker');template.setPosition(98,-951);
+  template.addComponent(UITransform).setAnchorPoint(0,1);template.getComponent(UITransform).setContentSize(510,58);
+  const key=layoutKey('dialogue',82,947,550,58,new Map());game.layouts.set(key,template);
+  game.storyText();
+  const label=[...game.layoutKeys].find(([node,k])=>k===key)?.[0].getComponent(Label);
+  assert.equal(label.string,'奶奶');assert.equal(label.node.position.x,98);
+  game.storyLine=3;game.storyText();
+  assert.equal([...game.layoutKeys].find(([node,k])=>k===key)?.[0].getComponent(Label).string,'阿禾');
 });

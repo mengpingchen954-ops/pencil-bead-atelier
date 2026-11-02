@@ -20,7 +20,7 @@ const { ccclass } = _decorator;
 const PAPER = '#f7f0df', INK = '#594d3f', SAGE = '#718366', MUTED = '#94846d', GOLD = '#c2a477';
 const BOARD_Y = 340, CELL = 78;
 const color = (hex: string) => new Color().fromHEX(hex);
-type Page = 'cover' | 'home' | 'orders' | 'craft' | 'match' | 'decor' | 'album' | 'journal' | 'contest' | 'contestCraft' | 'delivery';
+type Page = 'cover' | 'home' | 'orders' | 'craft' | 'match' | 'decor' | 'album' | 'journal' | 'contest' | 'contestCraft' | 'delivery' | 'dialogue';
 
 @ccclass('AtelierGame')
 export class AtelierGame extends Component {
@@ -50,6 +50,8 @@ export class AtelierGame extends Component {
   private modal = '';
   private storyIndex = 0;
   private storyLine = 0;
+  private dialogueState: { title:string; speaker:string; text:string } | null = null;
+  private recordReturn: (()=>void) | null = null;
   private journalPage = 0;
   private albumRepeat = false;
   private media: any = {};
@@ -159,6 +161,7 @@ export class AtelierGame extends Component {
       goals: this.session ? rules.goalProgress(this.session) : [],
       save: this.save, session: this.session, selected: this.selected, slot: this.slot,
       delivery: rules.pendingDelivery(this.save),
+      dialogue: this.dialogueState,
       music:this.music?.snapshot(),
       story: this.modal === 'story' ? { id: STORIES[this.storyIndex].id, line: this.storyLine } : null };
   }
@@ -301,7 +304,7 @@ export class AtelierGame extends Component {
     const grain = this.box('Paper fibres', 0, 0, 720, 1280).addComponent(Graphics);
     grain.strokeColor = color('#b6a17b14'); grain.lineWidth = 1;
     for (let i=0;i<180;i++) { const x=(i*173)%720,y=(i*97)%1280; grain.moveTo(x,-y); grain.lineTo(x+3,-y-1); } grain.stroke();
-    if (this.screen !== 'cover' && this.screen !== 'delivery') this.chrome();
+    if (this.screen !== 'cover' && this.screen !== 'delivery' && this.screen !== 'dialogue') this.chrome();
     switch (this.screen) {
       case 'cover': this.cover(); break;
       case 'home': this.home(); break;
@@ -314,6 +317,7 @@ export class AtelierGame extends Component {
       case 'contest': this.contest(); break;
       case 'contestCraft': this.craft(); break;
       case 'delivery': this.delivery(); break;
+      case 'dialogue': this.storyText(); break;
     }
     this.layoutKeys.forEach((key,node) => {
       const source=this.layouts.get(key)?.getComponent(AtelierLayout), drawing=node.getComponent(Graphics);
@@ -642,23 +646,28 @@ export class AtelierGame extends Component {
     if(invitation)this.toast('收到比赛邀请：'+invitation.title+'，首页可参加。');
     const nextStory=()=>this.startStory(STORIES.findIndex(story=>story.afterOrder===o.id));
     if(o.id!=='sea'){nextStory();return;}
-    this.dialog('sea-response','小满把祝福读了两遍');
-    this.text(seaResponse(this.save),105,365,510,210,29,SAGE,this.overlay);
     const gift=this.save.collection.find((item:any)=>item.id==='sea').gift;
-    this.rect('Blessing card',100,605,520,135,gift.paper==='sky'?'#e4edf0':'#fff9e9',this.overlay,16,'#c7b18b');
-    this.text('你写下的祝福\n'+SEA_BLESSINGS.find(b=>b.id===gift.blessing)!.text,120,620,480,105,25,INK,this.overlay,true);
-    this.text('这张卡已和作品一起收入图鉴。',105,780,510,60,23,MUTED,this.overlay,true);
-    this.button('目送她出发',135,917,450,64,()=>{this.closeModal();nextStory();},this.overlay,true);
+    const blessing=SEA_BLESSINGS.find(b=>b.id===gift.blessing)!.text;
+    const response=seaResponse(this.save).replace(/^小满：/,'');
+    const depart=()=>{this.closeModal();nextStory();};
+    const show=()=>{
+      const stage=this.dialogueStage('sea-response','小满把祝福读了两遍','小满',response,
+        [['祝福卡',blessing],['小满',response]],show,depart);
+      this.text('祝福卡 · '+blessing,82,1138,556,35,20,SAGE,stage);
+      this.button('目送她出发',396,1180,242,56,depart,stage,true);
+    };show();
   }
   private seaChat(questionId='') {
     if(!this.save.completed.includes('daisy'))return;
-    this.dialog('sea-chat','听听小满的故事');
     const question=SEA_QUESTIONS.find(q=>q.id===questionId);
-    this.text(question?'阿禾：'+question.ask+'\n\n小满：'+question.answer+'\n\n'+question.follow:'小满：我想要蓝色。第一次自己出远门，有点怕。\n\n阿禾把珠盒往她身边推了推，等她慢慢说。',105,342,510,300,26,INK,this.overlay);
-    SEA_QUESTIONS.forEach((q,i)=>this.button((this.save.seaHeart.facts.includes(q.id)?'✓ ':'')+q.ask,105,666+i*74,510,60,()=>{
+    const leave=()=>{this.closeModal();this.render();};
+    const records=[['小满','我想要蓝色。第一次自己出远门，有点怕。'],
+      ...this.save.seaHeart.facts.flatMap((id:string)=>{const q=SEA_QUESTIONS.find(q=>q.id===id)!;return [['阿禾',q.ask],['小满',q.answer],['阿禾',q.follow.replace(/^阿禾：/,'')]];})];
+    const stage=this.dialogueStage('sea-chat','听听小满的故事','小满',question?question.answer+'\n'+question.follow:records[0][1],records,()=>this.seaChat(questionId),leave,true);
+    SEA_QUESTIONS.forEach((q,i)=>this.button((this.save.seaHeart.facts.includes(q.id)?'✓ ':'')+q.ask,82,1002+i*61,556,53,()=>{
       const next=askSea(this.save,q.id);if(next){this.save=next;this.persist();}this.seaChat(q.id);
-    },this.overlay));
-    this.button('把这份心意记住',135,928,450,60,()=>{this.closeModal();this.render();},this.overlay,true);
+    },stage));
+    this.button('把这份心意记住',246,1191,392,52,leave,stage,true);
   }
   private seaPacking() {
     this.dialog('sea-packing','亲手写一句祝福');
@@ -1110,11 +1119,11 @@ export class AtelierGame extends Component {
       desk:{title:'下一份心意，从这里开始',line:'珠盒归了位，桌面也宽敞起来。\n\n阿禾摊开新的设计稿。奶奶把茶放在手边：“先喝一口，再慢慢想。”',art:'pencil-workshop'},
     };
     const moment=moments[id]||moments.desk;
-    this.dialog('renovation',moment.title);
-    this.image(moment.art,104,345,512,300,this.overlay);
-    this.text(moment.line,110,666,500,194,26,INK,this.overlay);
-    this.text('焕新 '+rules.shopProgress(this.save).percent+'% · 你的心意，留在了小店里',100,871,520,40,22,SAGE,this.overlay,true);
-    this.button('看看我们的新角落',130,941,460,62,()=>this.closeModal(),this.overlay,true);
+    const show=()=>{
+      const stage=this.dialogueStage('renovation',moment.title,'小店日常',moment.line,[['小店日常',moment.line]],show,()=>this.closeModal());
+      this.text('小店焕新 '+rules.shopProgress(this.save).percent+'%',82,1188,250,40,20,SAGE,stage);
+      this.button('看看我们的新角落',344,1180,294,56,()=>this.closeModal(),stage,true);
+    };show();
   }
   private album() {
     const repeat=this.albumRepeat&&this.save.repeatCollection.length>0,collection=repeat?this.save.repeatCollection:this.save.collection;
@@ -1159,15 +1168,16 @@ export class AtelierGame extends Component {
     this.button(this.save.seaHeart.visited?'旅行留影 · 小满的第一次独行':seaVisitReady(this.save)?'小满回来了 · 听听后来的故事':'海风订单 · 心意聊天与回访',38,1155,644,35,()=>this.seaRecord());
   }
   private dialog(id: string,title: string) {
-    this.stopVideo();this.clear(this.overlay);this.modal=id;
+    this.stopVideo();this.clear(this.overlay);this.modal=id;this.dialogueState=null;this.recordReturn=null;
     this.accessibility?.showDialog(title);
     const blocker=this.rect('Modal backdrop',0,0,720,1280,'#403a2cc4',this.overlay,0);blocker.addComponent(BlockInputEvents);
     this.rect('Dialog paper',60,230,600,820,PAPER,this.overlay,26,'#c7b18b');
     this.text(title,94,253,478,70,32,INK,this.overlay);
     this.button('×',579,250,58,54,()=>this.dismiss(),this.overlay);
   }
-  private closeModal() { this.stopVideo();this.clear(this.overlay);this.modal='';this.accessibility?.closeDialog(); }
+  private closeModal() { this.stopVideo();this.clear(this.overlay);this.modal='';this.dialogueState=null;this.recordReturn=null;this.accessibility?.closeDialog(); }
   private dismiss() {
+    if(this.modal==='dialogue-record'&&this.recordReturn){const resume=this.recordReturn;this.recordReturn=null;resume();return;}
     if(this.modal==='result'){if(this.session?.status==='won')this.claim();else{this.session=null;this.navigate(this.returnScreen);}return;}
     this.closeModal();
   }
@@ -1252,17 +1262,57 @@ export class AtelierGame extends Component {
     if(media?.src&&/^videos\/[a-zA-Z0-9_\-/]+\.mp4$/.test(media.src))this.storyVideo(media);
     else this.storyText();
   }
+  private dialogueStage(id:string,title:string,speaker:string,body:string,records:string[][],resume:()=>void,skip:()=>void,choices=false) {
+    this.stopVideo();this.clear(this.overlay);this.modal=id;this.dialogueState={title,speaker,text:body};
+    this.clear(this.notices);this.toastGeneration++;
+    this.accessibility?.showDialog(title);
+    for(const [node,key] of this.layoutKeys)if(key==='dialogue'||key.startsWith('dialogue/'))this.layoutKeys.delete(node);
+    for(const key of this.layoutCounts.keys())if(key.startsWith('dialogue/'))this.layoutCounts.delete(key);
+    const stage=this.container('Dialogue stage',this.overlay);this.layoutKeys.set(stage,'dialogue');
+    this.rect('Dialogue backdrop',0,0,720,1280,'#899879',stage,0).addComponent(BlockInputEvents);
+    this.image('pencil-dialogue-stage',0,0,720,930,stage);
+    this.text(title,218,301,284,66,25,PAPER,stage,true);
+    this.image('icon-book',568,49,36,39,stage);
+    this.button('记录',548,95,76,44,()=>this.dialogueRecord(title,records,resume),stage);
+    const icon=this.box('Skip icon',650,53,40,34,stage).addComponent(Graphics);
+    icon.strokeColor=color('#795f46');icon.fillColor=color('#fff8e8');icon.lineWidth=2.5;
+    for(const x of [0,18]){icon.moveTo(x,0);icon.lineTo(x+17,-15);icon.lineTo(x,-30);icon.close();icon.fill();icon.stroke();}
+    this.button('跳过',635,95,76,44,skip,stage);
+    const top=choices?775:925;
+    this.rect('Dialogue card shadow',38,top+7,648,1250-top,'#5e59486b',stage,13);
+    this.rect('Dialogue card',34,top,652,1250-top,'#fff8ed',stage,12,'#967554');
+    this.rect('Dialogue card lining',43,top+8,634,1234-top,'#fff8ed',stage,7,'#d1b895');
+    this.polygon('Dialogue pointer',[[565,top+9],[590,top-22],[618,top+9]],'#fff8ed',stage,'#b79a77');
+    this.text(speaker,82,top+22,550,58,34,'#69452e',stage);
+    this.rect('Dialogue rule',82,top+91,556,2,'#d1b895',stage,0);
+    const text=this.text(body,82,top+106,556,choices?112:140,choices?25:29,'#69452e',stage);
+    text.verticalAlign=Label.VerticalAlign.TOP;
+    return stage;
+  }
+  private dialogueRecord(title:string,records:string[][],resume:()=>void,page=-1) {
+    const last=Math.max(0,Math.ceil(records.length/2)-1);page=page<0?last:Math.min(last,Math.max(0,page));
+    this.dialog('dialogue-record','对话记录');this.recordReturn=resume;
+    this.text(title,100,336,520,60,26,SAGE,this.overlay,true);
+    records.slice(page*2,page*2+2).forEach((line,i)=>{
+      this.text(line[0],105,411+i*200,510,39,26,SAGE,this.overlay);
+      this.text(line[1],105,455+i*200,510,137,25,INK,this.overlay);
+    });
+    this.text((page+1)+' / '+(last+1),290,832,140,40,20,MUTED,this.overlay,true);
+    this.button('上一页',105,883,155,52,()=>this.dialogueRecord(title,records,resume,page-1),this.overlay,false,page>0);
+    this.button('下一页',460,883,155,52,()=>this.dialogueRecord(title,records,resume,page+1),this.overlay,false,page<last);
+    this.button('返回对话',235,958,250,57,resume,this.overlay,true);
+  }
+  private finishDialogueStory() {
+    const s=STORIES[this.storyIndex];this.save=finishStory(this.save,s.id);this.persist();this.closeModal();this.render();
+    if(s.evidence)this.toast('已收入手账：'+s.evidence.title);
+  }
   private storyText() {
-    const s=STORIES[this.storyIndex],line=s.lines[this.storyLine];this.dialog('story',s.title);
-    this.image('pencil-counter',85,330,550,315,this.overlay);
-    if(['阿禾','奶奶'].includes(line[0]))this.image(line[0]==='阿禾'?'girl':'grandma',104,502,122,140,this.overlay);
-    this.text(line[0],110,667,500,46,29,SAGE,this.overlay);
-    this.text(line[1],110,724,500,163,27,INK,this.overlay);
-    this.text(`${this.storyLine+1} / ${s.lines.length}`,110,954,160,40,20,MUTED,this.overlay);
-    this.button(this.storyLine===s.lines.length-1?'收好这一页':'下一句  →',315,941,292,60,()=>{
-      if(this.storyLine<s.lines.length-1){this.storyLine++;this.storyText();}
-      else{this.save=finishStory(this.save,s.id);this.persist();this.closeModal();this.render();if(s.evidence)this.toast('已收入手账：'+s.evidence.title);}
-    },this.overlay,true);
+    const s=STORIES[this.storyIndex],line=s.lines[this.storyLine];
+    const stage=this.dialogueStage('story',s.title,line[0],line[1],s.lines.slice(0,this.storyLine+1),()=>this.storyText(),()=>this.finishDialogueStory());
+    this.text(`${this.storyLine+1} / ${s.lines.length}`,82,1188,200,40,20,MUTED,stage);
+    this.button(this.storyLine===s.lines.length-1?'收好这一页':'下一句  →',396,1180,242,56,()=>{
+      if(this.storyLine<s.lines.length-1){this.storyLine++;this.storyText();}else this.finishDialogueStory();
+    },stage,true);
   }
   private storyVideo(media:any) {
     const id=STORIES[this.storyIndex].id;this.dialog('story',STORIES[this.storyIndex].title);

@@ -1,5 +1,13 @@
 Original prompt: 根据 E:\Game\手串\铅笔2 美术制作手机游戏原型，Three.js 实现，浏览器预览测试并修复；优先 imagegen，美术不可用时继续用程序化几何、Canvas、SVG、CSS 与粒子完成统一视觉。
 
+## Reference-style dialogue — 2026-11-02
+- User requested 791b90a71268df0f1bbf539f918df277.png as the dialogue interface reference. Added a proportion-preserved full-screen illustrated stage, live scene sign, speaker name, bottom dialogue card and top-right Record/Skip controls for all ten authored stories, sea chat/response and renovation moments.
+- Reproducible helper extracts only the upper illustration and removes baked controls/title using blank wall/sign samples. Native Cocos labels and controls show real narrative/choices; the supplied illustration retains the same heroine and grandmother (no additional portraits or expression animation).
+- Record shows only read story lines, two entries per page; Return or Escape resumes the exact line. Explicit story Skip marks the unlocked scene read through the existing idempotent finishStory rule, with its existing journal evidence and no economy rewards. Escape leaves an unfinished story unread. Chat Skip only leaves, without discovering unanswered details.
+- Creator now includes 12 editable layouts (new 剧情对话), with dynamic title/speaker/text and unchanged layout override support. Entry scene was backed up; its pre-edit hash matched the repository scene. No user editor changes were overwritten.
+- 60 Cocos tests passed, including real dialogue record/skip controllers, presentation overrides and original rules. Production browser suite passed all ten scenes, exact speakers/text, records without spoilers, native touch Record/Continue/Skip, saved completion, no repeated payout, sea choices and blessing response, and 360/390/1440 layouts. Inspected dialogue, record, customer response and skill-client screenshots; no page/console/HTTP errors.
+- Rebuilding and publishing to the existing GitHub/Pages URL, followed by anonymous dialogue/delivery and gameplay regression. Physical phone testing remains outstanding.
+
 ## Reference-style order settlement — 2026-11-02
 - User requested the order submission screen follow 7c3cbc7c2fdd8028625e24557a283ddc.png. Added a full Cocos delivery page with a proportion-preserved handover illustration, actual customer/order, exact paid twelve-bead arrangement and charm, earned coins/reputation, collection thumbnails/locks and Continue Business.
 - Only the illustration is cropped from the reference. All rewards, previews, text, progress and controls are live native nodes. Added its reproducible extraction helper and source manifest; Creator now includes 11 editable layouts and 25 intended textures.

@@ -270,6 +270,11 @@
         1220
       ],
       "method": "Handover illustration only; contain source proportions with a small edge crop; native live receipt UI"
+    },
+    {
+      "asset": "pencil-dialogue-stage.jpg",
+      "source": "791b90a71268df0f1bbf539f918df277.png",
+      "method": "Proportion-preserved upper dialogue illustration; remove baked title and controls with sampled blank wall/sign; native dialogue panel covers lower edge"
     }
   ]
 }
