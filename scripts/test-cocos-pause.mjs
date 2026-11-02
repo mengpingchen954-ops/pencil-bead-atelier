@@ -8,7 +8,7 @@ const browser=await chromium.launch({headless:true});
 try {
  const context=await browser.newContext({viewport:{width:540,height:960},isMobile:true,hasTouch:true}),page=await context.newPage(),errors=[];
  page.on('pageerror',e=>errors.push(e.message));page.on('console',m=>{if(m.type()==='error')errors.push(m.text());});page.on('response',r=>{if(r.status()>=400)errors.push(r.status()+' '+r.url());});
- const initial={...freshSave(),started:true,reduced:true,sound:false,music:{enabled:false,volume:.35,track:'glimmer'},inventory:Array(6).fill(100),draft:[0,3,...Array(10).fill(null)]};
+ const initial={...freshSave(),started:true,completed:['daisy'],orderId:'sea',reduced:true,sound:false,music:{enabled:false,volume:.35,track:'glimmer'},inventory:Array(6).fill(100),draft:[0,3,...Array(10).fill(null)]};
  await page.addInitScript(s=>{if(window.name.startsWith('qa-save:')){localStorage.setItem('pencil-bead-atelier-v1',window.name.slice(8));window.name='';}if(!localStorage.getItem('pencil-bead-atelier-v1'))localStorage.setItem('pencil-bead-atelier-v1',JSON.stringify(s));},initial);
  const ready=()=>page.waitForFunction(()=>typeof window.render_game_to_text==='function');
  const state=async()=>JSON.parse(await page.evaluate(()=>window.render_game_to_text()));
@@ -16,9 +16,9 @@ try {
  const tap=async(x,y)=>{const b=await page.locator('#GameCanvas').boundingBox(),scale=Math.min(b.width/720,b.height/1280);await page.touchscreen.tap(b.x+b.width/2+(x-360)*scale,b.y+b.height/2+(y-640)*scale);};
  const escape=async()=>{await page.locator('#GameCanvas').focus();await page.keyboard.press('Escape');};
  const fixture=async save=>{await page.evaluate(s=>{window.name='qa-save:'+JSON.stringify(s);},save);await page.reload({waitUntil:'networkidle'});await ready();};
- const startMatch=async()=>{await action('消除采珠');await page.getByRole('button',{name:/^开始采珠 · /}).dispatchEvent('click');assert.equal((await state()).screen,'match');};
+ const startMatch=async()=>{await action('消除采珠');await action('再采一些备用');assert.equal((await state()).screen,'match');};
  const audioReady=()=>page.waitForFunction(()=>JSON.parse(window.render_game_to_text()).music.playing,{},{timeout:15000});
- await page.goto(base,{waitUntil:'networkidle'});await ready();await action('按单制作');await action('开始制作');await tap(660,532);
+ await page.goto(base,{waitUntil:'networkidle'});await ready();await action('按单制作');await action('开始制作');await tap(650,42);
  let s=await state();assert.equal(s.modal,'pause');assert.equal(s.pause.context,'craft');assert.deepEqual(s.save.draft,initial.draft);
  await page.screenshot({path:'artifacts/pause/craft.png'});
  await tap(90,1040);assert.deepEqual((await state()).save.draft,initial.draft);

@@ -87,19 +87,27 @@ export function createBoard(seed = 1) {
   throw new Error("Unable to create a playable board");
 }
 export const targetForLevel = (level) => levelConfig(level).target;
-export function newSession(seed = 1, level = 1, order = null) {
+export function newSession(seed = 1, level = 1, order = null, save = null) {
   const config = levelConfig(level, order);
+  const supply = save && order ? supplyGoals(save, order) : [];
+  let board = createBoard(seed);
+  if (supply.length) {
+    for (let attempt=0;attempt<64&&!findSupplyMove(board,supply);attempt++) board=createBoard(seed+attempt+1);
+  }
+  const early = level <= 3 && supply.length > 0;
   return {
-    board: createBoard(seed),
+    board,
     seed,
     moves: config.moves,
     target: config.target,
-    title: config.title,
-    tip: config.tip,
-    objectives: config.objectives,
+    title: early ? '为这条手串备料' : config.title,
+    tip: early ? '先消除缺少的颜色，备齐后就能返回制作。前三关采到的珠材会立即保存。' : config.tip,
+    objectives: early ? supply : config.objectives,
+    supplyGoals: supply,
+    supplyOnly: early,
     specials: Array(64).fill(''),
-    obstacles: [...config.obstacles],
-    initialObstacles: [...config.obstacles],
+    obstacles: early ? Array(64).fill('') : [...config.obstacles],
+    initialObstacles: early ? Array(64).fill('') : [...config.obstacles],
     cleared: { paper: 0, thread: 0 },
     rewardOrder: order ? { id: order.id, customer: order.customer, main: order.main, accent: order.accent,
       mainNeed: order.mainNeed, accentNeed: order.accentNeed, palette: [...(order.palette || [])] } : null,
@@ -109,6 +117,33 @@ export function newSession(seed = 1, level = 1, order = null) {
     status: "playing",
     level,
   };
+}
+export function materialDeficits(save,order=currentOrder(save)) {
+  const need=draftCounts(save.draft);
+  need[order.main]=Math.max(need[order.main],order.mainNeed);
+  need[order.accent]=Math.max(need[order.accent],order.accentNeed);
+  return need.map((n,i)=>Math.max(0,n-save.inventory[i]));
+}
+export function supplyGoals(save,order=currentOrder(save)) {
+  const deficits=materialDeficits(save,order);
+  const goals=deficits.flatMap((target,type)=>target?[{kind:'color',type,target}]:[]);
+  const missing=Math.max(0,12-total(save.inventory));
+  if(missing>total(deficits))goals.push({kind:'total',target:missing});
+  return goals;
+}
+export function findSupplyMove(board,goals) {
+  const types=goals.filter(g=>g.kind==='color').map(g=>g.type);
+  for(let i=0;i<64;i++)for(const j of [i+1,i+8]){
+    if(!adjacent(i,j)||board[i]===board[j])continue;
+    const next=[...board];[next[i],next[j]]=[next[j],next[i]];
+    const hit=matches(next);if(hit.length&&(!types.length||hit.some(n=>types.includes(next[n]))))return [i,j];
+  }
+  return null;
+}
+export function bankEarlyCollection(save,session) {
+  if(!session||session.level>3)return {save,session};
+  const previous=session.banked||Array(6).fill(0);
+  return {save:{...save,inventory:save.inventory.map((n,i)=>n+Math.max(0,session.collected[i]-previous[i]))},session:{...session,banked:[...session.collected]}};
 }
 export function goalProgress(session) {
   const objectives = session.objectives || [{ kind: 'total', target: session.target }];
@@ -300,6 +335,7 @@ export function useTool(session, tool, index = 0) {
 export function sessionRewards(session, save = null) {
   if (session?.status !== 'won') return [0, 0, 0, 0, 0, 0];
   const reward = [...session.collected];
+  if(session.supplyOnly)return reward;
   const order = session.rewardOrder || (save ? currentOrder(save) : null);
   if (!order) return reward;
   const needed = Array(6).fill(0);
@@ -317,7 +353,9 @@ export function freshSave() {
     energy: 10,
     energyAt: Date.now(),
     level: 1,
-    inventory: [3, 0, 0, 2, 0, 0],
+    inventory: [10, 0, 0, 5, 2, 0],
+    starterKit: true,
+    firstSteps: {},
     completed: [],
     collection: [],
     repeatOrders: 0,
@@ -378,6 +416,10 @@ export function normalizeSave(input) {
       ),
     ),
   );
+  s.starterKit = true;
+  if(input.starterKit!==true&&!s.completed.length)s.inventory=s.inventory.map((n,i)=>Math.max(n,[10,0,0,5,2,0][i]));
+  s.firstSteps = Object.fromEntries(['craft','firstDelivery','secondOrder','firstGather','secondDelivery'].flatMap(key=>
+    Number.isFinite(input.firstSteps?.[key])&&input.firstSteps[key]>0?[[key,Math.min(Date.now(),input.firstSteps[key])]]:[]));
   for (const f of FURNITURE)
     s.upgrades[f.id] = bounded(input.upgrades?.[f.id], 2);
   s.renovation.cleared = input.renovation === undefined && Object.values(s.upgrades).some((tier) => tier > 0)
@@ -470,7 +512,7 @@ export function deliver(save) {
   const counts = draftCounts(save.draft);
   const completed = repeat ? save.completed : [...save.completed, order.id];
   const repeatOrders = bounded(save.repeatOrders) + (repeat ? 1 : 0);
-  return {
+  const next = {
     ...save,
     coins: save.coins + order.reward,
     rep: save.rep + order.rep,
@@ -486,6 +528,11 @@ export function deliver(save) {
     ],
     draft: Array(12).fill(null),
   };
+  return !repeat&&completed.length<=2?recordFirstStep(next,completed.length===1?'firstDelivery':'secondDelivery'):next;
+}
+export function recordFirstStep(save,key,now=Date.now()) {
+  if(!['craft','firstDelivery','secondOrder','firstGather','secondDelivery'].includes(key)||save.firstSteps?.[key])return save;
+  return {...save,firstSteps:{...save.firstSteps,[key]:now}};
 }
 export function purchase(save, id, tier) {
   const item = FURNITURE.find((f) => f.id === id);

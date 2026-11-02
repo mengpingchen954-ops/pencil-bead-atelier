@@ -23,38 +23,38 @@ try {
  await page.goto(base,{waitUntil:'networkidle'});await ready();await action('按单制作');await action('开始制作');
  let s=await state();assert.equal(s.crafting.orderId,'daisy');assert.equal(s.crafting.slots.length,12);
  await page.screenshot({path:'artifacts/workshop/empty.png'});
- await tap(538,1210);assert.equal((await state()).screen,'craft');assert.equal((await state()).save.coins,initial.coins);
- await at(s.crafting.materials[0]);s=await state();const origin=s.save.draft.findIndex(n=>n===0),target=(origin+1)%12;
+ await tap(440,1180);assert.equal((await state()).screen,'craft');assert.equal((await state()).save.coins,initial.coins);
+ await at(s.crafting.materials[0]);await at(s.crafting.slots[0]);s=await state();const origin=s.save.draft.findIndex(n=>n===0),target=(origin+1)%12;
  assert.equal(s.save.draft.filter(n=>n!==null).length,1);
  const cdp=await context.newCDPSession(page);
  const drag=async(a,b)=>{const p=await point(a.x,a.y),q=await point(b.x,b.y);await cdp.send('Input.dispatchTouchEvent',{type:'touchStart',touchPoints:[p]});for(let i=1;i<=5;i++)await cdp.send('Input.dispatchTouchEvent',{type:'touchMove',touchPoints:[{x:p.x+(q.x-p.x)*i/5,y:p.y+(q.y-p.y)*i/5}]});await cdp.send('Input.dispatchTouchEvent',{type:'touchEnd',touchPoints:[]});};
  await drag(s.crafting.slots[origin],s.crafting.slots[target]);s=await state();assert.equal(s.save.draft[target],0);assert.equal(s.save.draft[origin],null);
- await tap(80,1210);s=await state();assert.equal(s.save.draft[origin],0);assert.equal(s.save.draft[target],null);
- await at(s.crafting.slots[target]);assert.equal((await state()).slot,target,'native empty-groove selection');await at(s.crafting.materials[3]);s=await state();assert.equal(s.save.draft[target],3,JSON.stringify({origin,target,slot:s.slot,draft:s.save.draft,materials:s.crafting.materials,grooves:s.crafting.slots}));
+ await tap(74,1092);s=await state();assert.equal(s.save.draft[origin],0);assert.equal(s.save.draft[target],null);
+ await at(s.crafting.materials[3]);await at(s.crafting.slots[target]);s=await state();assert.equal(s.save.draft[target],3,JSON.stringify({origin,target,slot:s.slot,draft:s.save.draft,materials:s.crafting.materials,grooves:s.crafting.slots}));
  await drag(s.crafting.slots[origin],s.crafting.slots[target]);s=await state();assert.equal(s.save.draft[origin],3);assert.equal(s.save.draft[target],0);
- await at(s.crafting.slots[origin]);await at(s.crafting.materials[2]);s=await state();assert.equal(s.save.draft[origin],2);
- await at(s.crafting.slots[origin]);await tap(196,1210);s=await state();assert.equal(s.save.draft[origin],null);
- await tap(80,1210);s=await state();assert.equal(s.save.draft[origin],2);
+ await at(s.crafting.slots[origin]);await at(s.crafting.materials[2]);await action('替换');s=await state();assert.equal(s.save.draft[origin],2);
+ await at(s.crafting.slots[origin]);await tap(174,1092);s=await state();assert.equal(s.save.draft[origin],null);
+ await tap(74,1092);s=await state();assert.equal(s.save.draft[origin],2);
  const edited=s.save.draft;await page.reload({waitUntil:'networkidle'});await ready();await action('按单制作');await action('开始制作');assert.deepEqual((await state()).save.draft,edited);
- await tap(360,414);assert.equal((await state()).modal,'sample');await action('按参考排珠');
+ await tap(500,1092);assert.equal((await state()).modal,'sample');await action('按参考排珠');
  s=await state();assert.deepEqual(s.save.draft,ORDERS[0].palette);assert.deepEqual(s.save.inventory,initial.inventory);assert.equal(s.save.coins,initial.coins);
- await tap(310,1210);s=await state();assert.equal(s.modal,'craft-preview');assert.deepEqual(s.crafting.beads,ORDERS[0].palette);
+ await tap(274,1092);s=await state();assert.equal(s.modal,'craft-preview');assert.deepEqual(s.crafting.beads,ORDERS[0].palette);
  await page.screenshot({path:'artifacts/workshop/preview.png'});await tap(360,907);assert.equal((await state()).modal,'');
- await action('月牙');await tap(538,1210);assert.equal((await state()).screen,'craft');await action('✓ 月牙');await action('雏菊');
+ await action('月牙');await tap(440,1180);assert.equal((await state()).screen,'craft');await action('✓ 月牙');await action('雏菊');
  await page.waitForTimeout(2900);await page.screenshot({path:'artifacts/workshop/commission.png'});
  for(const [width,height] of [[360,800],[390,844],[1440,900]]){await page.setViewportSize({width,height});await page.screenshot({path:`artifacts/workshop/layout-${width}.png`});s=await state();assert.equal(s.crafting.slots.length,12);await at(s.crafting.slots[0]);assert.equal((await state()).slot,0);await at(s.crafting.slots[0]);}
- await page.setViewportSize({width:540,height:960});await tap(660,532);assert.equal((await state()).modal,'pause');await escape();
- await tap(538,1210);s=await state();assert.equal(s.screen,'packing');assert.deepEqual(s.packing.beads,ORDERS[0].palette);assert.deepEqual(s.save.inventory,initial.inventory);
+ await page.setViewportSize({width:540,height:960});await tap(650,42);assert.equal((await state()).modal,'pause');await escape();
+ await tap(440,1180);assert.equal((await state()).modal,'first-finished');await action('装进礼盒');s=await state();assert.equal(s.screen,'packing');assert.deepEqual(s.packing.beads,ORDERS[0].palette);assert.deepEqual(s.save.inventory,initial.inventory);
  await escape();assert.equal((await state()).screen,'craft');
- await tap(58,532);assert.equal((await state()).screen,'orders');await action('按单制作 180金');await action('开始制作');assert.equal((await state()).screen,'craft');
+ await tap(70,42);assert.equal((await state()).screen,'orders');await action('按单制作 180金');await action('开始制作');assert.equal((await state()).screen,'craft');
  // Insufficient material uses the original harvest route and does not create free beads.
- await fixture({...initial,inventory:Array(6).fill(0)});s=await state();await at(s.crafting.materials[0]);assert.ok((await state()).save.draft.every(n=>n===null));await tap(650,595);assert.equal((await state()).modal,'intro');await escape();
+ await fixture({...initial,inventory:Array(6).fill(0)});s=await state();await at(s.crafting.materials[0]);await at(s.crafting.slots[0]);assert.ok((await state()).save.draft.every(n=>n===null));await tap(635,1092);assert.equal((await state()).modal,'intro');await escape();
  // Contest reuses the workshop while keeping the customer's exact work and stock separate.
  const commission=[...ORDERS[1].palette].reverse();await fixture({...initial,completed:['daisy'],orderId:'sea',draft:commission,charm:'moon'});
- await action('听故事');assert.equal((await state()).modal,'sea-chat');await escape();await tap(58,532);await escape();
+ await action('听故事');assert.equal((await state()).modal,'sea-chat');await escape();await tap(70,42);await escape();
  await action('参加比赛');await page.getByRole('button',{name:'报名参加',exact:true}).first().dispatchEvent('click');s=await state();assert.equal(s.screen,'contestCraft');assert.equal(s.crafting.contestId,'spring');
- await at(s.crafting.materials[3]);await tap(80,1210);assert.ok((await state()).crafting.beads.every(n=>n===null));
- await tap(360,414);await action('以此为起点排珠');await page.screenshot({path:'artifacts/workshop/contest.png'});await tap(538,1210);assert.equal((await state()).modal,'contest-submit');await action('提交评审');s=await state();assert.equal(s.modal,'contest-result');assert.equal(s.save.coins,initial.coins+60);assert.deepEqual(s.save.draft,commission);assert.equal(s.save.charm,'moon');assert.deepEqual(s.save.inventory,initial.inventory);
+ await at(s.crafting.materials[3]);await at(s.crafting.slots[0]);await tap(74,1092);assert.ok((await state()).crafting.beads.every(n=>n===null));
+ await tap(500,1092);await action('以此为起点排珠');await page.screenshot({path:'artifacts/workshop/contest.png'});await tap(440,1180);assert.equal((await state()).modal,'contest-submit');await action('提交评审');s=await state();assert.equal(s.modal,'contest-result');assert.equal(s.save.coins,initial.coins+60);assert.deepEqual(s.save.draft,commission);assert.equal(s.save.charm,'moon');assert.deepEqual(s.save.inventory,initial.inventory);
  assert.deepEqual(errors,[]);fs.writeFileSync('artifacts/workshop/report.json',JSON.stringify({base,nativeTouch:true,dragAndSwap:true,undoRemoveReplace:true,preview:true,orderValidation:true,packing:true,inventoryGuard:true,contestIsolation:true,reload:true,threeViewports:true,errors},null,2));
  console.log('Workshop passed: native round grooves, placement, touch drag and swap, replacement/remove/undo, exact preview, guarded commission to packing, stock, sea chat, contest isolation and award, reload and three viewports.');
 } finally {await browser.close();}

@@ -16,6 +16,7 @@ try{
  const ready=()=>page.waitForFunction(()=>typeof window.render_game_to_text==='function');
  const state=async()=>JSON.parse(await page.evaluate(()=>window.render_game_to_text()));
  const action=async name=>page.getByRole('button',{name,exact:true}).dispatchEvent('click');
+ const finish=async()=>{await action('完成制作');if((await state()).modal==='first-finished')await action('装进礼盒');};
  const tap=async(x,y)=>{const box=await page.locator('#GameCanvas').boundingBox(),scale=Math.min(box.width/720,box.height/1280);await page.touchscreen.tap(box.x+box.width/2+(x-360)*scale,box.y+box.height/2+(y-640)*scale);};
  await page.goto(base,{waitUntil:'networkidle'});await ready();
  const deliveries=[];
@@ -24,7 +25,7 @@ try{
   if(index){await action('参考配色');await action('按参考排珠');}
   if(index===1){await action('听故事');await action('有什么让你担心的吗？');await action('把这份心意记住');}
   const before=(await state()).save;
-  await action('完成制作');
+  await finish();
   if(index===1){await action('挑选祝福与包装');await action('害怕的时候，也可以慢慢走。');await action('保存包装选择');}
   await action('完成包装');
   let s=await state();assert.equal(s.screen,'delivery');assert.equal(s.modal,'');assert.equal(s.save.coins,before.coins+order.reward);assert.equal(s.save.rep,before.rep+order.rep);
@@ -43,12 +44,12 @@ try{
   }else await action('继续营业');
   s=await state();assert.equal(s.save.deliveryReceipt,null);assert.equal(s.save.coins,before.coins+order.reward);
   if(index===1){assert.equal(s.modal,'sea-response');assert.equal(s.save.collection[1].gift.blessing,'slow');await action('目送她出发');}
-  assert.equal((await state()).modal,'story');await page.keyboard.press('Escape');
+  if(index===0){assert.equal((await state()).modal,'first-feedback');await action('领取下一份委托');await page.locator('#GameCanvas').focus();await page.keyboard.press('Escape');}else{assert.equal((await state()).modal,'story');await page.keyboard.press('Escape');}
   assert.equal((await state()).screen,'home');deliveries.push({id:order.id,reward:order.reward,rep:order.rep});
  }
  const story=structuredClone((await state()).save.collection);
  await action('按单制作');await action('开始制作');await action('参考配色');await action('按参考排珠');const before=(await state()).save;
- await action('完成制作');await action('完成包装');let s=await state();
+ await finish();await action('完成包装');let s=await state();
  assert.equal(s.screen,'delivery');assert.equal(s.delivery.repeat,true);assert.equal(s.delivery.order.name,'再送妈妈一朵花');assert.equal(s.delivery.number,1);assert.deepEqual(s.save.collection,story);
  assert.equal(s.save.coins,before.coins+180);await page.screenshot({path:'artifacts/delivery/repeat-receipt.png'});
  await page.reload({waitUntil:'networkidle'});await ready();assert.equal((await state()).delivery.repeat,true);

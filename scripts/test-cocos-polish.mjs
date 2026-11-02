@@ -22,7 +22,7 @@ function bestAction(s,preferCreation=false){
 try{
  const context=await browser.newContext({viewport:{width:540,height:960},isMobile:true,hasTouch:true});
  const page=await context.newPage();page.on('pageerror',e=>errors.push(e.message));page.on('console',m=>{if(m.type()==='error')errors.push(m.text()+' '+JSON.stringify(m.location()));});page.on('requestfailed',r=>errors.push(r.url()+' '+JSON.stringify(r.failure())));page.on('response',r=>{if(r.status()>=400)errors.push(r.status()+' '+r.url());});
- const fixture=(level,reduced=true)=>({...freshSave(),started:true,level,reduced,sound:true,music:{track:'glimmer',volume:.35,enabled:false}});
+ const fixture=(level,reduced=true)=>({...freshSave(),started:true,completed:['daisy'],orderId:'sea',inventory:Array(6).fill(50),level,reduced,sound:true,music:{track:'glimmer',volume:.35,enabled:false}});
  await page.addInitScript(save=>{
   if(window.name.startsWith('qa-save:')){localStorage.setItem('pencil-bead-atelier-v1',window.name.slice(8));window.name='';}
   if(!localStorage.getItem('pencil-bead-atelier-v1'))localStorage.setItem('pencil-bead-atelier-v1',JSON.stringify(save));
@@ -37,11 +37,11 @@ try{
  const settled=()=>page.waitForFunction(()=>!JSON.parse(window.render_game_to_text()).busy,{},{timeout:30000});
  await page.goto(base,{waitUntil:'networkidle'});await ready();
  await page.screenshot({path:'artifacts/polish/home.png'});
- assert.equal((await state()).save.completed.length,0);
+ assert.equal((await state()).save.completed.length,1);
  assert.equal(await page.getByRole('button',{name:'按单制作',exact:true}).count(),1);
  await tap(520,1050);assert.equal((await state()).modal,'intro');
  await page.screenshot({path:'artifacts/polish/intro.png'});
- await action('开始采珠 · 16 步');
+ await action('再采一些备用');
  await page.screenshot({path:'artifacts/polish/match.png'});
  let s=await state();assert.equal(s.session.seed,971);assert.equal(s.session.moves,16);
  // An invalid real swipe returns to its starting cells and never spends a move.
@@ -69,42 +69,35 @@ try{
  }
  s=await state();assert.equal(s.session.status,'won');assert.ok(created>0);assert.ok(activated>0);assert.ok(chains>0);
  await page.screenshot({path:'artifacts/polish/reward.png'});
- const stock=s.save.inventory.slice(),reward=sessionRewards(s.session,s.save);await action('收好珠材 · 回工坊');s=await state();
- assert.equal(s.screen,'craft');assert.equal(s.save.level,2);assert.deepEqual(s.save.inventory,stock.map((n,i)=>n+reward[i]));
- await action('参考配色');await action('按参考排珠');await action('完成制作');await action('完成包装');
- s=await state();assert.deepEqual(s.save.completed,['daisy']);assert.equal(s.save.coins,260);assert.equal(s.save.orderId,'sea');
- assert.equal(s.screen,'delivery');await action('继续营业');
- // Close the story without awarding anything extra, then verify persisted commission progression.
- await page.keyboard.press('Escape');await page.reload({waitUntil:'networkidle'});await ready();assert.deepEqual((await state()).save.completed,['daisy']);
- // Continue the earned save through Xiaoman's complete order and her later return.
- await tap(670,44);await action('减少动态效果  关闭');await page.keyboard.press('Escape');
- const harvestCurrent=async()=>{
-  const before=await state();await action('消除采珠');await action('开始采珠 · '+newSession(971,before.save.level,ORDERS.find(o=>o.id===before.save.orderId)).moves+' 步');
-  for(let turn=0;turn<40&&(await state()).session.status==='playing';turn++)await playAction(bestAction((await state()).session));
-  assert.equal((await state()).session.status,'won');await action('收好珠材 · 回工坊');
- };
- await harvestCurrent();await action('听故事');await action('有什么让你担心的吗？');await action('你最期待什么？');await action('把这份心意记住');
- await action('参考配色');await action('按参考排珠');await action('完成制作');
- await action('挑选祝福与包装');await action('害怕的时候，也可以慢慢走。');await action('晨空蓝纸');await action('海风蓝丝带');await action('保存包装选择');await action('完成包装');
- assert.equal((await state()).screen,'delivery');await action('继续营业');assert.equal((await state()).modal,'sea-response');await page.screenshot({path:'artifacts/polish/sea-response.png'});await action('目送她出发');await page.keyboard.press('Escape');
- await harvestCurrent();await action('参考配色');await action('按参考排珠');await action('完成制作');await action('完成包装');await action('继续营业');await page.keyboard.press('Escape');
- await action('小满回来了 · 看旅行留影');await action('添一颗小爱心');s=await state();
- assert.equal(s.save.seaHeart.visited,true);assert.equal(s.save.collection.find(w=>w.id==='sea').gift.blessing,'slow');assert.equal(s.save.coins,740);
- await page.screenshot({path:'artifacts/polish/sea-return.png'});
- results.push({stage:1,created,activated,chains,delivery:true,seaOrderAndReturn:true});
+ const stock=s.save.inventory.slice(),reward=sessionRewards(s.session,s.save),banked=s.session.banked||Array(6).fill(0);await action('收好珠材 · 回工坊');s=await state();
+ assert.equal(s.screen,'craft');assert.equal(s.save.level,2);assert.deepEqual(s.save.inventory,stock.map((n,i)=>n+reward[i]-banked[i]));
+ results.push({stage:1,created,activated,chains,earlyBanking:true});
  for(let level=2;level<=15;level++){
   await page.evaluate(save=>{window.name='qa-save:'+JSON.stringify(save);},fixture(level));await page.reload({waitUntil:'networkidle'});await ready();
-  await action('消除采珠');let initial=await state();await action('开始采珠 · '+newSession(971,level,ORDERS[0]).moves+' 步');
+  await action('消除采珠');let initial=await state();await action('再采一些备用');
   if([3,4,10,15].includes(level))await page.screenshot({path:'artifacts/polish/stage-'+level+'.png'});
   let turns=0;
   for(;turns<40&&(await state()).session.status==='playing';turns++){const choice=bestAction((await state()).session);assert.ok(choice);await playAction(choice);}
   const done=await state();assert.equal(done.session.status,'won','stage '+level);assert.ok(goalProgress(done.session).every(g=>g.done));
-  assert.deepEqual(done.save.inventory,initial.save.inventory,'rewards wait for claim');
+  assert.deepEqual(done.save.inventory,initial.save.inventory.map((n,i)=>n+(level<=3?done.session.collected[i]:0)),'early collection banks; later rewards wait for claim');
   results.push({stage:level,turns,goals:goalProgress(done.session)});
  }
- // Losing never grants materials. Retrying spends exactly one more energy; pause retains the board.
+ // Early losses retain actual collection through returning to craft and reloading.
+ await page.evaluate(save=>{window.name='qa-save:'+JSON.stringify(save);},fixture(2));await page.reload({waitUntil:'networkidle'});await ready();
+ await action('消除采珠');await action('再采一些备用');
+ const earlyStock=(await state()).save.inventory.slice();
+ for(let turns=0;turns<30&&(await state()).session.status==='playing';turns++){
+  const before=(await state()).session;let worst=null,score=Infinity;
+  for(let i=0;i<64;i++)for(const j of [i+1,i+8]){const r=move(before,i,j);if(r.valid&&merit(r.session)<score){score=merit(r.session);worst={kind:'swap',a:i,b:j,result:r};}}
+  assert.ok(worst);await playAction(worst);
+ }
+ s=await state();assert.equal(s.session.status,'lost');assert.ok(total(s.session.collected)>0);
+ const retained=earlyStock.map((n,i)=>n+s.session.collected[i]);assert.deepEqual(s.save.inventory,retained);
+ await page.screenshot({path:'artifacts/polish/early-loss.png'});await action('带着珠材回制作');assert.equal((await state()).screen,'craft');assert.deepEqual((await state()).save.inventory,retained);
+ await page.reload({waitUntil:'networkidle'});await ready();assert.deepEqual((await state()).save.inventory,retained);results.push({earlyLossRetained:true,reloadNoDoubleAward:true});
+ // Later losses grant no materials. Retrying spends exactly one more energy; pause retains the board.
  await page.evaluate(save=>{window.name='qa-save:'+JSON.stringify(save);},fixture(15));await page.reload({waitUntil:'networkidle'});await ready();
- await action('消除采珠');await action('开始采珠 · 24 步');
+ await action('消除采珠');await action('再采一些备用');
  for(let turns=0;turns<30&&(await state()).session.status==='playing';turns++){
   const before=(await state()).session;let worst=null,score=Infinity;
   for(let i=0;i<64;i++)for(const j of [i+1,i+8]){const r=move(before,i,j);if(r.valid&&merit(r.session)<score){score=merit(r.session);worst={kind:'swap',a:i,b:j,result:r};}}
@@ -125,5 +118,5 @@ try{
  const coins=s.save.coins;await page.reload({waitUntil:'networkidle'});await ready();s=await state();assert.equal(s.save.coins,coins);assert.equal(s.save.renovation.repairs.window,true);
  for(const [width,height] of [[360,800],[390,844],[1440,900]]){await page.setViewportSize({width,height});await page.screenshot({path:`artifacts/polish/layout-${width}.png`});}
  fs.writeFileSync('artifacts/polish/report.json',JSON.stringify({base,results,errors},null,2));assert.deepEqual(errors,[]);
- console.log('Cocos polish passed: 15 stages through real gestures, special creation/activation/chains, invalid return, rule/render agreement, reward/commission delivery, renovation reveal, persistence and three viewports.');
+ console.log('Cocos polish passed: 15 stages through real gestures, special creation/activation/chains, invalid return, rule/render agreement, early banking and later rewards, renovation reveal, persistence and three viewports.');
 }finally{await browser.close();}
