@@ -441,7 +441,7 @@ export function canPlace(save, type, index) {
   return counts[type] < save.inventory[type];
 }
 export function craftTarget(draft, selected = -1, random = Math.random) {
-  if (Number.isInteger(selected) && selected >= 0 && selected < 12 && draft[selected] !== null)
+  if (Number.isInteger(selected) && selected >= 0 && selected < 12)
     return selected;
   const empty = Array.from({ length: 12 }, (_, i) => i).filter((i) => draft[i] === null);
   return empty.length ? empty[Math.min(empty.length - 1, Math.max(0, Math.floor(random() * empty.length)))] : -1;

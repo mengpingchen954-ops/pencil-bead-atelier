@@ -108,6 +108,26 @@ test('workshop grooves are round and the bracelet has room between neighboring b
   }
 });
 
+test('commission workshop previews its real draft and validates before entering packing', () => {
+  const game=new AtelierGame(),actions=new Map();
+  game.page=new Node('Page');game.overlay=new Node('Dialogs');game.notices=new Node('Notices');
+  game.persist=()=>{};game.toast=()=>{};
+  game.accessibility={clear(){},text(){},button(name,action){actions.set(name,action);},showDialog(){},closeDialog(){}};
+  game.save={...rules.freshSave(),reduced:true,inventory:Array(6).fill(100)};game.screen='craft';game.render();
+  const before=JSON.stringify(game.save),rendered=[];
+  const original=game.bracelet.bind(game);game.bracelet=(beads,...args)=>{rendered.push([...beads]);return original(beads,...args);};
+  actions.get('完成制作')();assert.equal(game.screen,'craft');
+  actions.get('放入月光珍珠')();assert.equal(game.workingDraft.filter(n=>n!==null).length,1);
+  const partial=JSON.stringify(game.save);actions.get('预览')();
+  assert.equal(game.modal,'craft-preview');assert.deepEqual(rendered.at(-1),Array.from(game.save.draft));assert.equal(JSON.stringify(game.save),partial);
+  actions.get('继续制作')();assert.equal(game.modal,'');
+  const index=game.save.draft.findIndex(n=>n!==null);actions.get(`第${index+1}槽：月光珍珠`)();actions.get('移除')();
+  assert.ok(game.save.draft.every(n=>n===null));actions.get('撤销')();assert.equal(game.save.draft[index],0);
+  actions.get('参考配色')();actions.get('按参考排珠')();
+  const stocked=JSON.stringify(game.save);actions.get('完成制作')();assert.equal(game.screen,'packing');assert.equal(JSON.stringify(game.save),stocked);
+  assert.equal(game.save.coins,JSON.parse(before).coins);assert.deepEqual(game.save.inventory,Array(6).fill(100));
+});
+
 test('native controller connects chat, gift selection, delivery response, return visit and album memory', () => {
   const game=new AtelierGame(),actions=new Map();
   game.node=new Node('AtelierGame');game.page=new Node('Page');game.overlay=new Node('Dialogs');game.notices=new Node('Notices');
@@ -170,10 +190,10 @@ test('an old completed save opens a real customer order, delivers it and keeps r
   assert.ok(actions.has('按单制作'));actions.get('按单制作')();
   assert.equal(game.currentOrder().customer,'林阿姨');
   assert.equal(actions.has('欣赏作品'),false);
-  actions.get('包装交付  ·  180 金币')();assert.equal(game.modal,'');
+  actions.get('完成制作')();assert.equal(game.modal,'');
   assert.match(messages.at(-1),/串满/);
   actions.get('参考配色')();actions.get('按参考排珠')();
-  actions.get('包装交付  ·  180 金币')();assert.equal(game.screen,'packing');
+  actions.get('完成制作')();assert.equal(game.screen,'packing');
   actions.get('完成包装')();
   assert.equal(game.save.repeatOrders,1);assert.equal(game.save.coins,260);
   assert.equal(game.save.completed.length,6);assert.equal(game.save.repeatCollection.length,1);
@@ -181,7 +201,7 @@ test('an old completed save opens a real customer order, delivers it and keeps r
   actions.get('按单制作')();assert.equal(game.currentOrder().customer,'花店小满');
   assert.equal(actions.has('听故事'),false);
   actions.get('参考配色')();actions.get('按参考排珠')();
-  actions.get('包装交付  ·  220 金币')();assert.equal(game.screen,'packing');
+  actions.get('完成制作')();assert.equal(game.screen,'packing');
   actions.get('完成包装')();assert.equal(game.save.repeatOrders,2);
   actions.get('继续营业')();
   game.navigate('album');actions.get('查看回头客作品')();

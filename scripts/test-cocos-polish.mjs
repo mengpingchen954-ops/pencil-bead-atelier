@@ -71,7 +71,7 @@ try{
  await page.screenshot({path:'artifacts/polish/reward.png'});
  const stock=s.save.inventory.slice(),reward=sessionRewards(s.session,s.save);await action('收好珠材 · 回工坊');s=await state();
  assert.equal(s.screen,'craft');assert.equal(s.save.level,2);assert.deepEqual(s.save.inventory,stock.map((n,i)=>n+reward[i]));
- await action('参考配色');await action('按参考排珠');await action('包装交付  ·  180 金币');await action('完成包装');
+ await action('参考配色');await action('按参考排珠');await action('完成制作');await action('完成包装');
  s=await state();assert.deepEqual(s.save.completed,['daisy']);assert.equal(s.save.coins,260);assert.equal(s.save.orderId,'sea');
  assert.equal(s.screen,'delivery');await action('继续营业');
  // Close the story without awarding anything extra, then verify persisted commission progression.
@@ -84,10 +84,10 @@ try{
   assert.equal((await state()).session.status,'won');await action('收好珠材 · 回工坊');
  };
  await harvestCurrent();await action('听故事');await action('有什么让你担心的吗？');await action('你最期待什么？');await action('把这份心意记住');
- await action('参考配色');await action('按参考排珠');await action('包装交付  ·  220 金币');
+ await action('参考配色');await action('按参考排珠');await action('完成制作');
  await action('挑选祝福与包装');await action('害怕的时候，也可以慢慢走。');await action('晨空蓝纸');await action('海风蓝丝带');await action('保存包装选择');await action('完成包装');
  assert.equal((await state()).screen,'delivery');await action('继续营业');assert.equal((await state()).modal,'sea-response');await page.screenshot({path:'artifacts/polish/sea-response.png'});await action('目送她出发');await page.keyboard.press('Escape');
- await harvestCurrent();await action('参考配色');await action('按参考排珠');await action('包装交付  ·  260 金币');await action('完成包装');await action('继续营业');await page.keyboard.press('Escape');
+ await harvestCurrent();await action('参考配色');await action('按参考排珠');await action('完成制作');await action('完成包装');await action('继续营业');await page.keyboard.press('Escape');
  await action('小满回来了 · 看旅行留影');await action('添一颗小爱心');s=await state();
  assert.equal(s.save.seaHeart.visited,true);assert.equal(s.save.collection.find(w=>w.id==='sea').gift.blessing,'slow');assert.equal(s.save.coins,740);
  await page.screenshot({path:'artifacts/polish/sea-return.png'});

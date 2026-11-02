@@ -17,15 +17,15 @@ try{
  const state=async()=>JSON.parse(await page.evaluate(()=>window.render_game_to_text()));
  const action=async name=>page.getByRole('button',{name,exact:true}).dispatchEvent('click');
  const tap=async(x,y)=>{const b=await page.locator('#GameCanvas').boundingBox(),scale=Math.min(b.width/720,b.height/1280);await page.touchscreen.tap(b.x+b.width/2+(x-360)*scale,b.y+b.height/2+(y-640)*scale);};
- const enter=async reward=>{await action('按单制作');await action('包装交付  ·  '+reward+' 金币');assert.equal((await state()).screen,'packing');};
+ const enter=async reward=>{await action('按单制作');await action('完成制作');assert.equal((await state()).screen,'packing');};
  const fixture=async s=>{await page.evaluate(s=>{window.name='qa-save:'+JSON.stringify(s);},s);await page.reload({waitUntil:'networkidle'});await ready();};
  await page.goto(base,{waitUntil:'networkidle'});await ready();await enter(180);
  let s=await state();assert.deepEqual(s.packing.beads,initial.draft);assert.equal(s.packing.orderId,'daisy');assert.deepEqual(s.save.inventory,initial.inventory);assert.equal(s.save.coins,initial.coins);
  await page.screenshot({path:'artifacts/packing/daisy.png'});
  for(const [width,height] of [[360,800],[390,844],[1440,900]]){await page.setViewportSize({width,height});await page.screenshot({path:`artifacts/packing/layout-${width}.png`});}
  await page.setViewportSize({width:540,height:960});await tap(627,68);assert.equal((await state()).screen,'craft');
- await action('包装交付  ·  180 金币');await page.locator('#GameCanvas').focus();await page.keyboard.press('Escape');s=await state();assert.equal(s.screen,'craft');assert.deepEqual(s.save.draft,initial.draft);assert.equal(s.save.coins,initial.coins);
- await action('包装交付  ·  180 金币');await tap(204,1171);s=await state();assert.equal(s.screen,'delivery');assert.equal(s.save.coins,initial.coins+180);assert.deepEqual(s.delivery.work.beads,initial.draft);assert.deepEqual(s.save.inventory,initial.inventory.map((n,i)=>n-draftCounts(initial.draft)[i]));
+ await action('完成制作');await page.locator('#GameCanvas').focus();await page.keyboard.press('Escape');s=await state();assert.equal(s.screen,'craft');assert.deepEqual(s.save.draft,initial.draft);assert.equal(s.save.coins,initial.coins);
+ await action('完成制作');await tap(204,1171);s=await state();assert.equal(s.screen,'delivery');assert.equal(s.save.coins,initial.coins+180);assert.deepEqual(s.delivery.work.beads,initial.draft);assert.deepEqual(s.save.inventory,initial.inventory.map((n,i)=>n-draftCounts(initial.draft)[i]));
  await page.reload({waitUntil:'networkidle'});await ready();assert.equal((await state()).save.coins,s.save.coins);
  let sea=deliver(initial);sea.deliveryReceipt=null;sea={...sea,draft:[...ORDERS[1].palette].reverse(),charm:ORDERS[1].charm};sea=askSea(askSea(sea,'fear'),'sunrise');
  await fixture(sea);await enter(220);await action('挑选祝福与包装');

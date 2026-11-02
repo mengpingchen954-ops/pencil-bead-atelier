@@ -54,7 +54,7 @@ try{
  await fixture(first);await action('按单制作');await action('听故事');
  await action('有什么让你担心的吗？');s=await state();assert.equal(s.modal,'sea-chat');assert.equal(s.dialogue.speaker,'小满');assert.deepEqual(s.save.seaHeart.facts,['fear']);await page.screenshot({path:'artifacts/dialogue/sea-chat.png'});
  await action('记录');assert.equal((await state()).modal,'dialogue-record');await action('返回对话');assert.equal((await state()).save.orderId,'sea');
- await action('把这份心意记住');await action('参考配色');await action('按参考排珠');await action('包装交付  ·  220 金币');
+ await action('把这份心意记住');await action('参考配色');await action('按参考排珠');await action('完成制作');
  await action('挑选祝福与包装');await action('害怕的时候，也可以慢慢走。');await action('保存包装选择');await action('完成包装');await action('继续营业');
  s=await state();assert.equal(s.modal,'sea-response');assert.equal(s.dialogue.speaker,'小满');await page.screenshot({path:'artifacts/dialogue/sea-response.png'});
  const paid=s.save.coins;await action('记录');await action('返回对话');assert.equal((await state()).save.coins,paid);

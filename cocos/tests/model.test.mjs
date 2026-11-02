@@ -22,6 +22,7 @@ test("craft launches choose only free grooves, while an occupied selection can b
   const draft = Array(12).fill(null);
   assert.equal(craftTarget(draft, -1, () => 0), 0);
   assert.equal(craftTarget(draft, -1, () => 0.999), 11);
+  assert.equal(craftTarget(draft, 5, () => 0), 5);
   draft[0] = 0;
   draft[11] = 3;
   assert.equal(craftTarget(draft, -1, () => 0), 1);

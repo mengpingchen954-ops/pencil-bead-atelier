@@ -335,6 +335,21 @@
       "asset": "pencil-route-banner.jpg",
       "source": "ab04983f8014ba7f6c380cb3a50c33ee.png",
       "method": "Reference banner with baked title replaced by sampled blank paper; title rendered natively"
+    },
+    {
+      "asset": "pencil-commission-shop.jpg",
+      "source": "be9484cf9b7a02516861e64694bfe336.png",
+      "method": "Proportion-preserved shop with heroine and grandmother; banner lettering and entire example requirement/bracelet removed for native order state"
+    },
+    {
+      "asset": "pencil-commission-tray.png",
+      "source": "be9484cf9b7a02516861e64694bfe336.png",
+      "method": "Blank wooden tray; removed example beads, ring, arrows, highlights and side controls; real round grooves rendered natively"
+    },
+    {
+      "asset": "pencil-commission-scroll.jpg",
+      "source": "be9484cf9b7a02516861e64694bfe336.png",
+      "method": "Blank paper scroll for actual inventory palette, no baked bead choices"
     }
   ]
 }
