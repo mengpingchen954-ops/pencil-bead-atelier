@@ -110,12 +110,13 @@ const canvas=new Node('Canvas');canvas.parent=controller;canvas.addComponent(UIT
 const camera=new Node('UI Camera');camera.parent=canvas;camera.setPosition(0,0,1000);
 const origin=new Node('Atelier');origin.parent=canvas;origin.setPosition(-360,640);origin.addComponent(UITransform).setAnchorPoint(0,1);origin.getComponent(UITransform).setContentSize(720,1280);
 const layouts=new Node('EditableLayouts');layouts.parent=origin;
-for(const page of ['home','cover','orders','craft','match','decor','album','journal','contest','contestCraft','delivery','dialogue','memories']){
+for(const page of ['home','cover','orders','craft','match','decor','album','journal','contest','contestCraft','delivery','dialogue','memories','packing']){
   const game=new AtelierGame();game.textures=textures;game.save=rules.freshSave();game.screen=page;
   game.page=new Node(page);game.page.parent=layouts;game.page.addComponent(UITransform).setAnchorPoint(0,1);game.page.getComponent(UITransform).setContentSize(720,1280);
   game.overlay=new Node('Dialogs');game.notices=new Node('Notices');
   if(page==='dialogue'){game.overlay=game.page;game.storyLine=4;}
   if(page==='match')game.session=rules.newSession(42,1);
+  if(page==='packing')game.save={...game.save,inventory:Array(6).fill(20),draft:load(path.join(root,'assets/scripts/content.ts')).ORDERS[0].palette.slice()};
   if(page==='delivery')game.save=rules.deliver({...game.save,inventory:Array(6).fill(20),draft:load(path.join(root,'assets/scripts/content.ts')).ORDERS[0].palette.slice()});
   if(page==='contest'||page==='contestCraft')game.save.completed=['daisy'];
   if(page==='contestCraft')game.save.competitions.draft={id:'spring',beads:Array(12).fill(null),charm:'daisy'};
@@ -129,6 +130,6 @@ const cam=component('UI Camera','cc.Camera',{_projection:0,_priority:0,_orthoHei
 component('Canvas','cc.Canvas',{_cameraComponent:cam,_alignCanvasWithScreen:false});
 component('EditableLayouts',classId(ids.AtelierLayouts),{page:0});
 fs.writeFileSync(path.join(root,'assets/scenes/Atelier.scene'),JSON.stringify(all,null,2)+'\n');
-console.log(`Generated 13 editable layouts, ${all.filter(o=>o.__type__==='cc.Node').length} native nodes.`);
+console.log(`Generated 14 editable layouts, ${all.filter(o=>o.__type__==='cc.Node').length} native nodes.`);
 }
 module.exports={load,Node,UITransform,Label,Sprite,Graphics,Vec3,root};

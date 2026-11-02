@@ -25,8 +25,8 @@ try{
   if(index===1){await action('听故事');await action('有什么让你担心的吗？');await action('把这份心意记住');}
   const before=(await state()).save;
   await action('包装交付  ·  '+order.reward+' 金币');
-  if(index===1){await action('害怕的时候，也可以慢慢走。');await action('确认包装交付');}
-  else await action('确认交付');
+  if(index===1){await action('挑选祝福与包装');await action('害怕的时候，也可以慢慢走。');await action('保存包装选择');}
+  await action('完成包装');
   let s=await state();assert.equal(s.screen,'delivery');assert.equal(s.modal,'');assert.equal(s.save.coins,before.coins+order.reward);assert.equal(s.save.rep,before.rep+order.rep);
   assert.deepEqual(s.delivery.work.beads,before.draft);assert.equal(s.delivery.order.id,order.id);
   assert.deepEqual(s.save.inventory,before.inventory.map((n,i)=>n-draftCounts(before.draft)[i]));assert.equal(s.save.collection.length,index+1);
@@ -48,7 +48,7 @@ try{
  }
  const story=structuredClone((await state()).save.collection);
  await action('按单制作');await action('参考配色');await action('按参考排珠');const before=(await state()).save;
- await action('包装交付  ·  180 金币');await action('确认交付');let s=await state();
+ await action('包装交付  ·  180 金币');await action('完成包装');let s=await state();
  assert.equal(s.screen,'delivery');assert.equal(s.delivery.repeat,true);assert.equal(s.delivery.order.name,'再送妈妈一朵花');assert.equal(s.delivery.number,1);assert.deepEqual(s.save.collection,story);
  assert.equal(s.save.coins,before.coins+180);await page.screenshot({path:'artifacts/delivery/repeat-receipt.png'});
  await page.reload({waitUntil:'networkidle'});await ready();assert.equal((await state()).delivery.repeat,true);

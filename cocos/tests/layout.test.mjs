@@ -9,12 +9,12 @@ const { AtelierLayout } = load(root + '/assets/scripts/AtelierLayout.ts');
 const { layoutKey } = load(root + '/assets/scripts/layout-key.ts');
 const rules = load(root + '/assets/scripts/model.ts');
 
-test('entry scene contains thirteen real editable layouts, visible home art, labels and UI camera', () => {
+test('entry scene contains fourteen real editable layouts, visible home art, labels and UI camera', () => {
   const scene = JSON.parse(fs.readFileSync(root + '/assets/scenes/Atelier.scene', 'utf8'));
   const layouts = scene.find(n => n._name === 'EditableLayouts');
   assert.ok(layouts);
   const pages = layouts._children.map(r => scene[r.__id__]);
-  assert.deepEqual(pages.map(n => n._name), ['home','cover','orders','craft','match','decor','album','journal','contest','contestCraft','delivery','dialogue','memories']);
+  assert.deepEqual(pages.map(n => n._name), ['home','cover','orders','craft','match','decor','album','journal','contest','contestCraft','delivery','dialogue','memories','packing']);
   assert.equal(pages.filter(n => n._active).length, 1);
   assert.ok(pages[0]._active);
   assert.ok(scene.some(n => n.__type__ === 'cc.Camera' && n._orthoHeight === 640));
@@ -119,10 +119,10 @@ test('native controller connects chat, gift selection, delivery response, return
   game.screen='craft';game.render();actions.get('听故事')();
   assert.equal(game.modal,'sea-chat');actions.get('有什么让你担心的吗？')();
   actions.get('你最期待什么？')();actions.get('把这份心意记住')();
-  game.confirmDelivery();assert.equal(game.modal,'sea-packing');
+  game.confirmDelivery();assert.equal(game.screen,'packing');actions.get('挑选祝福与包装')();assert.equal(game.modal,'sea-packing');
   actions.get('害怕的时候，也可以慢慢走。')();
   actions.get('晨空蓝纸')();actions.get('海风蓝丝带')();
-  actions.get('确认包装交付')();assert.equal(game.screen,'delivery');actions.get('继续营业')();assert.equal(game.modal,'sea-response');
+  actions.get('保存包装选择')();assert.equal(game.screen,'packing');actions.get('完成包装')();assert.equal(game.screen,'delivery');actions.get('继续营业')();assert.equal(game.modal,'sea-response');
   assert.equal(game.save.collection.find(x=>x.id==='sea').gift.blessing,'slow');
   actions.get('目送她出发')();
   const rose=load(root+'/assets/scripts/content.ts').ORDERS.find(o=>o.id==='rose');
@@ -173,16 +173,16 @@ test('an old completed save opens a real customer order, delivers it and keeps r
   actions.get('包装交付  ·  180 金币')();assert.equal(game.modal,'');
   assert.match(messages.at(-1),/串满/);
   actions.get('参考配色')();actions.get('按参考排珠')();
-  actions.get('包装交付  ·  180 金币')();assert.equal(game.modal,'delivery');
-  actions.get('确认交付')();
+  actions.get('包装交付  ·  180 金币')();assert.equal(game.screen,'packing');
+  actions.get('完成包装')();
   assert.equal(game.save.repeatOrders,1);assert.equal(game.save.coins,260);
   assert.equal(game.save.completed.length,6);assert.equal(game.save.repeatCollection.length,1);
   assert.equal(game.screen,'delivery');actions.get('继续营业')();
   actions.get('按单制作')();assert.equal(game.currentOrder().customer,'花店小满');
   assert.equal(actions.has('听故事'),false);
   actions.get('参考配色')();actions.get('按参考排珠')();
-  actions.get('包装交付  ·  220 金币')();assert.equal(game.modal,'delivery');
-  actions.get('确认交付')();assert.equal(game.save.repeatOrders,2);
+  actions.get('包装交付  ·  220 金币')();assert.equal(game.screen,'packing');
+  actions.get('完成包装')();assert.equal(game.save.repeatOrders,2);
   actions.get('继续营业')();
   game.navigate('album');actions.get('查看回头客作品')();
   assert.ok(actions.has('欣赏再送妈妈一朵花'));
@@ -283,4 +283,33 @@ test('character memory navigation, locked tiles, replay and crafting preserve ac
  actions.get('重温这段回忆')();assert.equal(game.modal,'story');actions.get('跳过')();assert.equal(game.screen,'memories');
  actions.get('回忆阿禾')();assert.equal(game.memoryView().id,'ahe');actions.get('开始制作 · 当前委托')();assert.equal(game.screen,'craft');assert.equal(game.currentOrder().id,'daisy');
  assert.equal(JSON.stringify(game.save),before);
+});
+
+test('packing previews the real commission, returns to editing, and delivers only once on explicit confirmation',()=>{
+ const game=new AtelierGame(),actions=new Map(),order=load(root+'/assets/scripts/content.ts').ORDERS[0];
+ game.node=new Node('AtelierGame');game.page=new Node('Page');game.overlay=new Node('Dialogs');game.notices=new Node('Notices');
+ game.persist=()=>{};game.scheduleOnce=()=>{};game.toast=()=>{};
+ game.accessibility={clear(){actions.clear();},text(){},button(name,action,modal,enabled){if(enabled)actions.set(name,action);},showDialog(){actions.clear();},closeDialog(){actions.clear();},announce(){}};
+ game.save={...rules.freshSave(),started:true,reduced:true,inventory:Array(6).fill(50),draft:Array.from(order.palette).reverse()};game.screen='craft';
+ const before=JSON.stringify(game.save);game.confirmDelivery();assert.equal(game.screen,'packing');assert.equal(JSON.stringify(game.save),before);
+ assert.equal(game.snapshot().packing.orderId,'daisy');assert.deepEqual(game.snapshot().packing.beads,game.save.draft);
+ actions.get('返回修改')();assert.equal(game.screen,'craft');assert.equal(JSON.stringify(game.save),before);
+ game.confirmDelivery();actions.get('完成包装')();assert.equal(game.screen,'delivery');assert.equal(game.save.coins,260);
+ const paid=JSON.stringify(game.save);game.completePacking();assert.equal(JSON.stringify(game.save),paid);
+});
+
+test('sea packing keeps chosen blessings on completion and resets only gift choices for default wrapping',()=>{
+ const heart=load(root+'/assets/scripts/heart.ts'),orders=load(root+'/assets/scripts/content.ts').ORDERS;
+ for(const useDefault of [false,true]){
+  const game=new AtelierGame();game.node=new Node('AtelierGame');game.page=new Node('Page');game.overlay=new Node('Dialogs');game.notices=new Node('Notices');
+  game.persist=()=>{};game.scheduleOnce=()=>{};game.toast=()=>{};
+  game.save=rules.deliver({...rules.freshSave(),inventory:Array(6).fill(50),draft:Array.from(orders[0].palette)});game.save.deliveryReceipt=null;
+  game.save=heart.askSea(heart.askSea(game.save,'fear'),'sunrise');
+  for(const [field,id] of [['blessing','slow'],['paper','sky'],['ribbon','blue']])game.save=heart.chooseSeaGift(game.save,field,id);
+  game.save={...game.save,reduced:true,draft:Array.from(orders[1].palette),charm:orders[1].charm};game.screen='craft';
+  const facts=JSON.stringify(game.save.seaHeart.facts),stock=game.save.inventory.slice();game.confirmDelivery();
+  game.completePacking(useDefault);const work=game.save.collection.find(w=>w.id==='sea');
+  assert.equal(work.gift.blessing,useDefault?'scenery':'slow');assert.equal(work.gift.paper,useDefault?'cream':'sky');assert.equal(work.gift.ribbon,useDefault?'sage':'blue');
+  assert.equal(JSON.stringify(game.save.seaHeart.facts),facts);assert.deepEqual(game.save.inventory,stock.map((n,i)=>n-rules.draftCounts(orders[1].palette)[i]));
+ }
 });

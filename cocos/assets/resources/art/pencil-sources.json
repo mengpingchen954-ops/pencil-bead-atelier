@@ -285,6 +285,21 @@
       "asset": "pencil-memory-frame.png",
       "source": "800c73a1bfd42b4f4fbe8facf7fabee1.png",
       "method": "Transparent floral and gold corners only; all character, relationship, history, order and button UI is native"
+    },
+    {
+      "asset": "pencil-packing-box.jpg",
+      "source": "3119b53bc0460f72a8cc5df8de905e28.png",
+      "method": "Proportion-preserved open box and ribbon, example bracelet replaced with sampled blank cushion; actual twelve beads and charm rendered natively"
+    },
+    {
+      "asset": "pencil-packing-people.png",
+      "source": "3119b53bc0460f72a8cc5df8de905e28.png",
+      "method": "Only heroine and grandma cutouts; no baked blessing heading, text, or controls"
+    },
+    {
+      "asset": "pencil-packing-card.jpg",
+      "source": "3119b53bc0460f72a8cc5df8de905e28.png",
+      "method": "Blank floral blessing card illustration; message and choices are live labels"
     }
   ]
 }
