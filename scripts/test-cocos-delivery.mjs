@@ -20,7 +20,7 @@ try{
  await page.goto(base,{waitUntil:'networkidle'});await ready();
  const deliveries=[];
  for(let index=0;index<6;index++){
-  const order=ORDERS[index];await action('按单制作');
+  const order=ORDERS[index];await action('按单制作');await action('开始制作');
   if(index){await action('参考配色');await action('按参考排珠');}
   if(index===1){await action('听故事');await action('有什么让你担心的吗？');await action('把这份心意记住');}
   const before=(await state()).save;
@@ -47,7 +47,7 @@ try{
   assert.equal((await state()).screen,'home');deliveries.push({id:order.id,reward:order.reward,rep:order.rep});
  }
  const story=structuredClone((await state()).save.collection);
- await action('按单制作');await action('参考配色');await action('按参考排珠');const before=(await state()).save;
+ await action('按单制作');await action('开始制作');await action('参考配色');await action('按参考排珠');const before=(await state()).save;
  await action('完成制作');await action('完成包装');let s=await state();
  assert.equal(s.screen,'delivery');assert.equal(s.delivery.repeat,true);assert.equal(s.delivery.order.name,'再送妈妈一朵花');assert.equal(s.delivery.number,1);assert.deepEqual(s.save.collection,story);
  assert.equal(s.save.coins,before.coins+180);await page.screenshot({path:'artifacts/delivery/repeat-receipt.png'});

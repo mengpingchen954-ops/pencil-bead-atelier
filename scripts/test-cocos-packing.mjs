@@ -17,7 +17,7 @@ try{
  const state=async()=>JSON.parse(await page.evaluate(()=>window.render_game_to_text()));
  const action=async name=>page.getByRole('button',{name,exact:true}).dispatchEvent('click');
  const tap=async(x,y)=>{const b=await page.locator('#GameCanvas').boundingBox(),scale=Math.min(b.width/720,b.height/1280);await page.touchscreen.tap(b.x+b.width/2+(x-360)*scale,b.y+b.height/2+(y-640)*scale);};
- const enter=async reward=>{await action('按单制作');await action('完成制作');assert.equal((await state()).screen,'packing');};
+ const enter=async reward=>{await action('按单制作');await action('开始制作');await action('完成制作');assert.equal((await state()).screen,'packing');};
  const fixture=async s=>{await page.evaluate(s=>{window.name='qa-save:'+JSON.stringify(s);},s);await page.reload({waitUntil:'networkidle'});await ready();};
  await page.goto(base,{waitUntil:'networkidle'});await ready();await enter(180);
  let s=await state();assert.deepEqual(s.packing.beads,initial.draft);assert.equal(s.packing.orderId,'daisy');assert.deepEqual(s.save.inventory,initial.inventory);assert.equal(s.save.coins,initial.coins);

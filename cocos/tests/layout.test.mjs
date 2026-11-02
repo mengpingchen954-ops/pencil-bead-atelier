@@ -9,12 +9,12 @@ const { AtelierLayout } = load(root + '/assets/scripts/AtelierLayout.ts');
 const { layoutKey } = load(root + '/assets/scripts/layout-key.ts');
 const rules = load(root + '/assets/scripts/model.ts');
 
-test('entry scene contains sixteen real editable layouts, visible home art, labels and UI camera', () => {
+test('entry scene contains seventeen real editable layouts, visible home art, labels and UI camera', () => {
   const scene = JSON.parse(fs.readFileSync(root + '/assets/scenes/Atelier.scene', 'utf8'));
   const layouts = scene.find(n => n._name === 'EditableLayouts');
   assert.ok(layouts);
   const pages = layouts._children.map(r => scene[r.__id__]);
-  assert.deepEqual(pages.map(n => n._name), ['home','cover','orders','craft','match','decor','album','journal','contest','contestCraft','delivery','dialogue','memories','packing','storyMap','pause']);
+  assert.deepEqual(pages.map(n => n._name), ['home','cover','orders','craft','match','decor','album','journal','contest','contestCraft','delivery','dialogue','memories','packing','storyMap','pause','orderArrival']);
   assert.equal(pages.filter(n => n._active).length, 1);
   assert.ok(pages[0]._active);
   assert.ok(scene.some(n => n.__type__ === 'cc.Camera' && n._orthoHeight === 640));
@@ -225,7 +225,7 @@ test('an old completed save opens a real customer order, delivers it and keeps r
   game.accessibility={clear(modal){if(!modal)actions.clear();},text(){},button(name,action,modal,enabled){if(enabled)actions.set(name,action);},showDialog(){actions.clear();},closeDialog(){actions.clear();},announce(){}};
   game.save={...rules.freshSave(),started:true,reduced:true,inventory:Array(6).fill(100),completed:['daisy','sea','rose','forest','violet','promise'],orderId:'promise'};
   game.save=rules.normalizeSave(game.save);game.screen='home';game.render();
-  assert.ok(actions.has('按单制作'));actions.get('按单制作')();
+  assert.ok(actions.has('按单制作'));actions.get('按单制作')();actions.get('开始制作')();
   assert.equal(game.currentOrder().customer,'林阿姨');
   assert.equal(actions.has('欣赏作品'),false);
   actions.get('完成制作')();assert.equal(game.modal,'');
@@ -236,7 +236,7 @@ test('an old completed save opens a real customer order, delivers it and keeps r
   assert.equal(game.save.repeatOrders,1);assert.equal(game.save.coins,260);
   assert.equal(game.save.completed.length,6);assert.equal(game.save.repeatCollection.length,1);
   assert.equal(game.screen,'delivery');actions.get('继续营业')();
-  actions.get('按单制作')();assert.equal(game.currentOrder().customer,'花店小满');
+  actions.get('按单制作')();actions.get('开始制作')();assert.equal(game.currentOrder().customer,'花店小满');
   assert.equal(actions.has('听故事'),false);
   actions.get('参考配色')();actions.get('按参考排珠')();
   actions.get('完成制作')();assert.equal(game.screen,'packing');
@@ -245,6 +245,29 @@ test('an old completed save opens a real customer order, delivers it and keeps r
   game.navigate('album');actions.get('查看回头客作品')();
   assert.ok(actions.has('欣赏再送妈妈一朵花'));
   assert.ok(actions.has('欣赏送给旅途中的朋友'));
+});
+
+test('incoming commission shows live requirements and skips guidance without changing the saved order or draft', () => {
+  const game=new AtelierGame(),actions=new Map();
+  game.node=new Node('AtelierGame');game.page=new Node('Page');game.overlay=new Node('Dialogs');game.notices=new Node('Notices');
+  game.persist=()=>{};game.scheduleOnce=()=>{};
+  game.accessibility={clear(modal){if(!modal)actions.clear();},text(){},button(name,action,modal,enabled){if(enabled)actions.set(name,action);},showDialog(){actions.clear();},closeDialog(){actions.clear();},announce(){}};
+  const {ORDERS,RETURN_ORDERS}=load(root+'/assets/scripts/content.ts');
+  for(let i=0;i<=ORDERS.length;i++){
+    const o=i===ORDERS.length?RETURN_ORDERS[0]:ORDERS[i];
+    game.save=rules.normalizeSave({...rules.freshSave(),started:true,reduced:true,completed:ORDERS.slice(0,i).map(o=>o.id),orderId:o.id,inventory:[2,1,0,3,4,5],draft:[0,...Array(11).fill(null)],charm:'heart'});
+    const before=JSON.stringify(game.save);game.navigate('home');actions.get('查看当前订单')();
+    assert.equal(game.screen,'orderArrival');let s=game.snapshot().incomingOrder;
+    assert.equal(s.id,o.id);assert.equal(s.customer,o.customer);assert.equal(s.mainNeed,o.mainNeed);assert.equal(s.accentNeed,o.accentNeed);assert.equal(s.charm,o.charm);
+    assert.equal(s.deficits[o.main],Math.max(0,o.mainNeed-game.save.inventory[o.main]));assert.equal(s.repeatNumber,i===ORDERS.length?1:null);
+    assert.ok(actions.has('跳过引导'));actions.get('跳过引导')();assert.equal(game.orderGuide,false);assert.ok(actions.has('开始制作'));assert.equal(actions.has('跳过引导'),false);
+    assert.equal(JSON.stringify(game.save),before);actions.get('开始制作')();assert.equal(game.screen,'craft');assert.equal(JSON.stringify(game.save),before);
+    game.navigate('orderArrival');assert.equal(game.orderGuide,true);actions.get('查看订单并开始制作')();assert.equal(game.screen,'craft');assert.equal(JSON.stringify(game.save),before);
+    game.navigate('orderArrival');actions.get('返回小店')();assert.equal(game.screen,'home');assert.equal(JSON.stringify(game.save),before);
+  }
+  game.save=rules.normalizeSave({...rules.freshSave(),started:true,reduced:true,inventory:Array(6).fill(0)});
+  game.navigate('orderArrival');const before=JSON.stringify(game.save);assert.ok(actions.has('去采珠'));actions.get('去采珠')();assert.equal(game.modal,'intro');assert.equal(JSON.stringify(game.save),before);
+  game.closeModal();game.navigate('orders');actions.get('按单制作 180金')();assert.equal(game.screen,'orderArrival');
 });
 
 test('native goal HUD supports four objectives and claiming a win grants the displayed order supply exactly once', () => {

@@ -360,6 +360,31 @@
       "asset": "pencil-pause-button.png",
       "source": "c9cf0c4d00bb438b228f87878ffb1093.png",
       "method": "Blank green and gold action plate; lettering removed, used for live native actions"
+    },
+    {
+      "asset": "pencil-incoming-room.jpg",
+      "source": "8836117846d16a995a9fffa00b7d68ce.png",
+      "method": "Decorative jewellery cabinet and lace borders; removed example tutorial, portraits, order card, pointing hand and start/skip controls"
+    },
+    {
+      "asset": "pencil-incoming-card.jpg",
+      "source": "8836117846d16a995a9fffa00b7d68ce.png",
+      "method": "Blank gold-framed order paper, no example portrait, material icons/counts, title or tutorial hand"
+    },
+    {
+      "asset": "pencil-incoming-heroine.jpg",
+      "source": "8836117846d16a995a9fffa00b7d68ce.png",
+      "method": "Proportion-preserved framed heroine illustration, shown as Ah He planning the commission rather than a customer portrait"
+    },
+    {
+      "asset": "pencil-incoming-grandma.png",
+      "source": "8836117846d16a995a9fffa00b7d68ce.png",
+      "method": "Grandmother tutorial portrait cutout without baked speech or controls"
+    },
+    {
+      "asset": "pencil-incoming-hand.png",
+      "source": "8836117846d16a995a9fffa00b7d68ce.png",
+      "method": "Tutorial pointing hand only; used over a real clickable order card and hidden when guidance is skipped"
     }
   ]
 }

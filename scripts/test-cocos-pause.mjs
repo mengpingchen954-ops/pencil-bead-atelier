@@ -18,7 +18,7 @@ try {
  const fixture=async save=>{await page.evaluate(s=>{window.name='qa-save:'+JSON.stringify(s);},save);await page.reload({waitUntil:'networkidle'});await ready();};
  const startMatch=async()=>{await action('消除采珠');await page.getByRole('button',{name:/^开始采珠 · /}).dispatchEvent('click');assert.equal((await state()).screen,'match');};
  const audioReady=()=>page.waitForFunction(()=>JSON.parse(window.render_game_to_text()).music.playing,{},{timeout:15000});
- await page.goto(base,{waitUntil:'networkidle'});await ready();await action('按单制作');await tap(660,532);
+ await page.goto(base,{waitUntil:'networkidle'});await ready();await action('按单制作');await action('开始制作');await tap(660,532);
  let s=await state();assert.equal(s.modal,'pause');assert.equal(s.pause.context,'craft');assert.deepEqual(s.save.draft,initial.draft);
  await page.screenshot({path:'artifacts/pause/craft.png'});
  await tap(90,1040);assert.deepEqual((await state()).save.draft,initial.draft);

@@ -19,8 +19,8 @@ try {
  const tap=async(x,y)=>{const p=await point(x,y);await page.touchscreen.tap(p.x,p.y);};
  const at=async p=>tap(p.x,p.y);
  const escape=async()=>{await page.locator('#GameCanvas').focus();await page.keyboard.press('Escape');};
- const fixture=async save=>{await page.evaluate(s=>{window.name='qa-save:'+JSON.stringify(s);},save);await page.reload({waitUntil:'networkidle'});await ready();await action('按单制作');};
- await page.goto(base,{waitUntil:'networkidle'});await ready();await action('按单制作');
+ const fixture=async save=>{await page.evaluate(s=>{window.name='qa-save:'+JSON.stringify(s);},save);await page.reload({waitUntil:'networkidle'});await ready();await action('按单制作');await action('开始制作');};
+ await page.goto(base,{waitUntil:'networkidle'});await ready();await action('按单制作');await action('开始制作');
  let s=await state();assert.equal(s.crafting.orderId,'daisy');assert.equal(s.crafting.slots.length,12);
  await page.screenshot({path:'artifacts/workshop/empty.png'});
  await tap(538,1210);assert.equal((await state()).screen,'craft');assert.equal((await state()).save.coins,initial.coins);
@@ -35,7 +35,7 @@ try {
  await at(s.crafting.slots[origin]);await at(s.crafting.materials[2]);s=await state();assert.equal(s.save.draft[origin],2);
  await at(s.crafting.slots[origin]);await tap(196,1210);s=await state();assert.equal(s.save.draft[origin],null);
  await tap(80,1210);s=await state();assert.equal(s.save.draft[origin],2);
- const edited=s.save.draft;await page.reload({waitUntil:'networkidle'});await ready();await action('按单制作');assert.deepEqual((await state()).save.draft,edited);
+ const edited=s.save.draft;await page.reload({waitUntil:'networkidle'});await ready();await action('按单制作');await action('开始制作');assert.deepEqual((await state()).save.draft,edited);
  await tap(360,414);assert.equal((await state()).modal,'sample');await action('按参考排珠');
  s=await state();assert.deepEqual(s.save.draft,ORDERS[0].palette);assert.deepEqual(s.save.inventory,initial.inventory);assert.equal(s.save.coins,initial.coins);
  await tap(310,1210);s=await state();assert.equal(s.modal,'craft-preview');assert.deepEqual(s.crafting.beads,ORDERS[0].palette);
@@ -46,7 +46,7 @@ try {
  await page.setViewportSize({width:540,height:960});await tap(660,532);assert.equal((await state()).modal,'pause');await escape();
  await tap(538,1210);s=await state();assert.equal(s.screen,'packing');assert.deepEqual(s.packing.beads,ORDERS[0].palette);assert.deepEqual(s.save.inventory,initial.inventory);
  await escape();assert.equal((await state()).screen,'craft');
- await tap(58,532);assert.equal((await state()).screen,'orders');await action('按单制作 180金');assert.equal((await state()).screen,'craft');
+ await tap(58,532);assert.equal((await state()).screen,'orders');await action('按单制作 180金');await action('开始制作');assert.equal((await state()).screen,'craft');
  // Insufficient material uses the original harvest route and does not create free beads.
  await fixture({...initial,inventory:Array(6).fill(0)});s=await state();await at(s.crafting.materials[0]);assert.ok((await state()).save.draft.every(n=>n===null));await tap(650,595);assert.equal((await state()).modal,'intro');await escape();
  // Contest reuses the workshop while keeping the customer's exact work and stock separate.

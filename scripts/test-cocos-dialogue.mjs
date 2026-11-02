@@ -51,7 +51,7 @@ try{
  s=await state();assert.equal(s.save.seenStories.length,10);assert.equal(s.save.coins,initial.coins);assert.deepEqual(s.save.inventory,initial.inventory);
  // Chat choices and their transcript preserve learned details and the active commission.
  const first=deliver({...initial,started:true,inventory:Array(6).fill(100),draft:ORDERS[0].palette});first.deliveryReceipt=null;
- await fixture(first);await action('按单制作');await action('听故事');
+ await fixture(first);await action('按单制作');await action('开始制作');await action('听故事');
  await action('有什么让你担心的吗？');s=await state();assert.equal(s.modal,'sea-chat');assert.equal(s.dialogue.speaker,'小满');assert.deepEqual(s.save.seaHeart.facts,['fear']);await page.screenshot({path:'artifacts/dialogue/sea-chat.png'});
  await action('记录');assert.equal((await state()).modal,'dialogue-record');await action('返回对话');assert.equal((await state()).save.orderId,'sea');
  await action('把这份心意记住');await action('参考配色');await action('按参考排珠');await action('完成制作');

@@ -21,7 +21,7 @@ const { ccclass } = _decorator;
 const PAPER = '#f7f0df', INK = '#594d3f', SAGE = '#718366', MUTED = '#94846d', GOLD = '#c2a477';
 const BOARD_Y = 340, CELL = 78;
 const color = (hex: string) => new Color().fromHEX(hex);
-type Page = 'cover' | 'home' | 'orders' | 'craft' | 'match' | 'decor' | 'album' | 'journal' | 'contest' | 'contestCraft' | 'delivery' | 'dialogue' | 'memories' | 'packing' | 'storyMap';
+type Page = 'cover' | 'home' | 'orders' | 'orderArrival' | 'craft' | 'match' | 'decor' | 'album' | 'journal' | 'contest' | 'contestCraft' | 'delivery' | 'dialogue' | 'memories' | 'packing' | 'storyMap';
 
 @ccclass('AtelierGame')
 export class AtelierGame extends Component {
@@ -50,6 +50,7 @@ export class AtelierGame extends Component {
   private slotNodes: Node[] = [];
   private modal = '';
   private musicFromPause = false;
+  private orderGuide = true;
   private storyIndex = 0;
   private storyLine = 0;
   private dialogueState: { title:string; speaker:string; text:string } | null = null;
@@ -166,6 +167,7 @@ export class AtelierGame extends Component {
       save: this.save, session: this.session, selected: this.selected, slot: this.slot,
       delivery: rules.pendingDelivery(this.save),
       dialogue: this.dialogueState,
+      incomingOrder: this.screen==='orderArrival'?{...this.currentOrder(),guide:this.orderGuide,repeatNumber:this.repeatOrder?this.save.repeatOrders+1:null,stock:this.save.inventory,deficits:this.orderMaterialDeficits(),materialNote:this.materialNeed()}:null,
       memory: this.screen==='memories'?this.memoryView():null,
       packing: this.screen==='packing'?{orderId:this.currentOrder().id,beads:this.save.draft,charm:this.save.charm,gift:this.currentOrder().id==='sea'&&!this.repeatOrder?this.save.seaHeart.gift:null}:null,
       storyRoute: this.screen==='storyMap'?storyRoute(this.save):null,
@@ -304,6 +306,7 @@ export class AtelierGame extends Component {
   private navigate(page: Page) {
     if (this.busy) return;
     if (page === 'match') { this.matchIntro(); return; }
+    if (page === 'orderArrival') this.orderGuide = true;
     this.closeModal(); this.screen = page; this.slot = -1; this.selected = -1; this.hint = []; this.render();
   }
   private render() {
@@ -312,16 +315,17 @@ export class AtelierGame extends Component {
     this.boardNodes = []; this.slotNodes = [];
     this.rect('Paper', 0, 0, 720, 1280, PAPER);
     for(let y=0;y<1280;y+=720*112/680)this.image('pencil-paper',0,y,720,720*112/680);
-    if(!['match','memories','storyMap','craft','contestCraft'].includes(this.screen))this.image('pencil-frame',0,0,720,1280);
+    if(!['match','memories','storyMap','craft','contestCraft','orderArrival'].includes(this.screen))this.image('pencil-frame',0,0,720,1280);
     // Subtle stationary paper grain, generated once per page instead of every frame.
     const grain = this.box('Paper fibres', 0, 0, 720, 1280).addComponent(Graphics);
     grain.strokeColor = color('#b6a17b14'); grain.lineWidth = 1;
     for (let i=0;i<180;i++) { const x=(i*173)%720,y=(i*97)%1280; grain.moveTo(x,-y); grain.lineTo(x+3,-y-1); } grain.stroke();
-    if (!['cover','delivery','dialogue','memories','packing','storyMap','craft','contestCraft'].includes(this.screen)) this.chrome();
+    if (!['cover','delivery','dialogue','memories','packing','storyMap','craft','contestCraft','orderArrival'].includes(this.screen)) this.chrome();
     switch (this.screen) {
       case 'cover': this.cover(); break;
       case 'home': this.home(); break;
       case 'orders': this.orders(); break;
+      case 'orderArrival': this.orderArrival(); break;
       case 'craft': this.craft(); break;
       case 'match': this.match(); break;
       case 'decor': this.decor(); break;
@@ -384,12 +388,14 @@ export class AtelierGame extends Component {
     this.button('故事解锁',432,806,140,48,()=>this.navigate('storyMap'));
     this.button('手账',586,806,96,48,()=>this.navigate('journal'));
     const order=this.currentOrder();
-    this.rect('Commission',38,867,644,140,'#fffaf0',this.page,18,'#dfd1b6');
+    const commission=this.rect('Commission',38,867,644,140,'#fffaf0',this.page,18,'#dfd1b6');
+    commission.on(Node.EventType.TOUCH_END,()=>this.navigate('orderArrival'));
+    this.accessibleButton('查看当前订单',()=>this.navigate('orderArrival'));
     this.text((this.repeatOrder?'回头客追加委托 · ':'正在等待的心意 · ')+order.customer,60,878,550,28,20,MUTED);
     this.text(order.name,60,910,600,42,31);
     this.text(order.text,60,956,600,42,21,MUTED);
     const shortage=this.orderMaterialDeficits().some((n:number)=>n>0)||rules.total(this.save.inventory)<12;
-    this.button('按单制作',38,1020,311,60,()=>this.navigate('craft'),this.page,!shortage);
+    this.button('按单制作',38,1020,311,60,()=>this.navigate('orderArrival'),this.page,!shortage);
     this.button('消除采珠',371,1020,311,60,()=>this.matchIntro(),this.page,shortage);
     this.text(shortage?'下一步 · 为这份委托备料':'下一步 · 珠材备齐，按单制作',38,1088,644,34,25,SAGE);
     this.text(this.materialNeed(),38,1122,644,30,21,MUTED);
@@ -409,8 +415,47 @@ export class AtelierGame extends Component {
       this.text(o.name,139,y+39,500,40,28);
       this.text(`${BEADS[o.main].short}≥${o.mainNeed} / ${BEADS[o.accent].short}≥${o.accentNeed} / ${CHARMS[o.charm]}`,139,y+83,338,32,19,MUTED);
       if(!repeat&&o.id==='sea'&&unlocked)this.button('听听她的故事',430,y+8,232,30,()=>this.seaChat());
-      this.button(done?'已交付':unlocked?'按单制作 '+o.reward+'金':repeat?'等待来店':'尚未解锁',486,y+83,176,38,()=>{this.save.orderId=o.id;this.persist();this.navigate('craft');},this.page,unlocked&&!done,unlocked&&!done);
+      this.button(done?'已交付':unlocked?'按单制作 '+o.reward+'金':repeat?'等待来店':'尚未解锁',486,y+83,176,38,()=>{this.save.orderId=o.id;this.persist();this.navigate('orderArrival');},this.page,unlocked&&!done,unlocked&&!done);
     });
+  }
+  private orderArrival() {
+    const o=this.currentOrder(),shortage=this.orderMaterialDeficits().some((n:number)=>n>0)||rules.total(this.save.inventory)<12;
+    this.image('pencil-incoming-room',0,-5,720,1290);
+    this.button('返回小店',36,46,126,44,()=>this.navigate('home'));
+    if(this.orderGuide){
+      this.button('跳过引导',550,46,134,44,()=>{this.orderGuide=false;this.render();},this.page,true);
+      this.image('pencil-incoming-grandma',92,133,169,172);
+      this.polygon('Guide tail',[[302,202],[278,220],[302,234]],'#fffaf0',this.page);
+      this.rect('Grandmother guide',296,155,330,122,'#fffaf0',this.page,18,'#a88b66');
+      this.text('奶奶的提示',319,166,288,34,26,INK);
+      this.text('看看顾客的心意，\n点击订单开始制作。',319,204,288,61,25,INK);
+    }else{
+      this.text('一份心意，来到小店',135,180,450,58,33,PAPER,this.page,true);
+    }
+    const card=this.image('pencil-incoming-card',174,361,371,577);
+    card?.on(Node.EventType.TOUCH_END,()=>this.navigate('craft'));
+    this.accessibleButton('查看订单并开始制作',()=>this.navigate('craft'));
+    this.text(o.name,194,385,331,40,28,INK,this.page,true);
+    this.text((this.repeatOrder?'回头客第 '+(this.save.repeatOrders+1)+' 单 · ':'顾客委托 · ')+o.customer,194,428,331,32,21,MUTED,this.page,true);
+    this.image('pencil-incoming-heroine',268,468,180,210);
+    this.text('阿禾 · 为这份心意构思',198,680,323,28,18,MUTED,this.page,true);
+    this.text('所需材料 · 串满十二颗',204,717,310,34,23,INK);
+    [o.main,o.accent].forEach((type,i)=>{
+      const y=763+i*54,need=i?o.accentNeed:o.mainNeed,stock=this.save.inventory[type];
+      this.image('bead-'+type,208,y,38,38);
+      this.text(BEADS[type].short+' ≥ '+need+' 颗',255,y-3,230,29,24,INK);
+      this.text('库存 '+stock+(stock<need?' · 还缺 '+(need-stock):' · 已备齐'),255,y+25,230,24,18,stock<need?'#a05c4c':SAGE);
+    });
+    this.image('charm-'+o.charm,208,871,38,38);
+    this.text(CHARMS[o.charm]+'吊坠 × 1',255,868,230,29,24,INK);
+    this.text('制作时选择 · 无需采集',255,897,230,24,18,SAGE);
+    if(this.orderGuide)this.image('pencil-incoming-hand',520,741,105,123);
+    this.text('交付酬谢 '+o.reward+' 金 · 声望 +'+o.rep,125,950,470,34,24,PAPER,this.page,true);
+    this.rect('Supply note',110,990,500,44,'#fffaf0ed',this.page,12);
+    this.text(this.materialNeed(),120,993,480,37,21,shortage?'#a05c4c':SAGE,this.page,true);
+    this.button('开始制作',219,1053,281,80,()=>this.navigate('craft'),this.page,true);
+    if(shortage)this.button('去采珠',260,1150,200,48,()=>this.matchIntro());
+    else this.text('点击订单卡，也能走进手作台',135,1151,450,32,21,PAPER,this.page,true);
   }
   private get contestEntry() { return this.screen==='contestCraft'?this.save.competitions.draft:null; }
   private get workingDraft() { return this.contestEntry?.beads || this.save.draft; }
