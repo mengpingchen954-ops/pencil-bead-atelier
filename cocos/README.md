@@ -9,7 +9,7 @@
 3. 场景默认显示首页。若仍看到旧的空场景，先关闭 Atelier 场景标签，再双击重新打开；在层级选中 Canvas 后按 F 可聚焦。
 4. 点击顶部「运行 / 预览」试玩。设计尺寸为 720 × 1280，电脑横屏会保留侧边留白。
 
-场景已保存 Canvas、UI Camera 和十四个页面的原生布局。展开 `AtelierGame → Canvas → Atelier → EditableLayouts`，选中 EditableLayouts，在 `AtelierLayouts` 组件的 Page 下拉框切换首页、封面、委托、手作、消除、装修、图鉴、手账、比赛、参赛手作、订单交付、剧情对话、人物回忆、成品包装。
+场景已保存 Canvas、UI Camera 和十五个页面的原生布局。展开 `AtelierGame → Canvas → Atelier → EditableLayouts`，选中 EditableLayouts，在 `AtelierLayouts` 组件的 Page 下拉框切换首页、封面、委托、手作、消除、装修、图鉴、手账、比赛、参赛手作、订单交付、剧情对话、人物回忆、成品包装、故事解锁。
 
 子节点的 Position、Rotation、Scale、UITransform 尺寸，以及 Label 文字 / 字号 / 颜色 / 对齐、Sprite 的 SpriteFrame 都会在运行时读取。按钮事件与动态数值仍由 `AtelierGame.ts` 绑定：未修改的示例数值会跟随真实存档更新。请保留 AtelierLayout 组件和页面层级；重命名普通节点不影响绑定。新增按钮和修改玩法仍需配合脚本。棋盘格和手串槽可以移动；为保证网格与拖动规则，保持原有格子数量、珠槽尺寸和 UITransform 锚点。
 
@@ -21,7 +21,7 @@
 
 本版使用用户提供的 `E:/Game/手串/铅笔2` 参考：人物与柜台的纵深插画、略俯视的前宽后窄关系、奶油纸纹、金色花边，以及六色彩铅珠材与三种吊坠。手作台为前宽后窄的透视托盘，珠子、空槽、接触阴影、拖动落点和投珠动画独立运行；装修房间改为斜俯视，墙、地板、窗户和家具仍随真实经营进度变化。
 
-已选取并整理 31 张小尺寸纹理，原始参考图不复制进发布包。`assets/resources/art/pencil-sources.json` 记录来源、裁剪坐标与处理方式。用 Pillow 依次运行以下命令重建素材；工具不修改参考原图，界面中的数值、委托、对白、按钮与棋盘均由游戏实时绘制。
+已选取并整理 38 张小尺寸纹理，原始参考图不复制进发布包。`assets/resources/art/pencil-sources.json` 记录来源、裁剪坐标与处理方式。用 Pillow 依次运行以下命令重建素材；工具不修改参考原图，界面中的数值、委托、对白、按钮与棋盘均由游戏实时绘制。
 
 ```sh
 python tools/prepare-pencil-art.py E:/Game/手串/铅笔2
@@ -29,6 +29,7 @@ python tools/prepare-delivery-art.py E:/Game/手串/铅笔2/7c3cbc7c2fdd8028625e
 python tools/prepare-dialogue-art.py E:/Game/手串/铅笔2/791b90a71268df0f1bbf539f918df277.png
 python tools/prepare-memory-art.py E:/Game/手串/铅笔2/800c73a1bfd42b4f4fbe8facf7fabee1.png
 python tools/prepare-packing-art.py E:/Game/手串/铅笔2/3119b53bc0460f72a8cc5df8de905e28.png
+python tools/prepare-story-route-art.py E:/Game/手串/铅笔2/ab04983f8014ba7f6c380cb3a50c33ee.png
 ```
 
 ## 已迁移内容
@@ -101,7 +102,7 @@ python tools/prepare-packing-art.py E:/Game/手串/铅笔2/3119b53bc0460f72a8cc5
 
 ## 构建与验证
 
-安装 Node.js 24 后执行 `node --test tests/*.mjs`，验证实际迁移后的 TypeScript 规则模块。附带 66 项库存、三消关卡、特殊珠、订单、成品包装与交付回执、装修、存档、剧情记录与跳过、人物回忆、心意流程、美术比例、音乐播放和可编辑场景测试，其中一项直接运行 Creator 正式构建代码验证完整经营与回访流程；正式构建尚未生成时只跳过后一项。
+安装 Node.js 24 后执行 `node --test tests/*.mjs`，验证实际迁移后的 TypeScript 规则模块。附带 69 项库存、三消关卡、特殊珠、订单、成品包装与交付回执、装修、存档、剧情记录与跳过、故事路线、人物回忆、心意流程、美术比例、音乐播放和可编辑场景测试，其中一项直接运行 Creator 正式构建代码验证完整经营与回访流程；正式构建尚未生成时只跳过后一项。
 
 在 Windows PowerShell 执行 `./build-game.ps1`。它使用项目版本对应的已安装 Creator 和 `buildConfig_web-mobile.json`，等待实际构建日志结束，再检查脚本错误。也可用 `-Creator` 指定编辑器路径。正式产物位于 `build/web-mobile`。Creator 内置「构建发布」同样可选择 Web Mobile、启动场景 Atelier、竖屏构建。
 
@@ -132,3 +133,9 @@ python tools/prepare-packing-art.py E:/Game/手串/铅笔2/3119b53bc0460f72a8cc5
 成品达到顾客要求后，点击包装交付进入「成品包装」页面：礼盒展示真实十二颗珠子与吊坠，祝福卡与人物陪伴插画保持原比例。返回修改或 Esc 可继续手作，预览阶段不扣材料。海风订单可挑选已解锁祝福、信纸与丝带，保存选择后回到成品预览；完成包装保留选择，使用默认包装恢复默认祝福、奶油信纸、鼠尾草丝带并交付。普通与回头客订单使用默认祝福。结算继续使用同一笔交易与保存回执。
 
 礼盒原图示例手串已用取自盒盖的空白衬垫替换，实际作品由原生节点绘制。此页没有新增自由手作或独立奖励。仓库 scripts/test-cocos-packing.mjs 验证确认、取消、选择、默认方案与保存。
+
+## 故事解锁路线
+
+首页「故事解锁」或手账「故事路线 · 解锁」进入五站串珠地图。祖孙家、旧工作间、饰品小店、独立参展、新的明天对应现有七段主线；原图房间和市集插画作为阶段缩略图，不新增可经营地点。金币和珠材显示实际资源，节点高亮、锁与已读标记跟随存档。点击已解锁节点可查看对应段落；点击锁定节点可了解具体委托条件。继续故事接下一段已解锁主线，等待解锁时可制作当前顾客订单。进度条只统计七段主线，家具支线、人物回忆和小满留影仍在完整手账中。
+
+场景 Page「故事解锁」可编辑。素材工具提取节点插画、花边与空白标题条，原示例锁与文字已经移除；全部状态和操作是原生节点。仓库 scripts/test-cocos-story-route.mjs 验证路线、原生触屏、重温与资源守恒。

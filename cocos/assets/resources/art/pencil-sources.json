@@ -300,6 +300,41 @@
       "asset": "pencil-packing-card.jpg",
       "source": "3119b53bc0460f72a8cc5df8de905e28.png",
       "method": "Blank floral blessing card illustration; message and choices are live labels"
+    },
+    {
+      "asset": "pencil-route-family.jpg",
+      "source": "ab04983f8014ba7f6c380cb3a50c33ee.png",
+      "method": "Story illustration only, no chapter plaque or lock; room/market example locks replaced with adjacent illustration samples"
+    },
+    {
+      "asset": "pencil-route-workshop.jpg",
+      "source": "ab04983f8014ba7f6c380cb3a50c33ee.png",
+      "method": "Story illustration only, no chapter plaque or lock; room/market example locks replaced with adjacent illustration samples"
+    },
+    {
+      "asset": "pencil-route-shop.jpg",
+      "source": "ab04983f8014ba7f6c380cb3a50c33ee.png",
+      "method": "Story illustration only, no chapter plaque or lock; room/market example locks replaced with adjacent illustration samples"
+    },
+    {
+      "asset": "pencil-route-name.jpg",
+      "source": "ab04983f8014ba7f6c380cb3a50c33ee.png",
+      "method": "Story illustration only, no chapter plaque or lock; room/market example locks replaced with adjacent illustration samples"
+    },
+    {
+      "asset": "pencil-route-tomorrow.jpg",
+      "source": "ab04983f8014ba7f6c380cb3a50c33ee.png",
+      "method": "Story illustration only, no chapter plaque or lock; room/market example locks replaced with adjacent illustration samples"
+    },
+    {
+      "asset": "pencil-route-frame.png",
+      "source": "ab04983f8014ba7f6c380cb3a50c33ee.png",
+      "method": "Floral side borders and corners only; gear, currencies and progress controls removed"
+    },
+    {
+      "asset": "pencil-route-banner.jpg",
+      "source": "ab04983f8014ba7f6c380cb3a50c33ee.png",
+      "method": "Reference banner with baked title replaced by sampled blank paper; title rendered natively"
     }
   ]
 }

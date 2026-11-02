@@ -7,7 +7,7 @@ import {
 } from 'cc';
 import { BEADS, ORDERS, RETURN_ORDERS, CHAPTERS, STORIES, JOURNEY, FURNITURE, CHARMS, CLEAN_SPOTS, REPAIRS } from './content';
 import * as rules from './model';
-import { pendingStory, storyUnlocked, finishStory } from './story';
+import { pendingStory, storyUnlocked, finishStory, STORY_STOPS, storyRoute } from './story';
 import { BrowserAccessibility } from './BrowserAccessibility';
 import { AtelierLayout } from './AtelierLayout';
 import { layoutKey } from './layout-key';
@@ -21,7 +21,7 @@ const { ccclass } = _decorator;
 const PAPER = '#f7f0df', INK = '#594d3f', SAGE = '#718366', MUTED = '#94846d', GOLD = '#c2a477';
 const BOARD_Y = 340, CELL = 78;
 const color = (hex: string) => new Color().fromHEX(hex);
-type Page = 'cover' | 'home' | 'orders' | 'craft' | 'match' | 'decor' | 'album' | 'journal' | 'contest' | 'contestCraft' | 'delivery' | 'dialogue' | 'memories' | 'packing';
+type Page = 'cover' | 'home' | 'orders' | 'craft' | 'match' | 'decor' | 'album' | 'journal' | 'contest' | 'contestCraft' | 'delivery' | 'dialogue' | 'memories' | 'packing' | 'storyMap';
 
 @ccclass('AtelierGame')
 export class AtelierGame extends Component {
@@ -167,6 +167,7 @@ export class AtelierGame extends Component {
       dialogue: this.dialogueState,
       memory: this.screen==='memories'?this.memoryView():null,
       packing: this.screen==='packing'?{orderId:this.currentOrder().id,beads:this.save.draft,charm:this.save.charm,gift:this.currentOrder().id==='sea'&&!this.repeatOrder?this.save.seaHeart.gift:null}:null,
+      storyRoute: this.screen==='storyMap'?storyRoute(this.save):null,
       music:this.music?.snapshot(),
       story: this.modal === 'story' ? { id: STORIES[this.storyIndex].id, line: this.storyLine } : null };
   }
@@ -304,12 +305,12 @@ export class AtelierGame extends Component {
     this.boardNodes = []; this.slotNodes = [];
     this.rect('Paper', 0, 0, 720, 1280, PAPER);
     for(let y=0;y<1280;y+=720*112/680)this.image('pencil-paper',0,y,720,720*112/680);
-    if(!['match','memories'].includes(this.screen))this.image('pencil-frame',0,0,720,1280);
+    if(!['match','memories','storyMap'].includes(this.screen))this.image('pencil-frame',0,0,720,1280);
     // Subtle stationary paper grain, generated once per page instead of every frame.
     const grain = this.box('Paper fibres', 0, 0, 720, 1280).addComponent(Graphics);
     grain.strokeColor = color('#b6a17b14'); grain.lineWidth = 1;
     for (let i=0;i<180;i++) { const x=(i*173)%720,y=(i*97)%1280; grain.moveTo(x,-y); grain.lineTo(x+3,-y-1); } grain.stroke();
-    if (!['cover','delivery','dialogue','memories','packing'].includes(this.screen)) this.chrome();
+    if (!['cover','delivery','dialogue','memories','packing','storyMap'].includes(this.screen)) this.chrome();
     switch (this.screen) {
       case 'cover': this.cover(); break;
       case 'home': this.home(); break;
@@ -325,6 +326,7 @@ export class AtelierGame extends Component {
       case 'dialogue': this.storyText(); break;
       case 'memories': this.memories(); break;
       case 'packing': this.packing(); break;
+      case 'storyMap': this.storyMap(); break;
     }
     this.layoutKeys.forEach((key,node) => {
       const source=this.layouts.get(key)?.getComponent(AtelierLayout), drawing=node.getComponent(Graphics);
@@ -371,7 +373,8 @@ export class AtelierGame extends Component {
     this.rect('Shop sign',65,732,280,52,'#f9f3e7ee'); this.text('阿禾手作  ·  营业中',80,736,250,44,23,SAGE);
     this.button('参加比赛',494,735,164,52,()=>this.navigate('contest'),this.page,COMPETITIONS.some(event=>this.save.completed.length>=event.unlock&&!this.save.competitions.entries.some((entry:any)=>entry.id===event.id)));
     const chapter=CHAPTERS[Math.min(2,Math.floor(this.save.completed.length/2))];
-    this.text(chapter.title,38,809,530,42,23,MUTED);
+    this.text(chapter.title,38,809,378,42,23,MUTED);
+    this.button('故事解锁',432,806,140,48,()=>this.navigate('storyMap'));
     this.button('手账',586,806,96,48,()=>this.navigate('journal'));
     const order=this.currentOrder();
     this.rect('Commission',38,867,644,140,'#fffaf0',this.page,18,'#dfd1b6');
@@ -1186,8 +1189,9 @@ export class AtelierGame extends Component {
     }
   }
   private journal() {
-    this.title('OUR STORY, IN OUR OWN WORDS','把自己的名字，写进明天',`${this.save.seenStories.length}/${STORIES.length} 段已读 · 重温不会重复发放奖励`);
+    this.title(`回忆手账 · ${this.save.seenStories.length}/${STORIES.length} 段已读 · 重温无重复奖励`,'把自己的名字，写进明天');
     this.button('人物故事 · 回忆',430,215,252,48,()=>{this.memoryIndex=-1;this.navigate('memories');});
+    this.button('故事路线 · 解锁',38,215,365,48,()=>this.navigate('storyMap'));
     const journey=JOURNEY[Math.min(6,this.save.completed.length)];
     this.rect('Current chapter',38,283,644,164,'#e8ecde');
     this.text(journey.title,58,297,604,38,27,SAGE);
@@ -1202,6 +1206,67 @@ export class AtelierGame extends Component {
     });
     this.button(this.journalPage?'← 前五段':'后五段 →',180,1095,360,50,()=>{this.journalPage=this.journalPage?0:1;this.render();});
     this.button(this.save.seaHeart.visited?'旅行留影 · 小满的第一次独行':seaVisitReady(this.save)?'小满回来了 · 听听后来的故事':'海风订单 · 心意聊天与回访',38,1155,644,35,()=>this.seaRecord());
+  }
+  private storyMap() {
+    const route=storyRoute(this.save),current=route.stops.find(s=>s.id===route.currentId)!;
+    this.image('pencil-route-frame',0,0,720,1280);
+    this.image('pencil-route-banner',70,55,568,126);
+    this.text('珠光小店 · 手作时光',157,76,408,60,35,'#69452e',this.page,true);
+    this.button('设置',20,18,68,56,()=>this.settings());
+    this.button('返回小店',101,22,136,46,()=>this.navigate('home'));
+    this.button('珠材 '+rules.total(this.save.inventory),455,20,117,46,()=>this.inventory());
+    this.rect('Route coins',578,20,118,46,'#fff8e8',this.page,18,'#b4976b');
+    this.text('金币 '+this.save.coins,582,22,110,42,20,INK,this.page,true);
+    const curves=[[[343,271],[449,244],[485,282],[520,360]],[[410,480],[361,487],[328,498],[313,543]],[[256,750],[271,801],[344,826],[411,827]],[[467,922],[430,958],[371,967],[337,970]]];
+    const chain=this.box('Pearl story path',0,0,720,1280).addComponent(Graphics);
+    curves.forEach((points,index)=>{
+      chain.lineWidth=2;chain.strokeColor=color('#b39a7d');
+      chain.moveTo(points[0][0],-points[0][1]);chain.bezierCurveTo(points[1][0],-points[1][1],points[2][0],-points[2][1],points[3][0],-points[3][1]);chain.stroke();
+      for(let i=0;i<=17;i++){
+        const t=i/17,u=1-t,x=u*u*u*points[0][0]+3*u*u*t*points[1][0]+3*u*t*t*points[2][0]+t*t*t*points[3][0],y=u*u*u*points[0][1]+3*u*u*t*points[1][1]+3*u*t*t*points[2][1]+t*t*t*points[3][1];
+        chain.fillColor=color(i===8?(route.stops[index+1].unlocked?'#a4c0c6':'#d5c7b1'):'#fff4e3');chain.strokeColor=color('#9c7c54');chain.lineWidth=i===8?3:1.5;
+        chain.ellipse(x,-y,i===8?10:5.5,i===8?10:5.5);chain.fill();chain.ellipse(x,-y,i===8?10:5.5,i===8?10:5.5);chain.stroke();
+      }
+    });
+    const positions=[[76,190,280,215],[404,349,242,205],[83,523,270,199],[411,737,235,184],[86,830,263,193]];
+    route.stops.forEach((stop,i)=>{
+      const [x,y,w,h]=positions[i],active=stop.id===route.currentId;
+      if(active)this.rect('Current story glow',x-7,y-7,w+14,h+28,'#f4d99d',this.page,20,'#b58c46');
+      const tile=this.box('Story stop '+stop.id,x,y,w,h);
+      this.image('pencil-route-'+stop.id,0,0,w,h,tile);
+      if(!stop.unlocked){
+        this.rect('Locked chapter wash',0,0,w,h,'#f7f0df80',tile,4);
+        const lock=this.box('Chapter lock',w/2-22,h/2-27,44,54,tile).addComponent(Graphics);
+        lock.lineWidth=4;lock.strokeColor=color('#8a704f');lock.ellipse(22,-15,12,15);lock.stroke();
+        this.rect('Lock body',w/2-22,h/2-5,44,34,'#d6bf90',tile,7,'#8a704f');this.ellipse('Keyhole',w/2,h/2+9,4,7,'#69533e',tile);
+      }
+      this.rect('Chapter plaque',x+7,y+h-30,w-14,44,stop.unlocked?'#fff3d8':'#eee5d4',this.page,15,active?'#9d7b44':'#bca78c');
+      this.text(stop.name,x+21,y+h-27,w-42,38,29,stop.unlocked?'#69452e':MUTED,this.page,true);
+      if(stop.read)this.text('✓ 已读',x+6,y+5,89,30,19,SAGE);
+      const open=()=>stop.unlocked?this.routeChapter(stop.id):this.toast('解锁条件：'+stop.hint);
+      this.box('Chapter touch area '+stop.id,x,y,w,h+14).on(Node.EventType.TOUCH_END,open);
+      this.accessibleButton((stop.unlocked?'查看章节 · ':'解锁条件 · ')+stop.name,open);
+      if(active)this.button('制作手串',x+21,y+h+30,w-42,42,()=>this.navigate('craft'),this.page,true);
+    });
+    this.button('背包',70,1114,106,69,()=>this.inventory());
+    this.button(route.nextStoryId?'继续故事':route.read===route.total?'继续营业':'制作手串 · 解锁故事',195,1112,330,78,()=>route.nextStoryId?this.startStory(STORIES.findIndex(s=>s.id===route.nextStoryId)):this.navigate(route.read===route.total?'home':'craft'),this.page,true);
+    this.button('图鉴',545,1114,106,69,()=>this.navigate('album'));
+    this.text('当前章节 · '+current.name+'  '+route.read+'/'+route.total,133,1197,454,34,24,INK,this.page,true);
+    this.rect('Story reading track',199,1234,322,13,'#d8c9ae',this.page,6,'#a78d67');
+    if(route.read)this.rect('Stories actually read',200,1235,320*route.read/route.total,11,SAGE,this.page,5);
+    this.button('回忆手账',278,18,146,46,()=>this.navigate('journal'));
+  }
+  private routeChapter(id:string) {
+    const stop=storyRoute(this.save).stops.find(s=>s.id===id);if(!stop?.unlocked)return;
+    this.dialog('route-chapter',stop.name+' · 故事');
+    stop.scenes.forEach((sceneId,i)=>{
+      const scene=STORIES.find(s=>s.id===sceneId)!,open=storyUnlocked(this.save,scene),read=this.save.seenStories.includes(sceneId),y=360+i*211;
+      this.rect('Chapter story '+sceneId,95,y,530,180,'#fffaf0',this.overlay,15,'#cfb99a');
+      this.text(open?scene.title:'下一段故事',113,y+12,494,49,28,open?INK:MUTED,this.overlay,true);
+      this.text(read?'已读 · 可以重温':open?'新故事已解锁':stop.hint,113,y+65,494,52,22,MUTED,this.overlay,true);
+      this.button(read?'重温 · '+scene.title:'阅读 · '+(open?scene.title:'待解锁'),143,y+123,434,44,()=>this.startStory(STORIES.indexOf(scene)),this.overlay,true,open);
+    });
+    this.button('返回故事路线',160,945,400,58,()=>this.closeModal(),this.overlay);
   }
   private memoryView() {
     const people=characterMemories(this.save),person=people.find(p=>p.id===this.memoryId&&p.unlock)||people[0];

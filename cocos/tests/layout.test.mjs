@@ -9,12 +9,12 @@ const { AtelierLayout } = load(root + '/assets/scripts/AtelierLayout.ts');
 const { layoutKey } = load(root + '/assets/scripts/layout-key.ts');
 const rules = load(root + '/assets/scripts/model.ts');
 
-test('entry scene contains fourteen real editable layouts, visible home art, labels and UI camera', () => {
+test('entry scene contains fifteen real editable layouts, visible home art, labels and UI camera', () => {
   const scene = JSON.parse(fs.readFileSync(root + '/assets/scenes/Atelier.scene', 'utf8'));
   const layouts = scene.find(n => n._name === 'EditableLayouts');
   assert.ok(layouts);
   const pages = layouts._children.map(r => scene[r.__id__]);
-  assert.deepEqual(pages.map(n => n._name), ['home','cover','orders','craft','match','decor','album','journal','contest','contestCraft','delivery','dialogue','memories','packing']);
+  assert.deepEqual(pages.map(n => n._name), ['home','cover','orders','craft','match','decor','album','journal','contest','contestCraft','delivery','dialogue','memories','packing','storyMap']);
   assert.equal(pages.filter(n => n._active).length, 1);
   assert.ok(pages[0]._active);
   assert.ok(scene.some(n => n.__type__ === 'cc.Camera' && n._orthoHeight === 640));
@@ -312,4 +312,18 @@ test('sea packing keeps chosen blessings on completion and resets only gift choi
   assert.equal(work.gift.blessing,useDefault?'scenery':'slow');assert.equal(work.gift.paper,useDefault?'cream':'sky');assert.equal(work.gift.ribbon,useDefault?'sage':'blue');
   assert.equal(JSON.stringify(game.save.seaHeart.facts),facts);assert.deepEqual(game.save.inventory,stock.map((n,i)=>n-rules.draftCounts(orders[1].palette)[i]));
  }
+});
+
+test('story map opens actual unlocked stories, shows locked conditions and keeps commissions and resources unchanged',()=>{
+ const game=new AtelierGame(),actions=new Map();game.node=new Node('AtelierGame');game.page=new Node('Page');game.overlay=new Node('Dialogs');game.notices=new Node('Notices');
+ game.persist=()=>{};game.scheduleOnce=()=>{};game.toast=()=>{};
+ game.accessibility={clear(){actions.clear();},text(){},button(name,action,modal,enabled){if(enabled)actions.set(name,action);},showDialog(){actions.clear();},closeDialog(){actions.clear();},announce(){}};
+ game.save={...rules.freshSave(),started:true,reduced:true};const before=JSON.stringify(game.save);game.screen='home';game.render();
+ actions.get('故事解锁')();assert.equal(game.screen,'storyMap');actions.get('解锁条件 · 饰品小店')();assert.equal(game.modal,'');assert.equal(JSON.stringify(game.save),before);
+ actions.get('继续故事')();assert.equal(game.modal,'story');assert.equal(game.storyIndex,0);actions.get('跳过')();assert.equal(game.screen,'storyMap');assert.equal(game.snapshot().storyRoute.read,1);assert.equal(game.save.coins,80);
+ actions.get('制作手串 · 解锁故事')();assert.equal(game.screen,'craft');assert.equal(game.currentOrder().id,'daisy');
+ game.save.completed=['daisy'];game.navigate('storyMap');actions.get('查看章节 · 旧工作间')();assert.equal(game.modal,'route-chapter');assert.equal(actions.has('阅读 · 待解锁'),false);
+ actions.get('阅读 · 第一张收据，我自己收着')();actions.get('跳过')();const completed=JSON.stringify(game.save);
+ actions.get('查看章节 · 旧工作间')();actions.get('重温 · 第一张收据，我自己收着')();actions.get('跳过')();assert.equal(JSON.stringify(game.save),completed);
+ actions.get('回忆手账')();assert.equal(game.screen,'journal');assert.ok(actions.has('人物故事 · 回忆'));
 });
