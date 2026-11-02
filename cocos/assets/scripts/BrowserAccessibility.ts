@@ -30,6 +30,9 @@ export class BrowserAccessibility {
   input(value:string,onInput:(value:string)=>void) {
     if(!this.dialog)return;const n=document.createElement('textarea');n.setAttribute('aria-label','存档 JSON');n.value=value;n.addEventListener('input',()=>onInput(n.value));this.dialog.append(n);
   }
+  range(name:string,value:number,onInput:(value:number)=>void) {
+    if(!this.dialog)return;const n=document.createElement('input');n.type='range';n.min='0';n.max='100';n.step='1';n.value=String(value);n.setAttribute('aria-label',name);n.addEventListener('input',()=>onInput(Number(n.value)));this.dialog.append(n);return n;
+  }
   busy(value:boolean) {
     this.page?.setAttribute('aria-busy',String(value));
     this.page?.querySelectorAll('button').forEach(n=>{if(value){n.dataset.wasDisabled=String(n.disabled);n.disabled=true;}else n.disabled=n.dataset.wasDisabled==='true';});

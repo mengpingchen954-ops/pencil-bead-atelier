@@ -11,6 +11,8 @@ import { pendingStory, storyUnlocked, finishStory } from './story';
 import { BrowserAccessibility } from './BrowserAccessibility';
 import { AtelierLayout } from './AtelierLayout';
 import { layoutKey } from './layout-key';
+import { MUSIC_TRACKS } from './music-settings';
+import { BackgroundMusic } from './BackgroundMusic';
 import { COMPETITIONS, beginCompetition, submitCompetition, evaluateCompetition, competitionPalette } from './competition';
 import { SEA_QUESTIONS, SEA_BLESSINGS, SEA_PAPERS, SEA_RIBBONS, askSea, chooseSeaGift, seaVisitReady, finishSeaVisit, seaResponse } from './heart';
 
@@ -30,6 +32,7 @@ export class AtelierGame extends Component {
   private textures = new Map<string, SpriteFrame>();
   private sounds = new Map<string, AudioClip>();
   private sound: AudioSource;
+  private music: BackgroundMusic;
   private session: any = null;
   private selected = -1;
   private slot = -1;
@@ -107,6 +110,7 @@ export class AtelierGame extends Component {
     this.text('正在打开奶奶的旧珠盒…', 70, 590, 580, 70, 30, SAGE, this.page, true);
     try { this.save = rules.refreshEnergy(rules.normalizeSave(JSON.parse(sys.localStorage.getItem(rules.SAVE_KEY) || 'null'))); }
     catch { this.save = rules.freshSave(); }
+    this.music=new BackgroundMusic(this.node.addComponent(AudioSource),undefined,()=>this.toast('这首音乐暂时没有加载成功，请选择另一首。'));
     try {
       const frames = await new Promise<SpriteFrame[]>((resolve, reject) => resources.loadDir('art', SpriteFrame, (err, data) => err ? reject(err) : resolve(data)));
       frames.forEach(frame => this.textures.set(frame.name, frame));
@@ -123,6 +127,7 @@ export class AtelierGame extends Component {
     }
     this.screen = this.save.started ? 'home' : 'cover';
     this.render();
+    this.music.update(this.save.music);
     input.on(Input.EventType.KEY_DOWN, this.onKey, this);
     game.on(Game.EVENT_HIDE, this.onHide, this);
     game.on(Game.EVENT_SHOW, this.onShow, this);
@@ -136,6 +141,7 @@ export class AtelierGame extends Component {
     game.off(Game.EVENT_HIDE, this.onHide, this);
     game.off(Game.EVENT_SHOW, this.onShow, this);
     this.stopVideo();
+    this.music?.dispose();
     this.textures.clear();
     this.sounds.clear();
     this.accessibility?.destroy();
@@ -146,10 +152,11 @@ export class AtelierGame extends Component {
   private snapshot() {
     return { engine: 'Cocos Creator 3.8.2', screen: this.screen, modal: this.modal, busy: this.busy,
       save: this.save, session: this.session, selected: this.selected, slot: this.slot,
+      music:this.music?.snapshot(),
       story: this.modal === 'story' ? { id: STORIES[this.storyIndex].id, line: this.storyLine } : null };
   }
-  private onHide() { this.persist(); this.video?.pause(); this.sound.pause(); }
-  private onShow() { this.tickEnergy(); }
+  private onHide() { this.persist(); this.video?.pause(); this.sound.pause(); this.music?.setHidden(true); }
+  private onShow() { this.tickEnergy(); this.music?.setHidden(false); }
   private fitCamera() {
     const size=view.getFrameSize();
     if(this.camera&&size.width>0)this.camera.orthoHeight=Math.max(640,360*size.height/size.width);
@@ -163,7 +170,7 @@ export class AtelierGame extends Component {
     try { sys.localStorage.setItem(rules.SAVE_KEY, JSON.stringify(this.save)); this.storageFailed = false; }
     catch { if (!this.storageFailed) this.toast('当前设备无法保存，请先导出进度。'); this.storageFailed = true; }
   }
-  private play(name = 'tap') { const clip = this.sounds.get(name); if (this.save.sound && clip) this.sound.playOneShot(clip, 0.7); }
+  private play(name = 'tap') { this.music?.update(this.save.music);const clip = this.sounds.get(name); if (this.save.sound && clip) this.sound.playOneShot(clip, 0.7); }
 
   private container(name: string, parent: Node) {
     const n = new Node(name); n.layer = Layers.Enum.UI_2D; n.parent = parent;
@@ -922,13 +929,43 @@ export class AtelierGame extends Component {
   }
   private settings() {
     this.dialog('settings','让小店，按自己的节奏');
-    this.button('声音  '+(this.save.sound?'开启':'关闭'),110,355,500,64,()=>{this.save.sound=!this.save.sound;this.persist();this.settings();},this.overlay);
-    this.button('减少动态效果  '+(this.save.reduced?'开启':'关闭'),110,441,500,64,()=>{this.save.reduced=!this.save.reduced;this.persist();this.settings();},this.overlay);
-    this.button('导出 / 导入存档',110,527,500,64,()=>this.saveDialog(),this.overlay);
-    this.button('玩法说明',110,613,500,64,()=>this.info('小店的日常','采珠：交换相邻珠子，三连或 2×2 同色方块可消。\n手作：点珠材入槽，拖动换位，选吊坠后交付。\n装修：先免费打扫，再用金币修屋与添置家具。\n故事：委托推进主线，家具解锁支线。\n电脑：Esc 返回，F 全屏；方向键、空格操作棋盘。'),this.overlay);
-    this.button('我们的故事',110,699,500,64,()=>this.navigate('journal'),this.overlay);
+    this.button('背景音乐 · 切歌 / 音量',110,345,500,64,()=>this.musicDialog(),this.overlay,true);
+    this.button('操作音效  '+(this.save.sound?'开启':'关闭'),110,425,500,64,()=>{this.save.sound=!this.save.sound;this.persist();this.settings();},this.overlay);
+    this.button('减少动态效果  '+(this.save.reduced?'开启':'关闭'),110,505,500,64,()=>{this.save.reduced=!this.save.reduced;this.persist();this.settings();},this.overlay);
+    this.button('导出 / 导入存档',110,585,500,64,()=>this.saveDialog(),this.overlay);
+    this.button('玩法说明',110,665,500,64,()=>this.info('小店的日常','采珠：交换相邻珠子，三连或 2×2 同色方块可消。\n手作：按顾客要求点珠、选吊坠后包装交付。\n音乐：设置中点选切歌，拖动音量条调节。\n装修：先免费打扫，再用金币修屋与添置家具。\n故事：委托推进主线，家具解锁支线。\n电脑：Esc 返回，F 全屏；方向键、空格操作棋盘。'),this.overlay);
+    this.button('我们的故事',110,745,500,64,()=>this.navigate('journal'),this.overlay);
     this.button('重新开始',110,871,500,60,()=>this.resetDialog(),this.overlay);
     this.text('Cocos 原生版 · 本地自动存档\n原网页存档可通过 JSON 导入继续',110,952,500,66,20,MUTED,this.overlay,true);
+  }
+  private musicDialog() {
+    this.dialog('music','小店的背景音乐');
+    this.text('点击曲名切换 · 当前曲目循环播放',105,335,510,40,22,MUTED,this.overlay,true);
+    MUSIC_TRACKS.forEach((track,i)=>this.button((track.id===this.save.music.track?'✓ ':'')+track.name,105,390+i*61,510,51,()=>{
+      this.save.music.track=track.id;this.save.music.enabled=true;this.persist();this.music?.update(this.save.music);this.musicDialog();
+    },this.overlay,track.id===this.save.music.track));
+    const label=this.text('音乐音量 '+Math.round(this.save.music.volume*100)+'%',105,758,510,40,25,SAGE,this.overlay,true);
+    const bar=this.box('Music volume',160,814,400,44,this.overlay),drawing=bar.addComponent(Graphics);
+    let accessibleVolume:HTMLInputElement|undefined;
+    const redraw=()=>{
+      const width=380*this.save.music.volume;
+      drawing.clear();drawing.fillColor=color('#ddd0b8');drawing.roundRect(10,-28,380,12,6);drawing.fill();
+      if(width>0){drawing.fillColor=color(SAGE);drawing.roundRect(10,-28,width,12,6);drawing.fill();}
+      drawing.fillColor=color('#c2a477');drawing.circle(10+width,-22,16);drawing.fill();
+      label.string='音乐音量 '+Math.round(this.save.music.volume*100)+'%';
+      if(accessibleVolume)accessibleVolume.value=String(Math.round(this.save.music.volume*100));
+    };
+    const change=(value:number)=>{this.save.music.volume=Math.round(Math.max(0,Math.min(1,value))*100)/100;this.music?.update(this.save.music);redraw();};
+    const adjust=(e:EventTouch)=>change((this.localPoint(e).x-170)/380);
+    bar.on(Node.EventType.TOUCH_START,adjust);bar.on(Node.EventType.TOUCH_MOVE,adjust);
+    bar.on(Node.EventType.TOUCH_END,()=>this.persist());bar.on(Node.EventType.TOUCH_CANCEL,()=>this.persist());
+    this.button('−',105,810,54,50,()=>{change(this.save.music.volume-.1);this.persist();},this.overlay);
+    this.button('+',561,810,54,50,()=>{change(this.save.music.volume+.1);this.persist();},this.overlay);
+    accessibleVolume=this.accessibility?.range?.('背景音乐音量',Math.round(this.save.music.volume*100),value=>{change(value/100);this.persist();});
+    redraw();
+    this.button(this.save.music.enabled?'暂停音乐':'播放音乐',105,888,245,58,()=>{this.save.music.enabled=!this.save.music.enabled;this.persist();this.music?.update(this.save.music);this.musicDialog();},this.overlay);
+    this.button('下一首',370,888,245,58,()=>{const i=MUSIC_TRACKS.findIndex(t=>t.id===this.save.music.track);this.save.music.track=MUSIC_TRACKS[(i+1)%MUSIC_TRACKS.length].id;this.save.music.enabled=true;this.persist();this.music?.update(this.save.music);this.musicDialog();},this.overlay,true);
+    this.text('首次点按后开始播放 · 音乐与操作音效独立',105,969,510,48,20,MUTED,this.overlay,true);
   }
   private saveDialog() {
     this.dialog('save','带上我们的日子');
@@ -946,7 +983,7 @@ export class AtelierGame extends Component {
         const normalized=rules.refreshEnergy(rules.normalizeSave(parsed));
         this.dialog('import-confirm','使用这份存档？');
         this.text(`剧情委托 ${normalized.completed.length}/6 · 回头客 ${normalized.repeatOrders} 单\n金币 ${normalized.coins} · 体力 ${normalized.energy}\n导入将替换本机当前进度。`,100,425,520,220,28,INK,this.overlay,true);
-        this.button('确认导入',130,820,460,70,()=>{this.save=normalized;this.session=null;this.undo=[];this.contestUndo=[];this.persist();this.navigate(this.save.started?'home':'cover');this.toast('进度已导入。');},this.overlay,true);
+        this.button('确认导入',130,820,460,70,()=>{this.save=normalized;this.session=null;this.undo=[];this.contestUndo=[];this.music?.update(this.save.music);this.persist();this.navigate(this.save.started?'home':'cover');this.toast('进度已导入。');},this.overlay,true);
       }catch{this.toast('这份存档格式不正确，请粘贴完整的 JSON。');}
     },this.overlay,true);
   }
@@ -954,7 +991,7 @@ export class AtelierGame extends Component {
     this.dialog('reset','重新打开旧珠盒？');
     this.text('这会清空当前设备的游戏进度。\n建议先在设置中导出存档。',100,430,520,160,29,INK,this.overlay,true);
     this.button('保留进度',130,719,460,64,()=>this.closeModal(),this.overlay,true);
-    this.button('确认重新开始',130,823,460,64,()=>{this.save=rules.freshSave();this.session=null;this.undo=[];this.contestUndo=[];this.persist();this.navigate('cover');},this.overlay);
+    this.button('确认重新开始',130,823,460,64,()=>{this.save=rules.freshSave();this.session=null;this.undo=[];this.contestUndo=[];this.music?.update(this.save.music);this.persist();this.navigate('cover');},this.overlay);
   }
   private startStory(index: number) {
     const s=STORIES[index];if(!s||!storyUnlocked(this.save,s))return;

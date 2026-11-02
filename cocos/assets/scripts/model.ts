@@ -4,6 +4,7 @@ import { ORDERS, RETURN_ORDERS, FURNITURE, STORIES, CLEAN_SPOTS, REPAIRS } from 
 import { storyUnlocked } from "./story.ts";
 import { freshSeaHeart, normalizeSeaHeart } from "./heart.ts";
 import { freshCompetitions, normalizeCompetitions } from "./competition.ts";
+import { normalizeMusic } from "./music-settings.ts";
 export const SAVE_KEY = "pencil-bead-atelier-v1";
 export function rng(seed = 1) {
   let a = seed >>> 0;
@@ -230,6 +231,7 @@ export function freshSave() {
     charm: "daisy",
     orderId: "daisy",
     sound: true,
+    music: normalizeMusic(null),
     reduced: false,
     lastStory: -1,
     seenStories: [],
@@ -253,6 +255,7 @@ export function normalizeSave(input) {
   s.level = Math.max(1, s.level);
   s.started = !!input.started;
   s.sound = input.sound !== false;
+  s.music = normalizeMusic(input.music);
   s.reduced = !!input.reduced;
   s.energy = bounded(input.energy, 10);
   s.energyAt = Number.isFinite(input.energyAt)
