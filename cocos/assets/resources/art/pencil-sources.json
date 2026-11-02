@@ -350,6 +350,16 @@
       "asset": "pencil-commission-scroll.jpg",
       "source": "be9484cf9b7a02516861e64694bfe336.png",
       "method": "Blank paper scroll for actual inventory palette, no baked bead choices"
+    },
+    {
+      "asset": "pencil-pause-panel.png",
+      "source": "c9cf0c4d00bb438b228f87878ffb1093.png",
+      "method": "Proportion-preserved floral paper, lace and crown cutout; removed title, example toggles, action buttons, check badges and all example game state"
+    },
+    {
+      "asset": "pencil-pause-button.png",
+      "source": "c9cf0c4d00bb438b228f87878ffb1093.png",
+      "method": "Blank green and gold action plate; lettering removed, used for live native actions"
     }
   ]
 }

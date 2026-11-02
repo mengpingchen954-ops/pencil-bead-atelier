@@ -49,6 +49,7 @@ export class AtelierGame extends Component {
   private movesLabel: Label | null = null;
   private slotNodes: Node[] = [];
   private modal = '';
+  private musicFromPause = false;
   private storyIndex = 0;
   private storyLine = 0;
   private dialogueState: { title:string; speaker:string; text:string } | null = null;
@@ -168,6 +169,7 @@ export class AtelierGame extends Component {
       memory: this.screen==='memories'?this.memoryView():null,
       packing: this.screen==='packing'?{orderId:this.currentOrder().id,beads:this.save.draft,charm:this.save.charm,gift:this.currentOrder().id==='sea'&&!this.repeatOrder?this.save.seaHeart.gift:null}:null,
       storyRoute: this.screen==='storyMap'?storyRoute(this.save):null,
+      pause: this.modal==='pause'||this.modal==='pause-restart'||this.modal==='pause-leave'||this.musicFromPause?{context:this.screen,music:this.save.music.enabled,sound:this.save.sound,reduced:this.save.reduced}:null,
       crafting: ['craft','contestCraft'].includes(this.screen)?{orderId:this.contestEntry?null:this.currentOrder().id,contestId:this.contestEntry?.id||null,beads:this.workingDraft,charm:this.workingCharm,slots:this.slotNodes.map(n=>{const size=n.getComponent(UITransform)!.contentSize;return {x:n.position.x+size.width/2,y:-n.position.y+size.height/2};}),materials:BEADS.map((_,i)=>({x:90+i*108,y:1040}))}:null,
       music:this.music?.snapshot(),
       story: this.modal === 'story' ? { id: STORIES[this.storyIndex].id, line: this.storyLine } : null };
@@ -444,7 +446,7 @@ export class AtelierGame extends Component {
     this.button('参考配色',278,399,164,30,()=>this.sample());
     this.image('pencil-commission-tray',46,506,628,424);
     this.button(event?'返回比赛':'返回委托',22,504,72,56,()=>this.navigate(event?'contest':'orders'),this.page,false,true,'icon-back');
-    this.button('设置',626,504,72,56,()=>this.settings(),this.page,false,true,'icon-settings');
+    this.button('暂停',626,504,72,56,()=>this.pauseMatch(),this.page,false,true,'icon-settings');
     if(!event&&o.id==='sea'&&!this.repeatOrder)this.button('听故事',22,573,96,44,()=>this.seaChat());
     this.button(event?'评分规则':'采珠',602,573,96,44,()=>event?this.contestRules():this.matchIntro());
     this.ellipse('Tray outer groove',360,716,198,198,'#e0caa448',this.page,'#bda280');
@@ -1048,10 +1050,63 @@ export class AtelierGame extends Component {
     this.save.inventory=this.save.inventory.map((n:number,i:number)=>n+pack[i]);this.save.level++;this.persist();this.session=null;this.navigate('craft');this.toast('珠材已收好 · '+this.materialNeed());
   }
   private pauseMatch() {
-    if(this.busy)return;this.dialog('pause','在花园歇一会儿');
-    this.text('本局进度保留在当前游戏中。\n离开采珠不返还已经消耗的体力。',100,430,520,150,28,INK,this.overlay,true);
-    this.button('继续采珠',130,690,460,70,()=>this.closeModal(),this.overlay,true);
-    this.button('离开花园',130,794,460,60,()=>{this.session=null;this.navigate(this.returnScreen);},this.overlay);
+    if(this.busy||!['match','craft','contestCraft'].includes(this.screen)||this.screen==='match'&&this.session?.status!=='playing')return;
+    this.stopVideo();this.clear(this.overlay);this.modal='pause';this.musicFromPause=false;this.dialogueState=null;
+    this.clear(this.notices);this.toastGeneration++;
+    this.accessibility?.showDialog('暂停游戏');
+    for(const [node,key] of this.layoutKeys)if(key==='pause'||key.startsWith('pause/'))this.layoutKeys.delete(node);
+    for(const key of this.layoutCounts.keys())if(key.startsWith('pause/'))this.layoutCounts.delete(key);
+    const stage=this.container('Pause menu',this.overlay);this.layoutKeys.set(stage,'pause');
+    this.rect('Pause backdrop',0,0,720,1280,'#40382d80',stage,0).addComponent(BlockInputEvents);
+    this.image('pencil-pause-panel',24,182,660,868,stage);
+    this.text('暂停游戏',230,309,275,67,46,'#674526',stage,true);
+    const rows=[['音乐',this.save.music.enabled,()=>{this.save.music.enabled=!this.save.music.enabled;this.music?.update(this.save.music);}],['音效',this.save.sound,()=>{this.save.sound=!this.save.sound;}],['减少动效',this.save.reduced,()=>{this.save.reduced=!this.save.reduced;}]] as const;
+    rows.forEach(([label,enabled,change],i)=>{
+      const y=421+i*78,row=this.box('Pause '+label,191,y,351,67,stage),icon=this.box('Pause icon '+i,5,13,40,40,row).addComponent(Graphics);
+      icon.strokeColor=color('#94703e');icon.fillColor=color('#c3a06b');icon.lineWidth=2.5;
+      if(i===0){this.text('♫',0,0,40,40,38,'#a4814e',icon.node,true);}
+      else if(i===1){icon.moveTo(4,-16);icon.lineTo(12,-16);icon.lineTo(23,-7);icon.lineTo(23,-34);icon.lineTo(12,-25);icon.lineTo(4,-25);icon.close();icon.fill();icon.moveTo(29,-13);icon.bezierCurveTo(36,-17,36,-23,29,-29);icon.stroke();}
+      else {icon.ellipse(19,-16,9,10);icon.stroke();icon.moveTo(6,-33);icon.lineTo(31,-33);icon.moveTo(3,-4);icon.lineTo(37,-38);icon.stroke();}
+      this.text(label,54,0,183,62,31,'#674526',row);
+      this.rect('Toggle border',241,9,94,46,'#ae8a58',row,23,'#8d6d43');
+      this.rect('Toggle track',245,13,86,38,enabled?'#b6bf8a':'#c9bba6',row,19,'#ead2a3');
+      this.ellipse('Toggle knob',enabled?310:266,32,18,18,'#fff6e5',row,'#e2c69a');
+      this.text(enabled?'开':'关',enabled?249:291,15,34,33,17,enabled?'#526149':'#7e715d',row,true);
+      const toggle=()=>{change();this.persist();this.pauseMatch();};
+      row.on(Node.EventType.TOUCH_END,()=>{if(!this.busy){this.play();toggle();}});
+      this.accessibleButton(label+'：'+(enabled?'开启':'关闭'),toggle,stage);
+      this.rect('Pause row divider',195,y+66,339,1,'#d3bfa1',stage,0);
+    });
+    this.button('切歌 / 音量',235,658,250,43,()=>this.musicDialog(true),stage);
+    this.pauseButton('继续游戏',157,720,407,103,()=>this.closeModal(),stage);
+    this.pauseButton('重新开始',137,858,210,66,()=>this.pauseRestart(),stage);
+    this.pauseButton('返回店铺',374,858,210,66,()=>this.pauseLeave(),stage);
+    this.text(this.screen==='match'?'继续保留本局 · 重开消耗 1 体力':'当前订单与作品草稿已保存',169,827,382,27,18,MUTED,stage,true);
+    this.layoutKeys.forEach((key,node)=>{if(!key.startsWith('pause/'))return;const source=this.layouts.get(key)?.getComponent(AtelierLayout),drawing=node.getComponent(Graphics);if(source&&drawing&&source.drawing!==source.originalDrawing)source.redraw(drawing);});
+  }
+  private pauseButton(label:string,x:number,y:number,w:number,h:number,action:()=>void,parent:Node) {
+    const n=this.box('Button: '+label,x,y,w,h,parent);
+    this.image('pencil-pause-button',0,0,w,h,n);
+    this.text(label,12,0,w-24,h,w>300?39:26,'#fff4d9',n,true);
+    n.on(Node.EventType.TOUCH_END,(e:EventTouch)=>{e.propagationStopped=true;if(!this.busy){this.play();action();}});
+    this.accessibleButton(label,action,parent);
+  }
+  private pauseRestart() {
+    this.dialog('pause-restart',this.screen==='match'?'重新开始本关？':'重新制作当前作品？');
+    this.text(this.screen==='match'?'本局步数、棋盘和未领取珠材会放下。\n重新开始消耗 1 体力，已有库存与订单不变。':'只清空正在制作的十二颗珠子。\n顾客订单、吊坠和库存保留，可用撤销找回作品。',105,402,510,198,27,INK,this.overlay,true);
+    this.button('继续当前游戏',130,711,460,66,()=>this.pauseMatch(),this.overlay);
+    this.button(this.screen==='match'?'重开本关 · 1 体力':'重新制作本单',130,811,460,66,()=>{
+      if(this.modal!=='pause-restart')return;
+      if(this.screen==='match'){this.startMatch();return;}
+      this.remember();this.workingDraft=Array(12).fill(null);this.slot=-1;this.persist();this.closeModal();this.render();
+    },this.overlay,true);
+  }
+  private pauseLeave() {
+    if(this.screen!=='match'){this.navigate('home');return;}
+    this.dialog('pause-leave','返回店铺？');
+    this.text('本局未领取的珠材与棋盘进度会放下。\n已消耗体力不会返还，订单草稿继续保留。',105,421,510,174,27,INK,this.overlay,true);
+    this.button('继续当前游戏',130,711,460,66,()=>this.pauseMatch(),this.overlay);
+    this.button('确认返回店铺',130,811,460,66,()=>{if(this.modal!=='pause-leave')return;this.session=null;this.navigate('home');},this.overlay,true);
   }
   private drawRoom() {
     const p=this.save.renovation.repairs;
@@ -1366,8 +1421,9 @@ export class AtelierGame extends Component {
     this.text(title,94,253,478,70,32,INK,this.overlay);
     this.button('×',579,250,58,54,()=>this.dismiss(),this.overlay);
   }
-  private closeModal() { this.stopVideo();this.clear(this.overlay);this.modal='';this.dialogueState=null;this.recordReturn=null;this.accessibility?.closeDialog(); }
+  private closeModal() { this.stopVideo();this.clear(this.overlay);this.modal='';this.musicFromPause=false;this.dialogueState=null;this.recordReturn=null;this.accessibility?.closeDialog(); }
   private dismiss() {
+    if(this.modal==='pause-restart'||this.modal==='pause-leave'||this.modal==='music'&&this.musicFromPause){this.pauseMatch();return;}
     if(this.modal==='dialogue-record'&&this.recordReturn){const resume=this.recordReturn;this.recordReturn=null;resume();return;}
     if(this.modal==='result'){if(this.session?.status==='won')this.claim();else{this.session=null;this.navigate(this.returnScreen);}return;}
     this.closeModal();if(this.screen==='packing')this.render();
@@ -1391,11 +1447,12 @@ export class AtelierGame extends Component {
     this.button('重新开始',110,871,500,60,()=>this.resetDialog(),this.overlay);
     this.text('Cocos 原生版 · 本地自动存档\n原网页存档可通过 JSON 导入继续',110,952,500,66,20,MUTED,this.overlay,true);
   }
-  private musicDialog() {
+  private musicDialog(fromPause=false) {
     this.dialog('music','小店的背景音乐');
+    this.musicFromPause=fromPause;
     this.text('点击曲名切换 · 当前曲目循环播放',105,335,510,40,22,MUTED,this.overlay,true);
     MUSIC_TRACKS.forEach((track,i)=>this.button((track.id===this.save.music.track?'✓ ':'')+track.name,105,390+i*61,510,51,()=>{
-      this.save.music.track=track.id;this.save.music.enabled=true;this.persist();this.music?.update(this.save.music);this.musicDialog();
+      this.save.music.track=track.id;this.save.music.enabled=true;this.persist();this.music?.update(this.save.music);this.musicDialog(fromPause);
     },this.overlay,track.id===this.save.music.track));
     const label=this.text('音乐音量 '+Math.round(this.save.music.volume*100)+'%',105,758,510,40,25,SAGE,this.overlay,true);
     const bar=this.box('Music volume',160,814,400,44,this.overlay),drawing=bar.addComponent(Graphics);
@@ -1416,9 +1473,10 @@ export class AtelierGame extends Component {
     this.button('+',561,810,54,50,()=>{change(this.save.music.volume+.1);this.persist();},this.overlay);
     accessibleVolume=this.accessibility?.range?.('背景音乐音量',Math.round(this.save.music.volume*100),value=>{change(value/100);this.persist();});
     redraw();
-    this.button(this.save.music.enabled?'暂停音乐':'播放音乐',105,888,245,58,()=>{this.save.music.enabled=!this.save.music.enabled;this.persist();this.music?.update(this.save.music);this.musicDialog();},this.overlay);
-    this.button('下一首',370,888,245,58,()=>{const i=MUSIC_TRACKS.findIndex(t=>t.id===this.save.music.track);this.save.music.track=MUSIC_TRACKS[(i+1)%MUSIC_TRACKS.length].id;this.save.music.enabled=true;this.persist();this.music?.update(this.save.music);this.musicDialog();},this.overlay,true);
-    this.text('首次点按后开始播放 · 音乐与操作音效独立',105,969,510,48,20,MUTED,this.overlay,true);
+    this.button(this.save.music.enabled?'暂停音乐':'播放音乐',105,888,245,58,()=>{this.save.music.enabled=!this.save.music.enabled;this.persist();this.music?.update(this.save.music);this.musicDialog(fromPause);},this.overlay);
+    this.button('下一首',370,888,245,58,()=>{const i=MUSIC_TRACKS.findIndex(t=>t.id===this.save.music.track);this.save.music.track=MUSIC_TRACKS[(i+1)%MUSIC_TRACKS.length].id;this.save.music.enabled=true;this.persist();this.music?.update(this.save.music);this.musicDialog(fromPause);},this.overlay,true);
+    if(fromPause)this.button('返回暂停',105,969,510,48,()=>this.pauseMatch(),this.overlay);
+    else this.text('首次点按后开始播放 · 音乐与操作音效独立',105,969,510,48,20,MUTED,this.overlay,true);
   }
   private saveDialog() {
     this.dialog('save','带上我们的日子');
@@ -1531,7 +1589,7 @@ export class AtelierGame extends Component {
   private stopVideo() { if(this.video?.isValid)this.video.stop();this.video=null;this.videoSubtitle=null;this.captions=[]; }
   private onKey(e: any) {
     if(typeof document!=='undefined'&&(/^(INPUT|TEXTAREA)$/.test(document.activeElement?.tagName||'')||document.activeElement?.closest('#atelier-accessibility')))return;
-    if(e.keyCode===KeyCode.ESCAPE){if(this.modal)this.dismiss();else if(this.screen==='delivery')this.continueDelivery();else if(this.screen==='match')this.pauseMatch();else this.navigate(this.screen==='packing'?'craft':this.screen==='contestCraft'?'contest':'home');return;}
+    if(e.keyCode===KeyCode.ESCAPE){if(this.modal)this.dismiss();else if(this.screen==='delivery')this.continueDelivery();else if(['match','craft','contestCraft'].includes(this.screen))this.pauseMatch();else this.navigate(this.screen==='packing'?'craft':'home');return;}
     if(e.keyCode===KeyCode.KEY_F){if(displayScreen.fullScreen())displayScreen.exitFullScreen();else displayScreen.requestFullScreen();return;}
     if(this.screen!=='match'||this.modal||this.busy)return;
     const offsets:Record<number,number>={[KeyCode.ARROW_LEFT]:-1,[KeyCode.ARROW_RIGHT]:1,[KeyCode.ARROW_UP]:-8,[KeyCode.ARROW_DOWN]:8};

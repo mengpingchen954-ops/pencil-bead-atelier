@@ -9,12 +9,12 @@ const { AtelierLayout } = load(root + '/assets/scripts/AtelierLayout.ts');
 const { layoutKey } = load(root + '/assets/scripts/layout-key.ts');
 const rules = load(root + '/assets/scripts/model.ts');
 
-test('entry scene contains fifteen real editable layouts, visible home art, labels and UI camera', () => {
+test('entry scene contains sixteen real editable layouts, visible home art, labels and UI camera', () => {
   const scene = JSON.parse(fs.readFileSync(root + '/assets/scenes/Atelier.scene', 'utf8'));
   const layouts = scene.find(n => n._name === 'EditableLayouts');
   assert.ok(layouts);
   const pages = layouts._children.map(r => scene[r.__id__]);
-  assert.deepEqual(pages.map(n => n._name), ['home','cover','orders','craft','match','decor','album','journal','contest','contestCraft','delivery','dialogue','memories','packing','storyMap']);
+  assert.deepEqual(pages.map(n => n._name), ['home','cover','orders','craft','match','decor','album','journal','contest','contestCraft','delivery','dialogue','memories','packing','storyMap','pause']);
   assert.equal(pages.filter(n => n._active).length, 1);
   assert.ok(pages[0]._active);
   assert.ok(scene.some(n => n.__type__ === 'cc.Camera' && n._orthoHeight === 640));
@@ -126,6 +126,44 @@ test('commission workshop previews its real draft and validates before entering 
   actions.get('参考配色')();actions.get('按参考排珠')();
   const stocked=JSON.stringify(game.save);actions.get('完成制作')();assert.equal(game.screen,'packing');assert.equal(JSON.stringify(game.save),stocked);
   assert.equal(game.save.coins,JSON.parse(before).coins);assert.deepEqual(game.save.inventory,Array(6).fill(100));
+});
+
+function pausedGame(screen='match') {
+  const game=new AtelierGame(),actions=new Map();
+  game.page=new Node('Page');game.overlay=new Node('Dialogs');game.notices=new Node('Notices');
+  game.persist=()=>{};game.toast=()=>{};game.music={update(){},snapshot(){return {};}};
+  game.accessibility={clear(){actions.clear();},text(){},button(name,action,modal,enabled){if(enabled)actions.set(name,action);},showDialog(){},closeDialog(){}};
+  game.save={...rules.freshSave(),started:true,reduced:true,music:{enabled:false,volume:.35,track:'glimmer'},draft:[0,3,...Array(10).fill(null)]};
+  game.screen=screen;game.session=screen==='match'?rules.newSession(42,1):null;
+  return {game,actions};
+}
+
+test('pause toggles, nested music and continued play preserve the exact board and commission',()=>{
+  const {game,actions}=pausedGame(),session=game.session,draft=JSON.stringify(game.save.draft),energy=game.save.energy;
+  const template=new Node('edited heading');template.setPosition(240,-312);template.addComponent(UITransform).setAnchorPoint(0,1);template.getComponent(UITransform).setContentSize(280,70);
+  const key=layoutKey('pause',230,309,275,67,new Map());game.layouts.set(key,template);
+  game.pauseMatch();assert.equal(game.modal,'pause');assert.equal(game.snapshot().pause.context,'match');
+  actions.get('音乐：关闭')();assert.equal(game.save.music.enabled,true);actions.get('音效：开启')();assert.equal(game.save.sound,false);actions.get('减少动效：开启')();assert.equal(game.save.reduced,false);
+  assert.deepEqual([...game.layoutKeys].find(([node,k])=>k===key)[0].position,new Vec3(240,-312));
+  actions.get('切歌 / 音量')();assert.equal(game.modal,'music');assert.equal(game.musicFromPause,true);game.dismiss();assert.equal(game.modal,'pause');
+  actions.get('继续游戏')();assert.equal(game.modal,'');assert.equal(game.session,session);assert.equal(JSON.stringify(game.save.draft),draft);assert.equal(game.save.energy,energy);
+  game.busy=true;game.pauseMatch();assert.equal(game.modal,'');
+});
+
+test('restart and leaving a paused match require their explicit choice and never grant unclaimed stock',()=>{
+  const {game,actions}=pausedGame(),session=game.session,stock=JSON.stringify(game.save.inventory),draft=JSON.stringify(game.save.draft),energy=game.save.energy;
+  game.pauseMatch();actions.get('重新开始')();assert.equal(game.modal,'pause-restart');game.dismiss();assert.equal(game.session,session);assert.equal(game.save.energy,energy);
+  actions.get('重新开始')();const confirm=actions.get('重开本关 · 1 体力');confirm();confirm();assert.equal(game.save.energy,energy-1);assert.equal(game.modal,'');assert.notEqual(game.session,session);assert.equal(JSON.stringify(game.save.inventory),stock);assert.equal(JSON.stringify(game.save.draft),draft);
+  game.pauseMatch();actions.get('返回店铺')();assert.equal(game.modal,'pause-leave');actions.get('继续当前游戏')();assert.equal(game.screen,'match');
+  actions.get('返回店铺')();actions.get('确认返回店铺')();assert.equal(game.screen,'home');assert.equal(game.session,null);assert.equal(JSON.stringify(game.save.inventory),stock);assert.equal(game.save.energy,energy-1);
+  game.screen='match';game.session=session;game.save.energy=0;game.save.energyAt=Date.now();game.pauseMatch();actions.get('重新开始')();actions.get('重开本关 · 1 体力')();assert.equal(game.modal,'pause-restart');assert.equal(game.session,session);assert.equal(game.save.energy,0);
+});
+
+test('craft restart is undoable and contest restart never changes the customer draft',()=>{
+  const {game,actions}=pausedGame('craft'),draft=JSON.stringify(game.save.draft),energy=game.save.energy;
+  game.pauseMatch();actions.get('重新开始')();actions.get('重新制作本单')();assert.ok(game.save.draft.every(n=>n===null));actions.get('撤销')();assert.equal(JSON.stringify(game.save.draft),draft);
+  game.save.competitions.draft={id:'spring',beads:[3,...Array(11).fill(null)],charm:'moon'};game.screen='contestCraft';game.pauseMatch();actions.get('重新开始')();actions.get('重新制作本单')();assert.ok(game.save.competitions.draft.beads.every(n=>n===null));assert.equal(JSON.stringify(game.save.draft),draft);assert.equal(game.save.energy,energy);
+  game.pauseMatch();actions.get('返回店铺')();assert.equal(game.screen,'home');assert.equal(game.save.competitions.draft.charm,'moon');assert.equal(JSON.stringify(game.save.draft),draft);
 });
 
 test('native controller connects chat, gift selection, delivery response, return visit and album memory', () => {

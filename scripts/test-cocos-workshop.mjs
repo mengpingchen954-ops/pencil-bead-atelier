@@ -43,7 +43,7 @@ try {
  await action('月牙');await tap(538,1210);assert.equal((await state()).screen,'craft');await action('✓ 月牙');await action('雏菊');
  await page.waitForTimeout(2900);await page.screenshot({path:'artifacts/workshop/commission.png'});
  for(const [width,height] of [[360,800],[390,844],[1440,900]]){await page.setViewportSize({width,height});await page.screenshot({path:`artifacts/workshop/layout-${width}.png`});s=await state();assert.equal(s.crafting.slots.length,12);await at(s.crafting.slots[0]);assert.equal((await state()).slot,0);await at(s.crafting.slots[0]);}
- await page.setViewportSize({width:540,height:960});await tap(660,532);assert.equal((await state()).modal,'settings');await escape();
+ await page.setViewportSize({width:540,height:960});await tap(660,532);assert.equal((await state()).modal,'pause');await escape();
  await tap(538,1210);s=await state();assert.equal(s.screen,'packing');assert.deepEqual(s.packing.beads,ORDERS[0].palette);assert.deepEqual(s.save.inventory,initial.inventory);
  await escape();assert.equal((await state()).screen,'craft');
  await tap(58,532);assert.equal((await state()).screen,'orders');await action('按单制作 180金');assert.equal((await state()).screen,'craft');

@@ -112,8 +112,8 @@ try{
  }
  s=await state();assert.equal(s.session.status,'lost');const lossStock=s.save.inventory.slice(),energy=s.save.energy;
  await page.screenshot({path:'artifacts/polish/loss.png'});await action('重新采珠 · 1 体力');s=await state();assert.equal(s.save.energy,energy-1);assert.deepEqual(s.save.inventory,lossStock);
- const pausedBoard=s.session.board.slice();await action('暂停');assert.equal((await state()).modal,'pause');await action('继续采珠');assert.deepEqual((await state()).session.board,pausedBoard);
- await action('暂停');await action('离开花园');assert.equal((await state()).screen,'home');
+ const pausedBoard=s.session.board.slice();await action('暂停');assert.equal((await state()).modal,'pause');await action('继续游戏');assert.deepEqual((await state()).session.board,pausedBoard);
+ await action('暂停');await action('返回店铺');await action('确认返回店铺');assert.equal((await state()).screen,'home');
  // Renovation uses real earned-budget rules; test fixture only establishes a clean room.
  const renovation={...fixture(5,false),coins:500,renovation:{cleared:CLEAN_SPOTS.map(s=>s.id),repairs:{wall:false,floor:false,window:false}}};
  await page.evaluate(save=>{window.name='qa-save:'+JSON.stringify(save);},renovation);await page.reload({waitUntil:'networkidle'});await ready();await action('装修');

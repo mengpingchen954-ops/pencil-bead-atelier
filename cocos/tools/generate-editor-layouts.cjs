@@ -33,6 +33,7 @@ class Component {}
 class UITransform {setAnchorPoint(x,y){this.anchorPoint=typeof x==='object'?x:{x,y};}setContentSize(w,h){this.contentSize=typeof w==='object'?{width:w.width,height:w.height}:{width:w,height:h};}}
 class Graphics {
   constructor(){this.commands=[];}
+  clear(){this.commands=[];}
   set fillColor(c){this.commands.push(['fillColor',c.r,c.g,c.b,c.a]);}
   set strokeColor(c){this.commands.push(['strokeColor',c.r,c.g,c.b,c.a]);}
   set lineWidth(w){this.commands.push(['lineWidth',w]);}
@@ -110,7 +111,7 @@ const canvas=new Node('Canvas');canvas.parent=controller;canvas.addComponent(UIT
 const camera=new Node('UI Camera');camera.parent=canvas;camera.setPosition(0,0,1000);
 const origin=new Node('Atelier');origin.parent=canvas;origin.setPosition(-360,640);origin.addComponent(UITransform).setAnchorPoint(0,1);origin.getComponent(UITransform).setContentSize(720,1280);
 const layouts=new Node('EditableLayouts');layouts.parent=origin;
-for(const page of ['home','cover','orders','craft','match','decor','album','journal','contest','contestCraft','delivery','dialogue','memories','packing','storyMap']){
+for(const page of ['home','cover','orders','craft','match','decor','album','journal','contest','contestCraft','delivery','dialogue','memories','packing','storyMap','pause']){
   const game=new AtelierGame();game.textures=textures;game.save=rules.freshSave();game.screen=page;
   game.page=new Node(page);game.page.parent=layouts;game.page.addComponent(UITransform).setAnchorPoint(0,1);game.page.getComponent(UITransform).setContentSize(720,1280);
   game.overlay=new Node('Dialogs');game.notices=new Node('Notices');
@@ -120,7 +121,8 @@ for(const page of ['home','cover','orders','craft','match','decor','album','jour
   if(page==='delivery')game.save=rules.deliver({...game.save,inventory:Array(6).fill(20),draft:load(path.join(root,'assets/scripts/content.ts')).ORDERS[0].palette.slice()});
   if(page==='contest'||page==='contestCraft')game.save.completed=['daisy'];
   if(page==='contestCraft')game.save.competitions.draft={id:'spring',beads:Array(12).fill(null),charm:'daisy'};
-  game.render();game.layoutKeys.forEach((key,n)=>n.layoutKey=key);
+  if(page==='pause'){game.screen='craft';game.overlay=game.page;game.pauseMatch();}else game.render();
+  game.layoutKeys.forEach((key,n)=>n.layoutKey=key);
   game.page.active=page==='home';
 }
 all[1]._children=[node(controller,ref(1))];
@@ -130,6 +132,6 @@ const cam=component('UI Camera','cc.Camera',{_projection:0,_priority:0,_orthoHei
 component('Canvas','cc.Canvas',{_cameraComponent:cam,_alignCanvasWithScreen:false});
 component('EditableLayouts',classId(ids.AtelierLayouts),{page:0});
 fs.writeFileSync(path.join(root,'assets/scenes/Atelier.scene'),JSON.stringify(all,null,2)+'\n');
-console.log(`Generated 15 editable layouts, ${all.filter(o=>o.__type__==='cc.Node').length} native nodes.`);
+console.log(`Generated 16 editable layouts, ${all.filter(o=>o.__type__==='cc.Node').length} native nodes.`);
 }
 module.exports={load,Node,UITransform,Label,Sprite,Graphics,Vec3,root};
