@@ -21,6 +21,12 @@ const { ccclass } = _decorator;
 const PAPER = '#f7f0df', INK = '#594d3f', SAGE = '#627351', MUTED = '#7a6b57', GOLD = '#826637';
 const BOARD_Y = 340, CELL = 78;
 const color = (hex: string) => new Color().fromHEX(hex);
+// A damped spring reaches the wire, recoils, and settles without rotating the artwork.
+export function craftSpring(t:number) {
+  if(t<=0)return 0;if(t>=1)return 1;
+  const seconds=t*.64;
+  return 1-Math.exp(-11*seconds)*(Math.cos(17*seconds)+11/17*Math.sin(17*seconds));
+}
 type Page = 'cover' | 'home' | 'orders' | 'orderArrival' | 'craft' | 'match' | 'decor' | 'album' | 'journal' | 'contest' | 'contestCraft' | 'delivery' | 'dialogue' | 'memories' | 'packing' | 'storyMap';
 
 @ccclass('AtelierGame')
@@ -41,6 +47,7 @@ export class AtelierGame extends Component {
   private craftMaterial = 0;
   private craftMotion: Node;
   private craftFlights = new Map<number,{node:Node;type:number}>();
+  private craftRipples = new WeakSet<Node>();
   private tool = '';
   private hint: number[] = [];
   private busy = false;
@@ -605,18 +612,35 @@ export class AtelierGame extends Component {
     this.ellipse('Flight shadow',43,66,29,10,'#82634235',n);this.image('bead-'+type,0,0,82,82,n);
     n.setScale(.72,.72,1);this.craftFlights.set(index,{node:n,type});
     const slot=this.slotNodes[index],p=slot?new Vec3(slot.position.x+5,slot.position.y-5,0):new Vec3(this.slotPos(index).x-41,41-this.slotPos(index).y,0);
-    const center=new Vec3(319,-491,0),dx=p.x-center.x,dy=p.y-center.y;
-    tween(n).to(.22,{position:center,scale:new Vec3(1.08,1.08,1)},{easing:'quadOut'})
-      .to(.09,{scale:Vec3.ONE},{easing:'sineOut'})
-      .to(.2,{position:new Vec3(center.x+dx*.5,center.y+dy*.5+54,0),scale:new Vec3(1.06,1.06,1)},{easing:'quadOut'})
-      .to(.2,{position:p,scale:Vec3.ONE},{easing:'quadIn'})
-      .delay(.09)
+    const center=new Vec3(319,-491,0),radius=Vec3.distance(center,p);let touched=false;
+    tween(n).to(.22,{position:center,scale:Vec3.ONE},{easing:'quadOut'})
+      .delay(.035)
+      .to(.64,{position:p},{easing:craftSpring,onUpdate:()=>{
+        if(!touched&&Vec3.distance(center,n.position)>=radius){touched=true;this.bumpCraftNeighbors(index);this.play('land',.35);}
+      }})
       .call(()=>{
         if(this.craftFlights.get(index)?.node!==n)return;this.clearCraftFlight(index);
         const target=this.slotNodes[index];
         target.children.filter(child=>child.getComponent(Label)).forEach(child=>{child.removeFromParent();child.destroy();});
-        this.ellipse('Bead contact shadow',48,65,31,12,'#82634250',target);this.image('bead-'+type,5,5,82,82,target);this.play('land',.35);
+        this.ellipse('Bead contact shadow',48,65,31,12,'#82634250',target);this.image('bead-'+type,5,5,82,82,target);
       }).start();
+  }
+  private bumpCraftNeighbors(index:number) {
+    if(this.save.reduced)return;
+    this.slotNodes.forEach((slot,i)=>{
+      const gap=Math.min((i-index+12)%12,(index-i+12)%12);
+      if(gap<1||gap>2||this.craftFlights.has(i))return;
+      // Move only the artwork; groove hit targets and an active drag stay untouched.
+      const p=this.slotPos(i),dx=(p.x-360)/228,dy=-(p.y-532)/228,amount=gap===1?9:4;
+      slot.children.filter(child=>child.name.startsWith('bead-')||child.name==='Bead contact shadow').forEach(child=>{
+        if(this.craftRipples.has(child))return;
+        this.craftRipples.add(child);
+        const rest=child.position.clone();
+        tween(child).to(.08,{position:new Vec3(rest.x+dx*amount,rest.y+dy*amount,rest.z)},{easing:'quadOut'})
+          .to(.13,{position:new Vec3(rest.x-dx*amount*.35,rest.y-dy*amount*.35,rest.z)},{easing:'sineInOut'})
+          .to(.19,{position:rest},{easing:'sineOut'}).call(()=>this.craftRipples.delete(child)).start();
+      });
+    });
   }
   private localPoint(e: EventTouch) {
     // getUILocation already accounts for SHOW_ALL letterboxing; page origin is top left.

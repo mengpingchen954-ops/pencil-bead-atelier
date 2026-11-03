@@ -31,6 +31,10 @@ try{
  const samples=await page.evaluate(()=>{window.sampleLaunch=false;return window.launchSamples;});
  assert.ok(samples.length>15);assert.ok(samples.every(f=>f.angle===0),'every sampled bead keeps its original orientation');
  assert.ok(samples.some(f=>Math.hypot(f.x-360,f.y-532)<3),'bead reaches the center before its outward bounce');
+ const firstSamples=samples.filter(f=>f.index===first),centerFrame=firstSamples.findIndex(f=>Math.hypot(f.x-360,f.y-532)<3);
+ const radii=firstSamples.slice(centerFrame).map(f=>Math.hypot(f.x-360,f.y-532)),peak=radii.indexOf(Math.max(...radii));
+ assert.ok(radii[peak]>248&&radii[peak]<261,'spring visibly overshoots the wire by a bounded amount');
+ assert.ok(radii.slice(peak).some(r=>r<227),'bead rebounds inside the wire before settling');
  // Another bead landing must not destroy a drag already in progress.
  await material(2);s=await state();const drop=s.save.draft.findIndex(n=>n===null),a=await point(s.crafting.slots[first]),b=await point(s.crafting.slots[drop]);
  await page.mouse.move(a.x,a.y);await page.mouse.down();await page.mouse.move((a.x+b.x)/2,(a.y+b.y)/2,{steps:4});await page.waitForTimeout(1000);await page.mouse.move(b.x,b.y,{steps:4});await page.mouse.up();assert.equal((await state()).save.draft[drop],0);await action('撤销');await action('撤销');
@@ -42,10 +46,31 @@ try{
  await tap((await state()).crafting.slots[first]);for(let i=0;i<6;i++)await material(i);
  s=await state();assert.equal(s.save.draft.filter(n=>n!==null).length,12);const full=s.save.draft.slice();await material(3);assert.deepEqual((await state()).save.draft,full);await idle();
  await tap((await state()).crafting.slots[first]);await action('替换');assert.equal((await state()).save.draft[first],3);await action('撤销');await idle();assert.deepEqual((await state()).save.draft,full);
+ // Observe actual rendered bead children; impact must move nearby art, never groove hit targets.
+ await tap((await state()).crafting.slots[first]);await action('移除');
+ await page.evaluate(async()=>{
+   const cc=await System.import('cc');
+   window.readBeadArt=()=>cc.director.getScene().getChildByPath('AtelierGame/Canvas/Atelier/Page').children.filter(n=>n.name.startsWith('Slot ')).map(n=>{
+     const b=n.children.find(c=>c.name.startsWith('bead-'));
+     return {index:Number(n.name.slice(5)),x:b?.position.x,y:b?.position.y,angle:b?.angle,slotX:n.position.x,slotY:n.position.y};
+   });
+   window.rippleBaseline=window.readBeadArt();window.rippleSamples=[];window.sampleRipple=true;
+   const sample=()=>{if(!window.sampleRipple)return;window.rippleSamples.push(window.readBeadArt());requestAnimationFrame(sample);};requestAnimationFrame(sample);
+ });
+ await material(full[first]);
+ await page.waitForFunction(()=>JSON.parse(window.render_game_to_text()).crafting.flights.some(f=>Math.hypot(f.x-360,f.y-532)>248&&Math.hypot(f.x-360,f.y-532)<261));
+ await page.screenshot({path:dir+'/spring-impact.png'});await idle();await page.waitForTimeout(100);
+ const ripple=await page.evaluate(()=>{window.sampleRipple=false;return {baseline:window.rippleBaseline,samples:window.rippleSamples,final:window.readBeadArt()};});
+ const moved=new Set();
+ for(const frame of ripple.samples)for(const bead of frame){const before=ripple.baseline[bead.index];assert.equal(bead.slotX,before.slotX);assert.equal(bead.slotY,before.slotY);if(bead.index===first||bead.x===undefined)continue;assert.equal(bead.angle,0);if(Math.hypot(bead.x-before.x,bead.y-before.y)>2)moved.add(bead.index);}
+ assert.ok(moved.size>=2,'impact ripples through nearby existing beads');
+ for(const index of moved)assert.ok(Math.min((index-first+12)%12,(first-index+12)%12)<=2,'distant beads stay still');
+ for(const bead of ripple.final){if(bead.index===first)continue;const before=ripple.baseline[bead.index];assert.ok(Math.hypot(bead.x-before.x,bead.y-before.y)<.001,'ripple returns to the exact original pose');}
+ assert.deepEqual((await state()).save.draft,full);
  await page.screenshot({path:dir+'/settled.png'});await page.reload({waitUntil:'networkidle'});await ready();assert.deepEqual((await state()).save.draft,full);await action('按单制作');await action('开始制作');assert.equal((await state()).crafting.flights.length,0);
  // Leaving during flight preserves the reserved draft, without ghost beads on return.
  await tap((await state()).crafting.slots[first]);await action('移除');await material(4);const leaving=(await state()).save.draft.slice();await action('返回委托');assert.equal((await state()).screen,'orders');await action('按单制作 180金');await action('开始制作');assert.deepEqual((await state()).save.draft,leaving);assert.equal((await state()).crafting.flights.length,0);
  const reduced={...initial,reduced:true,inventory:[1,0,0,0,0,0]};await page.evaluate(save=>{window.name='qa-save:'+JSON.stringify(save);},reduced);await page.reload({waitUntil:'networkidle'});await ready();await action('按单制作');await action('开始制作');await material(0);s=await state();assert.equal(s.crafting.flights.length,0);assert.equal(s.save.draft.filter(n=>n===0).length,1);const limited=s.save.draft.slice();await material(0);await material(2);assert.deepEqual((await state()).save.draft,limited);
  for(const [width,height] of [[360,800],[390,844],[1440,900]]){await page.setViewportSize({width,height});await page.screenshot({path:dir+`/layout-${width}.png`});}
- assert.deepEqual(errors,[]);fs.writeFileSync(dir+'/report.json',JSON.stringify({base,centerThenBounce:true,noRotation:true,orientationSamples:samples.length,concurrentFlights:true,uniqueReservations:true,dragSwapRemoveUndo:true,fullAndStockGuards:true,reloadAndLeave:true,reducedMotion:true,threeWidths:true,errors},null,2));console.log('Random launch passed: center then outward bounce, no rotation in every sampled frame, concurrent unique slots, drag/swap/remove/undo, full/stock guards, reload/exit, reduced motion and three widths.');
+ assert.deepEqual(errors,[]);fs.writeFileSync(dir+'/report.json',JSON.stringify({base,centerThenBounce:true,springOvershoot:Math.max(...radii)-228,inwardRebound:true,neighborRipple:[...moved],noRotation:true,orientationSamples:samples.length,concurrentFlights:true,uniqueReservations:true,dragSwapRemoveUndo:true,fullAndStockGuards:true,reloadAndLeave:true,reducedMotion:true,threeWidths:true,errors},null,2));console.log('Spring launch passed: center, bounded overshoot, inward rebound, neighboring bead ripple with stable hit targets, no rotation, concurrent flights, held drag, undo/full/stock/reload/exit/reduced motion and three widths.');
 }finally{await browser.close();}

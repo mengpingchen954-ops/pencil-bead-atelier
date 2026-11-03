@@ -9,6 +9,17 @@ const { AtelierLayout } = load(root + '/assets/scripts/AtelierLayout.ts');
 const { layoutKey } = load(root + '/assets/scripts/layout-key.ts');
 const rules = load(root + '/assets/scripts/model.ts');
 
+test('craft spring overshoots the wire once, rebounds inward and settles with bounded motion',()=>{
+  const {craftSpring}=load(root+'/assets/scripts/AtelierGame.ts');
+  const samples=Array.from({length:1001},(_,i)=>craftSpring(i/1000));
+  assert.equal(samples[0],0);assert.equal(samples.at(-1),1);
+  assert.ok(samples.every(n=>Number.isFinite(n)&&n>=0&&n<1.14));
+  const peak=samples.indexOf(Math.max(...samples));
+  assert.ok(peak>200&&peak<400);assert.ok(samples[peak]>1.1);
+  assert.ok(Math.min(...samples.slice(peak))<.99);
+  assert.ok(samples.slice(900).every(n=>Math.abs(n-1)<.003));
+});
+
 test('commission pages keep every order reachable and open on the current customer without changing saves', () => {
   const game=new AtelierGame(),actions=new Map();
   game.page=new Node('Page');game.overlay=new Node('Dialogs');game.notices=new Node('Notices');
