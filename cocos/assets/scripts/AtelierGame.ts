@@ -563,7 +563,7 @@ export class AtelierGame extends Component {
       this.confirmDelivery();
     },this.page,ready);
     finish.children.find(n=>n.getComponent(Label))!.getComponent(Label)!.fontSize=29;
-    this.text(ready?'作品已符合委托，准备装进礼盒。':this.slot>=0?'已选第 '+(this.slot+1)+' 颗 · 选择珠材后点替换，或取下。':'点已有珠子，可替换或取下；撤销随时可用。',45,1220,630,26,19,ready?SAGE:MUTED,this.page,true);
+    this.text(ready?'作品已符合委托，准备装进礼盒。':this.slot>=0?'已选第 '+(this.slot+1)+' 颗 · 可取下，或用当前珠材替换。':'点已有珠子，可替换或取下；撤销随时可用。',45,1220,630,26,19,ready?SAGE:MUTED,this.page,true);
   }
   private selectCraftSlot(index:number) {
     this.slot=this.slot===index?-1:index;this.render();
@@ -602,7 +602,12 @@ export class AtelierGame extends Component {
       .to(.23,{position:new Vec3(center.x+dx*.48-dy/228*bend*side,center.y+dy*.48+dx/228*bend*side,0),angle:side*155},{easing:'quadIn'})
       .to(.23,{position:new Vec3(p.x+dx*.025,p.y+dy*.025,0),angle:side*345},{easing:'quadOut'})
       .to(.1,{position:p,angle:side*360},{easing:'sineOut'})
-      .call(()=>{if(this.craftFlights.get(index)?.node!==n)return;this.clearCraftFlight(index);this.play('land',.35);this.render();}).start();
+      .call(()=>{
+        if(this.craftFlights.get(index)?.node!==n)return;this.clearCraftFlight(index);
+        const target=this.slotNodes[index];
+        target.children.filter(child=>child.getComponent(Label)).forEach(child=>{child.removeFromParent();child.destroy();});
+        this.ellipse('Bead contact shadow',48,65,31,12,'#82634250',target);this.image('bead-'+type,5,5,82,82,target);this.play('land',.35);
+      }).start();
   }
   private localPoint(e: EventTouch) {
     // getUILocation already accounts for SHOW_ALL letterboxing; page origin is top left.

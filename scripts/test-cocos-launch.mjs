@@ -27,6 +27,9 @@ try{
  for(let type=1;type<=5;type++)await material(type);
  s=await state();assert.equal(s.save.draft.filter(n=>n!==null).length,6);assert.ok(s.crafting.flights.length>=2);assert.equal(new Set(s.crafting.flights.map(f=>f.index)).size,s.crafting.flights.length);assert.deepEqual(s.save.inventory,initial.inventory);
  await page.screenshot({path:dir+'/continuous.png'});await idle();s=await state();const empty=s.save.draft.findIndex(n=>n===null);
+ // Another bead landing must not destroy a drag already in progress.
+ await material(2);s=await state();const drop=s.save.draft.findIndex(n=>n===null),a=await point(s.crafting.slots[first]),b=await point(s.crafting.slots[drop]);
+ await page.mouse.move(a.x,a.y);await page.mouse.down();await page.mouse.move((a.x+b.x)/2,(a.y+b.y)/2,{steps:4});await page.waitForTimeout(1000);await page.mouse.move(b.x,b.y,{steps:4});await page.mouse.up();assert.equal((await state()).save.draft[drop],0);await action('撤销');await action('撤销');
  await drag(first,empty);assert.equal((await state()).save.draft[empty],0);assert.equal((await state()).save.draft[first],null);await action('撤销');assert.equal((await state()).save.draft[first],0);
  s=await state();const second=s.save.draft.findIndex(n=>n===1);await drag(first,second);assert.equal((await state()).save.draft[first],1);assert.equal((await state()).save.draft[second],0);await action('撤销');
  await tap((await state()).crafting.slots[first]);await action('移除');assert.equal((await state()).save.draft[first],null);await action('撤销');assert.equal((await state()).save.draft[first],0);
