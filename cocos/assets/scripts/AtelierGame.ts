@@ -531,9 +531,6 @@ export class AtelierGame extends Component {
     this.text(event?event.description:!this.save.completed.length?'想送奶奶一朵花，颜色清淡一点。':o.text,114,116,562,53,22,MUTED);
     const main=event?event.main:o.main,accent=event?event.accent:o.accent;
     this.text(`${BEADS[main].short} ${counts[main]}/${event?6:o.mainNeed} · ${BEADS[accent].short} ${counts[accent]}/${event?3:o.accentNeed} · ${CHARMS[event?event.charm:o.charm]}吊坠`,66,178,588,36,24,SAGE,this.page,true);
-    this.image('pencil-commission-tray',28,230,664,602);
-    this.ellipse('Tray outer groove',360,532,276,276,'#e0caa455',this.page,'#bda280');
-    this.ellipse('Tray inner groove',360,532,177,177,'#f8eddbd9',this.page,'#d4bb99');
     const g=this.box('Wire',0,0,720,1280).addComponent(Graphics);
     g.strokeColor=color('#c1a06b');g.lineWidth=2;g.ellipse(360,-532,228,228);g.stroke();
     const first=!event&&!this.save.completed.length&&counts.every(n=>n===0);
@@ -552,8 +549,7 @@ export class AtelierGame extends Component {
       this.accessibleButton(`第${i+1}槽：${type===null?'空槽':BEADS[type].name}`,()=>this.selectCraftSlot(i));
     });
     this.text(event?'赛事提供珠材 · 委托草稿独立保留':this.materialNeed(),38,828,644,32,22,MUTED,this.page,true);
-    this.image('pencil-commission-scroll',18,858,684,203);
-    this.text('点珠材，弹入托盘后随机落位',60,865,600,28,21,MUTED,this.page,true);
+    this.text('点珠材加入手串 · 拖动调整位置',60,865,600,28,21,MUTED,this.page,true);
     BEADS.forEach((b,i)=>{
       const x=39+i*108;
       const chosen=this.craftMaterial===i,n=this.rect('Bead material '+i,x,900,102,94,chosen?'#e6d39d':'#fffaf040',this.page,13,chosen?'#9b7b43':'#cbb799');
