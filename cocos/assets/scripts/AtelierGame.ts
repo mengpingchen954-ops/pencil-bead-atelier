@@ -1080,7 +1080,7 @@ export class AtelierGame extends Component {
         if(!n?.isValid){n=this.makeBoardBead(fall.to,fall.type,fall.special||'',0);n.setScale(.05,.05,1);this.bindBoard(n,fall.to);}
         else {n.off(Node.EventType.TOUCH_START);n.off(Node.EventType.TOUCH_MOVE);n.off(Node.EventType.TOUCH_END);n.off(Node.EventType.TOUCH_CANCEL);this.bindBoard(n,fall.to);}
         next[fall.to]=n;tasks.push(this.animate(n,this.boardPos(fall.to),.16+Math.max(0,Math.floor(fall.to/8)-Math.max(0,fall.fromRow))*.03,Vec3.ONE).then(async()=>{
-          if(!this.save.reduced){n.setScale(1.06,.94,1);await this.animate(n,this.boardPos(fall.to),.09,Vec3.ONE);}
+          if(!this.save.reduced){n.setScale(1.015,.985,1);await this.animate(n,this.boardPos(fall.to),.09,Vec3.ONE);}
         }));
       });
       this.boardNodes=next;await Promise.all(tasks);this.drawObstacles(frame.obstaclesAfter);this.play('land',.4);
