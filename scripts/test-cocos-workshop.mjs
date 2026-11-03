@@ -24,15 +24,15 @@ try {
  let s=await state();assert.equal(s.crafting.orderId,'daisy');assert.equal(s.crafting.slots.length,12);
  await page.screenshot({path:'artifacts/workshop/empty.png'});
  await tap(440,1180);assert.equal((await state()).screen,'craft');assert.equal((await state()).save.coins,initial.coins);
- await at(s.crafting.materials[0]);await at(s.crafting.slots[0]);s=await state();const origin=s.save.draft.findIndex(n=>n===0),target=(origin+1)%12;
+ await at(s.crafting.materials[0]);s=await state();const origin=s.save.draft.findIndex(n=>n===0),target=(origin+1)%12;
  assert.equal(s.save.draft.filter(n=>n!==null).length,1);
  const cdp=await context.newCDPSession(page);
  const drag=async(a,b)=>{const p=await point(a.x,a.y),q=await point(b.x,b.y);await cdp.send('Input.dispatchTouchEvent',{type:'touchStart',touchPoints:[p]});for(let i=1;i<=5;i++)await cdp.send('Input.dispatchTouchEvent',{type:'touchMove',touchPoints:[{x:p.x+(q.x-p.x)*i/5,y:p.y+(q.y-p.y)*i/5}]});await cdp.send('Input.dispatchTouchEvent',{type:'touchEnd',touchPoints:[]});};
  await drag(s.crafting.slots[origin],s.crafting.slots[target]);s=await state();assert.equal(s.save.draft[target],0);assert.equal(s.save.draft[origin],null);
  await tap(74,1092);s=await state();assert.equal(s.save.draft[origin],0);assert.equal(s.save.draft[target],null);
- await at(s.crafting.materials[3]);await at(s.crafting.slots[target]);s=await state();assert.equal(s.save.draft[target],3,JSON.stringify({origin,target,slot:s.slot,draft:s.save.draft,materials:s.crafting.materials,grooves:s.crafting.slots}));
+ await at(s.crafting.materials[3]);s=await state();const added=s.save.draft.findIndex(n=>n===3);if(added!==target)await drag(s.crafting.slots[added],s.crafting.slots[target]);s=await state();assert.equal(s.save.draft[target],3);
  await drag(s.crafting.slots[origin],s.crafting.slots[target]);s=await state();assert.equal(s.save.draft[origin],3);assert.equal(s.save.draft[target],0);
- await at(s.crafting.slots[origin]);await at(s.crafting.materials[2]);await action('替换');s=await state();assert.equal(s.save.draft[origin],2);
+ await at(s.crafting.materials[2]);await action('撤销');s=await state();await at(s.crafting.slots[origin]);await action('替换');s=await state();assert.equal(s.save.draft[origin],2);
  await at(s.crafting.slots[origin]);await tap(174,1092);s=await state();assert.equal(s.save.draft[origin],null);
  await tap(74,1092);s=await state();assert.equal(s.save.draft[origin],2);
  const edited=s.save.draft;await page.reload({waitUntil:'networkidle'});await ready();await action('按单制作');await action('开始制作');assert.deepEqual((await state()).save.draft,edited);

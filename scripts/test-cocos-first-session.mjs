@@ -17,16 +17,22 @@ try{
  const tap=async(x,y)=>{const p=await point(x,y);await page.touchscreen.tap(p.x,p.y);};
  const groove=async i=>{const p=(await state()).crafting.slots[i];await tap(p.x,p.y);};
  const material=async i=>{const p=(await state()).crafting.materials[i];await tap(p.x,p.y);};
+ const addAt=async(type,index)=>{
+  const before=(await state()).save.draft.slice();await material(type);let s=await state();
+  const from=s.save.draft.findIndex((n,i)=>n!==before[i]);assert.ok(from>=0);
+  await page.waitForFunction(()=>!JSON.parse(window.render_game_to_text()).crafting.flights.length);
+  if(from!==index){const a=await point(s.crafting.slots[from].x,s.crafting.slots[from].y),b=await point(s.crafting.slots[index].x,s.crafting.slots[index].y);await page.mouse.move(a.x,a.y);await page.mouse.down();await page.mouse.move(b.x,b.y,{steps:5});await page.mouse.up();}
+ };
  const escape=async()=>{await page.locator('#GameCanvas').focus();await page.keyboard.press('Escape');};
  await page.goto(base,{waitUntil:'networkidle'});await ready();await action('打开小店  →');assert.equal((await state()).modal,'first-order');
  await page.screenshot({path:dir+'/one-line-order.png'});await tap(517,1207);let s=await state();assert.equal(s.screen,'craft');assert.ok(s.save.firstSteps.craft);assert.equal(s.save.level,1);
  const initialStock=s.save.inventory,energy=s.save.energy;assert.ok(initialStock[0]>=8&&initialStock[3]>=3);
  await page.screenshot({path:dir+'/large-workshop.png'});
- await groove(0);assert.equal((await state()).save.draft[0],0);await material(3);assert.equal((await state()).save.draft.filter(x=>x!==null).length,1);await groove(1);assert.equal((await state()).save.draft[1],3);
+ await addAt(0,0);await addAt(3,1);assert.equal((await state()).save.draft[1],3);
  // Existing bead selection is non-destructive; replacement and removal are explicit.
- await groove(0);await material(4);await tap(374,1092);assert.equal((await state()).save.draft[0],4);await action('撤销');assert.equal((await state()).save.draft[0],0);
+ await material(4);await action('撤销');await groove(0);await tap(374,1092);assert.equal((await state()).save.draft[0],4);await action('撤销');assert.equal((await state()).save.draft[0],0);
  await groove(0);await action('移除');assert.equal((await state()).save.draft[0],null);await action('撤销');assert.equal((await state()).save.draft[0],0);
- for(let i=2;i<12;i++){await material(ORDERS[0].palette[i]);await groove(i);assert.equal((await state()).busy,false);}
+ for(let i=2;i<12;i++){await addAt(ORDERS[0].palette[i],i);assert.equal((await state()).busy,false);}
  s=await state();assert.deepEqual(s.save.draft,ORDERS[0].palette);assert.deepEqual(s.save.inventory,initialStock);assert.equal(s.save.energy,energy);
  for(const [width,height] of [[360,800],[390,844],[1440,900]]){await page.setViewportSize({width,height});await page.waitForTimeout(180);await page.screenshot({path:dir+`/workshop-${width}.png`});await groove(0);assert.equal((await state()).slot,0);await groove(0);}
  await page.setViewportSize({width:540,height:960});await page.waitForTimeout(160);await action('完成制作');assert.equal((await state()).modal,'first-finished');await page.screenshot({path:dir+'/first-closeup.png'});
@@ -52,8 +58,8 @@ try{
  await page.reload({waitUntil:'networkidle'});await ready();assert.deepEqual((await state()).save.inventory,earned);await action('按单制作');await action('开始制作');
  const recipe=[...Array(6).fill(2),...Array(3).fill(0)],counts=draftCounts(recipe);
  while(recipe.length<12){const type=earned.findIndex((n,i)=>n>counts[i]);assert.ok(type>=0);recipe.push(type);counts[type]++;}
- for(let i=0;i<12;i++){await material(recipe[i]);await groove(i);}await action('月牙');await action('完成制作');assert.equal((await state()).screen,'packing');await action('完成包装');s=await state();assert.equal(s.save.completed.length,2);assert.ok(s.save.firstSteps.secondDelivery);assert.deepEqual(s.delivery.work.beads,recipe);
+ for(let i=0;i<12;i++)await addAt(recipe[i],i);await action('月牙');await action('完成制作');assert.equal((await state()).screen,'packing');await action('完成包装');s=await state();assert.equal(s.save.completed.length,2);assert.ok(s.save.firstSteps.secondDelivery);assert.deepEqual(s.delivery.work.beads,recipe);
  await action('继续营业');await action('目送她出发');await escape();await action('图鉴');await action('欣赏给奶奶的一朵花');assert.deepEqual((await state()).collectionDetail.work.beads,ORDERS[0].palette);
- assert.deepEqual(errors,[]);fs.writeFileSync(dir+'/report.json',JSON.stringify({base,freeFirstCommission:true,shortOpening:true,selectedMaterialThenGroove:true,nativeReplaceRemoveUndo:true,continuousPlacement:true,firstCloseupAndFeedback:true,noMiningBeforeFirstDelivery:true,exactSupplyTargets:true,earlyCollectionSaved:true,noDoubleClaim:true,secondDelivery:true,realCollection:true,threeWidths:true,firstSteps:s.save.firstSteps,errors},null,2));
+ assert.deepEqual(errors,[]);fs.writeFileSync(dir+'/report.json',JSON.stringify({base,freeFirstCommission:true,shortOpening:true,randomMaterialLaunchAndRearrangement:true,nativeReplaceRemoveUndo:true,continuousPlacement:true,firstCloseupAndFeedback:true,noMiningBeforeFirstDelivery:true,exactSupplyTargets:true,earlyCollectionSaved:true,noDoubleClaim:true,secondDelivery:true,realCollection:true,threeWidths:true,firstSteps:s.save.firstSteps,errors},null,2));
  console.log('First-session loop passed: free first order, one-line opening, large workshop, native placement/replace/remove/undo, closeup/packing/feedback, exact supply goals and saved collection, second delivery and milestones.');
 }finally{await browser.close();}

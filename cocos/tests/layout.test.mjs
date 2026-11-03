@@ -117,7 +117,7 @@ test('commission workshop previews its real draft and validates before entering 
   const before=JSON.stringify(game.save),rendered=[];
   const original=game.bracelet.bind(game);game.bracelet=(beads,...args)=>{rendered.push([...beads]);return original(beads,...args);};
   actions.get('完成制作')();assert.equal(game.screen,'craft');
-  actions.get('选择月光珍珠')();assert.equal(game.workingDraft.filter(n=>n!==null).length,0);actions.get('第1槽：空槽')();assert.equal(game.workingDraft.filter(n=>n!==null).length,1);
+  actions.get('放入月光珍珠')();assert.equal(game.workingDraft.filter(n=>n!==null).length,1);
   const partial=JSON.stringify(game.save);actions.get('预览')();
   assert.equal(game.modal,'craft-preview');assert.deepEqual(rendered.at(-1),Array.from(game.save.draft));assert.equal(JSON.stringify(game.save),partial);
   actions.get('继续制作')();assert.equal(game.modal,'');
@@ -198,14 +198,14 @@ test('native controller connects chat, gift selection, delivery response, return
 test('competition board connects native craft, isolated undo, one-time awards and saved results', () => {
   const game=new AtelierGame(),actions=new Map();
   game.node=new Node('AtelierGame');game.page=new Node('Page');game.overlay=new Node('Dialogs');game.notices=new Node('Notices');
-  game.persist=()=>{};game.scheduleOnce=()=>{};
+  game.persist=()=>{};game.scheduleOnce=()=>{};game.toast=()=>{};
   game.accessibility={clear(modal){if(!modal)actions.clear();},text(){},button(name,action,modal,enabled){if(enabled)actions.set(name,action);},showDialog(){actions.clear();},closeDialog(){actions.clear();},announce(){}};
   game.save={...rules.freshSave(),started:true,reduced:true,completed:['daisy'],draft:[0,...Array(11).fill(null)],charm:'heart'};
   const commission=game.save.draft.slice(),stock=game.save.inventory.slice(),coins=game.save.coins;
   game.screen='home';game.render();actions.get('参加比赛')();assert.equal(game.screen,'contest');
   actions.get('报名参加')();assert.equal(game.screen,'contestCraft');
   actions.get('参考配色')();actions.get('以此为起点排珠')();
-  actions.get('第1槽：森绿玉珠')();actions.get('选择月光珍珠')();actions.get('替换')();
+  actions.get('放入月光珍珠')();actions.get('第1槽：森绿玉珠')();actions.get('替换')();
   assert.equal(game.save.competitions.draft.beads[0],0);
   actions.get('撤销')();assert.equal(game.save.competitions.draft.beads[0],3);
   assert.deepEqual(game.save.draft,commission);assert.equal(game.save.charm,'heart');assert.deepEqual(game.save.inventory,stock);
@@ -478,4 +478,20 @@ test('early failed gathering banks every collected color once through result, Es
  assert.deepEqual(game.save.inventory,stock.map((n,i)=>n+game.session.collected[i]));const saved=JSON.stringify(game.save);game.result();assert.equal(JSON.stringify(game.save),saved);
  game.dismiss();assert.equal(game.screen,'craft');assert.equal(game.session,null);assert.equal(JSON.stringify(game.save),saved);
  assert.deepEqual(rules.normalizeSave(JSON.parse(saved)).inventory,game.save.inventory);
+});
+
+test('material taps reserve random empty slots, ignore selection, guard stock/full drafts and undo safely',()=>{
+ const game=new AtelierGame(),actions=new Map();game.node=new Node('AtelierGame');game.page=new Node('Page');game.overlay=new Node('Dialogs');game.notices=new Node('Notices');
+ game.persist=()=>{};game.toast=()=>{};game.play=()=>{};
+ game.accessibility={clear(){actions.clear();},text(){},button(name,action){actions.set(name,action);},showDialog(){},closeDialog(){}};
+ game.save={...rules.freshSave(),reduced:true,inventory:[2,2,0,2,0,0]};game.screen='craft';game.render();
+ actions.get('第1槽：空槽')();assert.equal(game.save.draft.filter(n=>n!==null).length,0);
+ for(const name of ['月光珍珠','蔷薇红晶','森绿玉珠','月光珍珠','蔷薇红晶','森绿玉珠']){
+  const before=game.save.draft.slice();game.slot=0;actions.get('放入'+name)();
+  const changed=game.save.draft.map((n,i)=>n!==before[i]?i:-1).filter(i=>i>=0);assert.equal(changed.length,1);assert.equal(before[changed[0]],null);
+ }
+ const stock=game.save.inventory.slice(),draft=game.save.draft.slice();actions.get('放入月光珍珠')();assert.deepEqual(game.save.draft,draft);actions.get('放入雾蓝水晶')();assert.deepEqual(game.save.draft,draft);
+ actions.get('撤销')();assert.equal(game.save.draft.filter(n=>n!==null).length,5);assert.deepEqual(game.save.inventory,stock);
+ game.save.inventory=Array(6).fill(20);game.save.draft=Array(12).fill(0);game.render();const full=game.save.draft.slice();actions.get('放入森绿玉珠')();assert.deepEqual(game.save.draft,full);
+ actions.get('第1槽：月光珍珠')();actions.get('替换')();assert.equal(game.save.draft[0],3);actions.get('撤销')();assert.deepEqual(Array.from(game.save.draft),full);
 });
