@@ -10,7 +10,7 @@ try{
  const context=await browser.newContext({viewport:{width:540,height:960},isMobile:true,hasTouch:true});
  const page=await context.newPage(),errors=[];
  page.on('pageerror',e=>errors.push(e.message));page.on('console',m=>{if(m.type()==='error')errors.push(m.text());});page.on('response',r=>{if(r.status()>=400)errors.push(r.status()+' '+r.url());});
- const initial={...freshSave(),reduced:true,sound:false,music:{enabled:false,volume:.35,track:'glimmer'}};
+ const initial={...freshSave(),started:true,reduced:true,sound:false,music:{enabled:false,volume:.35,track:'glimmer'}};
  await page.addInitScript(s=>{
   if(window.name.startsWith('qa-save:')){localStorage.setItem('pencil-bead-atelier-v1',window.name.slice(8));window.name='';}
   if(!localStorage.getItem('pencil-bead-atelier-v1'))localStorage.setItem('pencil-bead-atelier-v1',JSON.stringify(s));
@@ -20,7 +20,8 @@ try{
  const action=async name=>page.getByRole('button',{name,exact:true}).dispatchEvent('click');
  const tap=async(x,y)=>{const b=await page.locator('#GameCanvas').boundingBox(),scale=Math.min(b.width/720,b.height/1280);await page.touchscreen.tap(b.x+b.width/2+(x-360)*scale,b.y+b.height/2+(y-640)*scale);};
  const fixture=async save=>{await page.evaluate(s=>{window.name='qa-save:'+JSON.stringify(s);},save);await page.reload({waitUntil:'networkidle'});await ready();};
- await page.goto(base,{waitUntil:'networkidle'});await ready();await action('打开小店  →');
+ await page.goto(base,{waitUntil:'networkidle'});await ready();await action('手账');
+ await page.getByRole('button',{name:'阅读 / 重温',exact:true}).first().dispatchEvent('click');
  let s=await state();assert.equal(s.modal,'story');assert.equal(s.dialogue.speaker,'往事');
  await action('记录');assert.equal((await state()).modal,'dialogue-record');assert.equal(await page.getByText(STORIES[0].lines[1][1],{exact:true}).count(),0);await action('返回对话');
  for(let i=0;i<4;i++)await action('下一句  →');
@@ -39,8 +40,8 @@ try{
  const unlocked={...initial,started:true,completed:ORDERS.map(o=>o.id),orderId:'promise',upgrades:{chair:1,desk:1,display:1},seenStories:[]};
  await fixture(unlocked);await action('手账');const read=[];
  for(let i=0;i<STORIES.length;i++){
-  if(i===5)await action('后五段 →');
-  await page.getByRole('button',{name:'阅读 / 重温',exact:true}).nth(i%5).dispatchEvent('click');
+  if(i>0&&i%4===0)await action('下一页故事');
+  await page.getByRole('button',{name:'阅读 / 重温',exact:true}).nth(i%4).dispatchEvent('click');
   const story=STORIES[i];
   for(let j=0;j<story.lines.length;j++){
    s=await state();assert.equal(s.modal,'story');assert.equal(s.story.id,story.id);assert.equal(s.dialogue.speaker,story.lines[j][0]);assert.equal(s.dialogue.text,story.lines[j][1]);

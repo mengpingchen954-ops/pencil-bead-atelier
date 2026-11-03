@@ -9,6 +9,28 @@ const { AtelierLayout } = load(root + '/assets/scripts/AtelierLayout.ts');
 const { layoutKey } = load(root + '/assets/scripts/layout-key.ts');
 const rules = load(root + '/assets/scripts/model.ts');
 
+test('commission pages keep every order reachable and open on the current customer without changing saves', () => {
+  const game=new AtelierGame(),actions=new Map();
+  game.page=new Node('Page');game.overlay=new Node('Dialogs');game.notices=new Node('Notices');
+  game.persist=()=>{};game.accessibility={clear(){actions.clear();},text(){},button(name,action,modal,enabled){if(enabled)actions.set(name,action);},showDialog(){},closeDialog(){}};
+  game.save={...rules.freshSave(),started:true};
+  const before=JSON.stringify(game.save);
+  game.navigate('orders');
+  const cards=()=>game.page.children.filter(n=>n.name.startsWith('Order '));
+  assert.deepEqual(cards().map(n=>n.name),['Order daisy','Order sea','Order rose']);
+  assert.ok(actions.has('按单制作 180金'));assert.equal(actions.has('← 前三份'),false);
+  actions.get('后三份 →')();assert.equal(game.ordersPage,1);assert.equal(cards().length,3);
+  assert.equal(actions.has('后三份 →'),false);actions.get('← 前三份')();assert.equal(game.ordersPage,0);
+  assert.equal(JSON.stringify(game.save),before);
+  const content=load(root+'/assets/scripts/content.ts');
+  game.save.completed=content.ORDERS.slice(0,4).map(o=>o.id);game.save.orderId=content.ORDERS[4].id;
+  game.navigate('orders');assert.equal(game.ordersPage,1);
+  actions.get('按单制作 '+content.ORDERS[4].reward+'金')();assert.equal(game.screen,'orderArrival');
+  assert.equal(game.currentOrder().id,content.ORDERS[4].id);
+  game.save.completed=content.ORDERS.map(o=>o.id);game.save.repeatOrders=4;game.navigate('orders');
+  assert.equal(game.ordersPage,1);assert.ok(cards().some(n=>n.name==='Order '+game.currentOrder().id));
+});
+
 test('entry scene contains eighteen real editable layouts, visible home art, labels and UI camera', () => {
   const scene = JSON.parse(fs.readFileSync(root + '/assets/scenes/Atelier.scene', 'utf8'));
   const layouts = scene.find(n => n._name === 'EditableLayouts');
@@ -20,7 +42,9 @@ test('entry scene contains eighteen real editable layouts, visible home art, lab
   assert.ok(scene.some(n => n.__type__ === 'cc.Camera' && n._orthoHeight === 640));
   assert.ok(scene.filter(n => n.__type__ === 'cc.Sprite').length > 100);
   assert.ok(scene.filter(n => n.__type__ === 'cc.Label').length > 100);
-  const homeArt = pages[0]._children.map(r => scene[r.__id__]).find(n => n._name === 'pencil-shop');
+  const panorama = pages[0]._children.map(r => scene[r.__id__]).find(n => n._name === 'Shop panorama');
+  assert.ok(panorama._components.some(r => scene[r.__id__].__type__ === 'cc.Mask'));
+  const homeArt = panorama._children.map(r => scene[r.__id__]).find(n => n._name === 'pencil-shop');
   assert.ok(homeArt?._components.some(r => scene[r.__id__].__type__ === 'cc.Sprite'));
   const keys = scene.filter(n => n.key).map(n => n.key);
   assert.equal(new Set(keys).size, keys.length);
