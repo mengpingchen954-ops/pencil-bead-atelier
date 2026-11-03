@@ -601,16 +601,16 @@ export class AtelierGame extends Component {
   }
   private clearCraftFlights() {this.craftFlights.forEach((flight,index)=>this.clearCraftFlight(index));}
   private launchCraftBead(index:number,type:number) {
-    const n=this.box('Rolling bead '+index,49+type*108,891,82,82,this.craftMotion);
-    this.ellipse('Rolling shadow',43,66,29,10,'#82634235',n);this.image('bead-'+type,0,0,82,82,n);
+    const n=this.box('Bouncing bead '+index,49+type*108,891,82,82,this.craftMotion);
+    this.ellipse('Flight shadow',43,66,29,10,'#82634235',n);this.image('bead-'+type,0,0,82,82,n);
     n.setScale(.72,.72,1);this.craftFlights.set(index,{node:n,type});
     const slot=this.slotNodes[index],p=slot?new Vec3(slot.position.x+5,slot.position.y-5,0):new Vec3(this.slotPos(index).x-41,41-this.slotPos(index).y,0);
-    const center=new Vec3(319,-491,0),dx=p.x-center.x,dy=p.y-center.y,side=Math.random()<.5?-1:1,bend=18+Math.random()*18;
-    tween(n).to(.18,{position:center,scale:new Vec3(1.08,1.08,1)},{easing:'quadOut'})
-      .to(.08,{position:new Vec3(center.x,center.y-9,0),scale:Vec3.ONE},{easing:'sineOut'})
-      .to(.23,{position:new Vec3(center.x+dx*.48-dy/228*bend*side,center.y+dy*.48+dx/228*bend*side,0),angle:side*155},{easing:'quadIn'})
-      .to(.23,{position:new Vec3(p.x+dx*.025,p.y+dy*.025,0),angle:side*345},{easing:'quadOut'})
-      .to(.1,{position:p,angle:side*360},{easing:'sineOut'})
+    const center=new Vec3(319,-491,0),dx=p.x-center.x,dy=p.y-center.y;
+    tween(n).to(.22,{position:center,scale:new Vec3(1.08,1.08,1)},{easing:'quadOut'})
+      .to(.09,{scale:Vec3.ONE},{easing:'sineOut'})
+      .to(.2,{position:new Vec3(center.x+dx*.5,center.y+dy*.5+54,0),scale:new Vec3(1.06,1.06,1)},{easing:'quadOut'})
+      .to(.2,{position:p,scale:Vec3.ONE},{easing:'quadIn'})
+      .delay(.09)
       .call(()=>{
         if(this.craftFlights.get(index)?.node!==n)return;this.clearCraftFlight(index);
         const target=this.slotNodes[index];
