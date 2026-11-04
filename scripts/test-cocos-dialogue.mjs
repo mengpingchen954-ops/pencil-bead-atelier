@@ -29,13 +29,14 @@ try{
   const key=({'阿禾':'pencil-speaker-ahe','奶奶':'pencil-speaker-grandma','林阿姨':'pencil-dialogue-lin'})[speaker];
   assert.deepEqual(actual,{portraits:key?[{name:key,color:[255,255,255,255]}]:[],background:[255,255,255,255]});
  };
- const tap=async(x,y)=>{const b=await page.locator('#GameCanvas').boundingBox(),scale=Math.min(b.width/720,b.height/1280);await page.touchscreen.tap(b.x+b.width/2+(x-360)*scale,b.y+b.height/2+(y-640)*scale);};
+ const tap=async(x,y)=>{const b=await page.locator('#GameCanvas').boundingBox(),scale=Math.min(b.width/720,b.height/1280);await page.touchscreen.tap(b.x+b.width/2+(x-360)*scale,b.y+b.height/2+(y-640)*scale);await page.evaluate(()=>new Promise(resolve=>requestAnimationFrame(()=>requestAnimationFrame(resolve))));};
+ const resize=async(width,height)=>{await page.setViewportSize({width,height});await page.waitForTimeout(200);};
  const fixture=async save=>{await page.evaluate(s=>{window.name='qa-save:'+JSON.stringify(s);},save);await page.reload({waitUntil:'networkidle'});await ready();};
  await page.goto(base,{waitUntil:'networkidle'});await ready();
  await fixture({...initial,started:false});await tap(360,1084);
  let opening=await state();assert.equal(opening.modal,'first-order');assert.equal(opening.dialogue.speaker,'林阿姨');await checkPortraits('林阿姨');
- for(const [width,height] of [[360,800],[390,844],[540,960],[1440,900]]){await page.setViewportSize({width,height});await page.screenshot({path:`${dir}/first-order-${width}.png`});assert.equal(await page.evaluate(()=>document.documentElement.scrollWidth>innerWidth),false);}
- await page.setViewportSize({width:540,height:960});await tap(586,68);assert.equal((await state()).modal,'dialogue-record');await action('返回对话');await checkPortraits('林阿姨');
+ for(const [width,height] of [[360,800],[390,844],[540,960],[1440,900]]){await resize(width,height);await page.screenshot({path:`${dir}/first-order-${width}.png`});assert.equal(await page.evaluate(()=>document.documentElement.scrollWidth>innerWidth),false);}
+ await resize(540,960);await tap(586,68);assert.equal((await state()).modal,'dialogue-record');await action('返回对话');await checkPortraits('林阿姨');
  assert.deepEqual((await state()).save,opening.save);await tap(673,68);assert.equal((await state()).screen,'craft');
  await fixture(initial);await action('手账');
  await page.getByRole('button',{name:'阅读 / 重温',exact:true}).first().dispatchEvent('click');
@@ -45,8 +46,8 @@ try{
  s=await state();assert.equal(s.dialogue.speaker,'奶奶');assert.equal(s.dialogue.text,STORIES[0].lines[4][1]);
  await checkPortraits('奶奶');
  await page.screenshot({path:dir+'/grandma.png'});
- for(const [width,height] of [[360,800],[390,844],[1440,900]]){await page.setViewportSize({width,height});await page.screenshot({path:`${dir}/layout-${width}.png`});}
- await page.setViewportSize({width:540,height:960});
+ for(const [width,height] of [[360,800],[390,844],[1440,900]]){await resize(width,height);await page.screenshot({path:`${dir}/layout-${width}.png`});}
+ await resize(540,960);
  await tap(586,68);s=await state();assert.equal(s.modal,'dialogue-record');await page.screenshot({path:dir+'/record.png'});
  assert.equal(await page.getByText(STORIES[0].lines[5][1],{exact:true}).count(),0);
  await action('上一页');assert.equal(await page.getByText(STORIES[0].lines[2][1],{exact:true}).count(),1);
