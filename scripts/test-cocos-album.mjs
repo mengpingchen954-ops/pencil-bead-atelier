@@ -37,7 +37,8 @@ try {
  await search('  不存在的作品  ');assert.equal((await state()).album.items.length,0);await action('清空搜索');
  for(const [width,height] of [[360,800],[390,844],[1440,900]]){await page.setViewportSize({width,height});await page.screenshot({path:`artifacts/album/layout-${width}.png`});await tap(217,350);assert.equal((await state()).modal,'collection');await escape();}
  await page.setViewportSize({width:540,height:960});await page.waitForTimeout(120);sameSave((await state()).save,before);
- await tap(90,1230);assert.equal((await state()).screen,'home');await action('图鉴');await tap(450,1230);assert.equal((await state()).screen,'orders');await escape();await action('图鉴');await tap(630,1230);assert.equal((await state()).screen,'journal');await escape();await action('图鉴');
+ for(const [x,target] of [[72,'home'],[216,'orders'],[360,'craft'],[504,'decor'],[648,'album']]){await tap(x,1230);assert.equal((await state()).screen,target);sameSave((await state()).save,before);if(target==='craft')await action('返回委托');await action('图鉴');}
+ await action('我们的故事与回忆手账');assert.equal((await state()).screen,'journal');await escape();await action('图鉴');
  await tap(360,1074);s=await state();assert.equal(s.screen,'orderArrival');assert.equal(s.incomingOrder.id,before.orderId);sameSave(s.save,before);await escape();await action('图鉴');
  await page.reload({waitUntil:'networkidle'});await ready();sameSave((await state()).save,before);await action('图鉴');assert.equal((await state()).album.query,'');
  await fixture(initial);s=await state();assert.equal(s.album.percent,0);assert.equal(s.album.items.filter(o=>o.work).length,0);await page.screenshot({path:'artifacts/album/empty.png'});
@@ -46,6 +47,6 @@ try {
  for(let i=0;i<8;i++){const o=ORDERS[i%6];complete=deliver({...complete,draft:[...o.palette].reverse(),charm:o.charm});}complete.deliveryReceipt=null;
  await fixture(complete);s=await state();assert.equal(s.album.percent,100);const completed=s.save;await action('查看回头客作品');s=await state();assert.equal(s.album.percent,100);assert.equal(s.album.items[1].work.number,8);assert.deepEqual(s.album.items[0].work.beads,[...ORDERS[0].palette].reverse());await page.screenshot({path:'artifacts/album/returning.png'});
  await action('欣赏送给旅途中的朋友');assert.equal((await state()).modal,'collection');await escape();await action('查看剧情作品');sameSave((await state()).save,completed);
- assert.deepEqual(errors,[]);fs.writeFileSync('artifacts/album/report.json',JSON.stringify({base,actualBraceletsAndCharms:true,seaBlessingAndTravelCharm:true,lockedCards:true,realSeriesProgress:true,nativeSearchAndEnter:true,semanticSearch:true,emptyAndNoResults:true,recentReturningWorks:true,commissionEntry:true,nativeFourTabs:true,noSaveChanges:true,reload:true,threeViewports:true,errors},null,2));
- console.log('Collection album passed: real custom bracelets/charms/blessings, locks, truthful chapter progress, native input/Enter and semantic search, empty states, recent returning works, commissioned crafting, four touch tabs, unchanged saves, reload and three widths.');
+ assert.deepEqual(errors,[]);fs.writeFileSync('artifacts/album/report.json',JSON.stringify({base,actualBraceletsAndCharms:true,seaBlessingAndTravelCharm:true,lockedCards:true,realSeriesProgress:true,nativeSearchAndEnter:true,semanticSearch:true,emptyAndNoResults:true,recentReturningWorks:true,commissionEntry:true,nativeFiveTabs:true,noSaveChanges:true,reload:true,threeViewports:true,errors},null,2));
+ console.log('Collection album passed: real custom bracelets/charms/blessings, locks, truthful chapter progress, native input/Enter and semantic search, empty states, recent returning works, commissioned crafting, five touch tabs, unchanged saves, reload and three widths.');
 } finally {await browser.close();}

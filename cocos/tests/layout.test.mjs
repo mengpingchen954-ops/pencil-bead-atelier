@@ -63,6 +63,30 @@ test('entry scene contains eighteen real editable layouts, visible home art, lab
   }
 });
 
+test('all persistent navigation uses the home dimensions and five destinations without covering page controls',()=>{
+  const game=new AtelierGame();game.page=new Node('Page');game.overlay=new Node('Dialogs');game.notices=new Node('Notices');
+  game.textures.set('pencil-floor',{name:'pencil-floor'});
+  game.save={...rules.freshSave(),started:true};
+  const before=JSON.stringify(game.save),targets=['home','orders','craft','decor','album'];
+  for(const page of ['home','orders','decor','album','journal','contest']){
+    game.screen=page;game.render();
+    const bar=game.page.children.find(n=>n.name==='Navigation');
+    assert.equal(bar.position.y,-1140,page);assert.equal(bar.getComponent(UITransform).contentSize.height,140,page);
+    const tabs=game.page.children.filter(n=>n.name.startsWith('Navigate '));
+    assert.deepEqual(tabs.map(n=>n.name),targets.map(n=>'Navigate '+n),page);
+    tabs.forEach((n,i)=>{
+      assert.equal(n.position.x,i*144);assert.equal(n.position.y,-1140);
+      assert.deepEqual(n.getComponent(UITransform).contentSize,{width:144,height:140});
+      const label=n.getComponentsInChildren(Label)[0];assert.equal(label.fontSize,23);
+      assert.equal(n.children.some(c=>c.name==='pencil-ui-active'),targets[i]===page);
+    });
+    for(const n of game.page.children.filter(n=>n.name.startsWith('Button: '))){
+      assert.ok(-n.position.y+n.getComponent(UITransform).contentSize.height<=1140,page+' '+n.name);
+    }
+  }
+  assert.equal(JSON.stringify(game.save),before);
+});
+
 test('home keeps live commission details and saved drafts with the supplied decorative artwork',()=>{
   const game=new AtelierGame();game.page=new Node('Page');game.overlay=new Node('Dialogs');game.notices=new Node('Notices');
   const {ORDERS,RETURN_ORDERS}=load(root+'/assets/scripts/content.ts');
@@ -299,6 +323,7 @@ test('an old completed save opens a real customer order, delivers it and keeps r
 
 test('collection catalog derives real works, locked cards, chapter progress and native search without changing saves', () => {
   const game=new AtelierGame(),actions=new Map();let inputSearch;
+  game.textures.set('pencil-floor',{name:'pencil-floor'});
   game.node=new Node('AtelierGame');game.page=new Node('Page');game.overlay=new Node('Dialogs');game.notices=new Node('Notices');
   game.persist=()=>{};game.scheduleOnce=()=>{};
   game.accessibility={clear(modal){if(!modal)actions.clear();},text(){},search(value,input){inputSearch=input;},button(name,action,modal,enabled){if(enabled)actions.set(name,action);},showDialog(){actions.clear();},closeDialog(){actions.clear();},announce(){}};
@@ -315,7 +340,7 @@ test('collection catalog derives real works, locked cards, chapter progress and 
   inputSearch('<没有这件作品>');actions.get('搜索')();assert.equal(game.snapshot().album.items.length,0);assert.ok(actions.has('清空搜索'));actions.get('清空搜索')();assert.equal(game.snapshot().album.items.length,2);
   const nativeField=game.page.children.find(n=>n.name==='Collection search'),edit=nativeField.components.find(c=>c.maxLength===32);edit.string='珍珠';nativeField.events['text-changed']();nativeField.events['editing-return']();assert.equal(game.albumQuery,'珍珠');
   assert.equal(JSON.stringify(game.save),before);actions.get('制作新手串')();assert.equal(game.screen,'orderArrival');assert.equal(JSON.stringify(game.save),before);
-  game.navigate('album');actions.get('任务')();assert.equal(game.screen,'orders');game.navigate('album');actions.get('我的')();assert.equal(game.screen,'journal');game.navigate('album');actions.get('店铺')();assert.equal(game.screen,'home');
+  game.navigate('album');actions.get('委托')();assert.equal(game.screen,'orders');game.navigate('album');actions.get('手作')();assert.equal(game.screen,'craft');game.navigate('album');actions.get('装修')();assert.equal(game.screen,'decor');game.navigate('album');actions.get('小店')();assert.equal(game.screen,'home');
 });
 
 test('returning collection uses recent actual works and retains exact bracelets and story collection', () => {

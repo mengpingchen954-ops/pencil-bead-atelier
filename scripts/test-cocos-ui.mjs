@@ -20,10 +20,23 @@ try{
  const action=async name=>page.getByRole('button',{name,exact:true}).dispatchEvent('click');
  const tap=async(x,y)=>{const b=await page.locator('#GameCanvas').boundingBox(),s=Math.min(b.width/720,b.height/1280);await page.touchscreen.tap(b.x+b.width/2+(x-360)*s,b.y+b.height/2+(y-640)*s);};
  const fixture=async save=>{await page.evaluate(s=>{window.name='qa-save:'+JSON.stringify(s);},save);await page.reload({waitUntil:'networkidle'});await ready();};
+ let navigationGeometry;
  const shot=async name=>{
   await page.waitForTimeout(120);
   const overflow=await page.evaluate(async()=>{const cc=await System.import('cc'),game=cc.director.getScene().getChildByName('AtelierGame').getComponent('AtelierGame');return [game.page,game.overlay].flatMap(root=>root.getComponentsInChildren(cc.Sprite).filter(s=>s.node.name==='Painted surface').flatMap(s=>{const size=s.node.getComponent(cc.UITransform).contentSize,parent=s.node.parent.getComponent(cc.UITransform).contentSize;return Math.abs(size.width-parent.width)>.01||Math.abs(size.height-parent.height)>.01?[s.node.parent.name]:[];}));});
   assert.deepEqual(overflow,[],name+' painted controls must fit their native hit areas');
+  const nav=await page.evaluate(async()=>{
+   const cc=await System.import('cc'),game=cc.director.getScene().getChildByName('AtelierGame').getComponent('AtelierGame'),bar=game.page.getChildByName('Navigation');
+   if(!bar)return null;
+   const geometry=n=>{const s=n.getComponent(cc.UITransform).contentSize;return [n.name,n.position.x,n.position.y,s.width,s.height,n.scale.x,n.scale.y];};
+   const tabs=game.page.children.filter(n=>n.name.startsWith('Navigate '));
+   return {screen:game.screen,bar:geometry(bar),tabs:tabs.map(n=>[geometry(n),...n.children.filter(c=>c.name!=='pencil-ui-active').map(geometry)]),active:tabs.filter(n=>n.getChildByName('pencil-ui-active')).map(n=>n.name)};
+  });
+  if(nav){
+   assert.deepEqual(nav.bar,['Navigation',0,-1140,720,140,1,1],name);
+   navigationGeometry??=nav.tabs;assert.deepEqual(nav.tabs,navigationGeometry,name+' navigation geometry must match home');
+   assert.deepEqual(nav.active,['home','orders','craft','decor','album'].includes(nav.screen)?['Navigate '+nav.screen]:[],name+' active destination');
+  }
   await page.screenshot({path:dir+'/'+name+'.png'});
  };
  await page.goto(base,{waitUntil:'networkidle'});await ready();
@@ -42,10 +55,21 @@ try{
   await tap(129,1126);await tap(129,1126);
   await action('小店');await tap(576,1043);assert.equal((await state()).screen,'contest');await shot('contest-'+width);
   await action('装修');assert.equal((await state()).screen,'decor');await shot('decor-'+width);
+  await action('图鉴');assert.equal((await state()).screen,'album');await shot('album-'+width);
   assert.deepEqual((await state()).save,before);
   assert.equal(await page.evaluate(()=>document.documentElement.scrollWidth>innerWidth),false);
  }
  await page.setViewportSize({width:540,height:960});
+ await fixture(initial);const navigationSave=(await state()).save;
+ for(const source of ['小店','委托','装修','图鉴','手账','参加比赛']){
+  for(const [i,target] of ['home','orders','craft','decor','album'].entries()){
+   await action('小店');if(source!=='小店')await action(source);
+   // Hit both edges of each full-height tab, including the newly expanded top area.
+   await tap(i*144+(i%2?142:2),i%2?1278:1142);assert.equal((await state()).screen,target,source+' → '+target);
+   if(target==='craft')await action('返回委托');
+  }
+ }
+ assert.deepEqual((await state()).save,navigationSave);
  for(let count=1;count<ORDERS.length;count++){
   const order=ORDERS[count];await fixture({...initial,completed:ORDERS.slice(0,count).map(o=>o.id),orderId:order.id,coins:217,inventory:[17,19,23,29,31,37]});
   const saved=(await state()).save;await shot('home-current-'+count);await action('委托');await shot('orders-current-'+count);

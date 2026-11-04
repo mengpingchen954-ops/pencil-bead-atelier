@@ -404,7 +404,10 @@ export class AtelierGame extends Component {
     this.hitButton('♥ '+this.save.energy,534,16,89,52,()=>this.info('体力','每 3 分钟恢复一点，上限 10。\n采珠消耗 1 点；手作、装修与阅读不耗体力。'));
     this.hitButton('⚙',643,16,53,52,()=>this.settings());
     if (this.screen === 'match') return;
-    const y=this.screen==='home'?1140:this.screen==='orders'?1165:1180,h=1280-y;
+    this.navigation();
+  }
+  private navigation() {
+    const y=1140,h=140;
     this.rect('Navigation',0,y,720,h,'#f8f3e9',this.page,0);
     (['home','orders','craft','decor','album'] as Page[]).forEach((p,i) => {
       const labels=['小店','委托','手作','装修','图鉴'], icons=['home','orders','craft','chair','album'];
@@ -727,7 +730,7 @@ export class AtelierGame extends Component {
       this.text(entry?entry.medal+' · '+entry.score+' 分':unlocked?'邀请已送达 · 金奖 '+event.reward+' 金':'完成 '+event.unlock+' 份委托后邀请',58,y+170,370,36,21,MUTED);
       this.button(entry?'查看参赛作品':unlocked?resuming?'继续参赛':'报名参加':'等待下一次邀请',438,y+164,224,46,()=>entry?this.contestResult(event.id):this.enterCompetition(event.id),this.page,unlocked&&!entry,unlocked);
     });
-    this.text('每场可提交一件作品，成绩与奖牌会保留在这里。',38,1144,644,40,22,MUTED,this.page,true);
+    this.text('每场可提交一件作品，成绩与奖牌会保留在这里。',38,1104,644,28,22,MUTED,this.page,true);
   }
   private enterCompetition(id:string,replace=false) {
     const old=this.save.competitions.draft,next=beginCompetition(this.save,id,replace);
@@ -1394,7 +1397,7 @@ export class AtelierGame extends Component {
       },this.page,false,!done);
     });
     FURNITURE.forEach((f,i)=>{
-      const tier=this.save.upgrades[f.id],y=847+i*103;
+      const tier=this.save.upgrades[f.id],y=837+i*103;
       this.rect('Furniture '+f.id,38,y,644,89,'#fffaf0',this.page,14,'#dfd1b6');
       this.text(f.title,58,y+6,400,34,26);
       this.text(f.names[tier],58,y+45,392,30,20,MUTED);
@@ -1494,18 +1497,11 @@ export class AtelierGame extends Component {
       n.on(Node.EventType.TOUCH_END,open);this.accessibleButton((o.work?'欣赏':'未收集 · ')+o.name,open);
     });
     this.text('继续顾客委托 · '+this.currentOrder().name,84,995,467,32,22,INK,this.page,true);
-    this.image('pencil-album-grandma',567,997,142,174);
+    this.image('pencil-album-grandma',567,970,131,160);
     this.button('制作新手串',195,1040,331,69,()=>this.navigate('orderArrival'),this.page,true);
-    this.button('我们的故事与回忆手账',84,1121,270,36,()=>this.navigate('journal'));
-    if(this.save.repeatCollection.length)this.button(this.albumRepeat?'查看剧情作品':'查看回头客作品',370,1121,260,36,()=>{this.albumRepeat=!this.albumRepeat;this.albumChapter=-1;this.render();});
-    this.rect('Collection navigation',0,1173,720,107,'#faf4e8',this.page,0,'#c5aa85');
-    (['店铺','图鉴','任务','我的'] as const).forEach((label,i)=>{
-      const target=(['home','album','orders','journal'] as Page[])[i],n=this.box('Collection navigation '+target,i*180,1175,180,105);
-      if(target==='album')this.rect('Collection active tab',6,1,168,102,'#e2e8d7',n,10);
-      this.image('pencil-album-nav-'+['shop','works','orders','journal'][i],41,2,98,70,n);
-      this.text(label,0,72,180,32,25,INK,n,true);
-      n.on(Node.EventType.TOUCH_END,()=>this.navigate(target));this.accessibleButton(label,()=>this.navigate(target));
-    });
+    this.button('我们的故事与回忆手账',84,1096,270,36,()=>this.navigate('journal'));
+    if(this.save.repeatCollection.length)this.button(this.albumRepeat?'查看剧情作品':'查看回头客作品',370,1096,260,36,()=>{this.albumRepeat=!this.albumRepeat;this.albumChapter=-1;this.render();});
+    this.navigation();
   }
   private albumFilter() {
     this.dialog('album-filter','选择收藏系列');
@@ -1612,10 +1608,10 @@ export class AtelierGame extends Component {
         if(s.evidence&&read)this.button('收好相关记录',370,y+64,278,48,()=>this.info(s.evidence.title,s.evidence.text));
       }else this.text('完成对应委托或升级家具后开启',72,y+68,576,36,21,MUTED);
     });
-    this.button('上一页故事',48,1094,162,64,()=>{this.journalPage--;this.render();},this.page,false,this.journalPage>0);
-    const letter=this.button(this.save.seaHeart.visited?'旅行留影 · 小满的第一次独行':seaVisitReady(this.save)?'小满回来了 · 听听后来的故事':'海风订单 · 心意聊天与回访',230,1094,260,64,()=>this.seaRecord());
+    this.button('上一页故事',48,1068,162,64,()=>{this.journalPage--;this.render();},this.page,false,this.journalPage>0);
+    const letter=this.button(this.save.seaHeart.visited?'旅行留影 · 小满的第一次独行':seaVisitReady(this.save)?'小满回来了 · 听听后来的故事':'海风订单 · 心意聊天与回访',230,1068,260,64,()=>this.seaRecord());
     letter.children.find(n=>n.getComponent(Label))!.getComponent(Label)!.string=this.save.seaHeart.visited?'旅行留影':seaVisitReady(this.save)?'小满回来了':'心意来信';
-    this.button('下一页故事',510,1094,162,64,()=>{this.journalPage++;this.render();},this.page,false,start+4<STORIES.length);
+    this.button('下一页故事',510,1068,162,64,()=>{this.journalPage++;this.render();},this.page,false,start+4<STORIES.length);
   }
   private storyMap() {
     const route=storyRoute(this.save),current=route.stops.find(s=>s.id===route.currentId)!;
