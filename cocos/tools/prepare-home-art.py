@@ -39,7 +39,18 @@ def save(image,name,method,borders=(0,0,0,0)):
 header=art.copy()
 for rect,sample in [((76,24,198,61),(77,69,199,79)),((319,25,378,61),(319,19,378,26)),((449,25,508,61),(449,19,508,26)),((578,25,612,62),(578,19,612,26))]:
     header=patch(header,rect,sample)
-save(header.crop(bounds((0,0,715,84))),'pencil-ui-header.jpg','Resource header with pearl/coin/heart/settings icons; title, inventory, coins and energy are live native text')
+# Keep icons and rounded ends intact while making room for the native music shortcut.
+strip=patch(header,(270,0,715,84),(205,1,267,83)).crop(bounds((0,0,715,84))).resize((1440,168),Image.Resampling.LANCZOS)
+for rect,x,w in [((280,16,390,68),266,99),((406,16,516,68),378,99),((534,16,623,68),490,76),((643,16,696,68),580,53)]:
+    tile=header.crop(bounds(rect));tile=tile.resize((round(tile.width*104/tile.height),104),Image.Resampling.LANCZOS)
+    left,right=90,20
+    if w<60:tile=tile.resize((w*2,104),Image.Resampling.LANCZOS)
+    else:
+        compact=Image.new('RGB',(w*2,104));compact.paste(tile.crop((0,0,left,104)),(0,0))
+        compact.paste(tile.crop((left,0,tile.width-right,104)).resize((w*2-left-right,104),Image.Resampling.LANCZOS),(left,0))
+        compact.paste(tile.crop((tile.width-right,0,tile.width,104)),(w*2-right,0));tile=compact
+    strip.paste(tile,(x*2,32))
+save(strip,'pencil-ui-header.jpg','Compact pearl/coin/heart/settings header with room for a native music shortcut; all resource values remain live native text')
 primary=patch(art,(122,834,319,880),(84,832,113,881))
 neutral=patch(art,(426,834,625,880),(379,832,406,881))
 button=primary.crop(bounds((70,821,347,894)))

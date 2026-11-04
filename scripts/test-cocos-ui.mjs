@@ -81,7 +81,7 @@ try{
   await tap(550,470+237*(count%3));assert.equal((await state()).incomingOrder.id,order.id);assert.deepEqual((await state()).save,saved);
  }
  await fixture(initial);await action('委托');
- for(const [x,y] of [[335,42],[582,42],[668,42]]){await tap(x,y);assert.ok((await state()).modal);await shot('shared-dialog-'+x);await page.locator('#GameCanvas').focus();await page.keyboard.press('Escape');assert.equal((await state()).screen,'orders');}
+ for(const [x,y] of [[310,42],[530,42],[607,42]]){await tap(x,y);assert.ok((await state()).modal);await shot('shared-dialog-'+x);await page.locator('#GameCanvas').focus();await page.keyboard.press('Escape');assert.equal((await state()).screen,'orders');}
  for(const [x,screen] of [[72,'home'],[360,'craft'],[504,'decor'],[648,'album']]){await tap(x,1220);assert.equal((await state()).screen,screen);if(screen==='craft')await action('返回委托');else if(screen==='album'){await page.locator('#GameCanvas').focus();await page.keyboard.press('Escape');await action('委托');}else await action('委托');}
  await tap(45,42);assert.equal((await state()).screen,'home');
  await fixture({...initial,inventory:[0,0,0,0,0,0]});await shot('home-shortage');

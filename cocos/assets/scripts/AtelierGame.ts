@@ -61,6 +61,7 @@ export class AtelierGame extends Component {
   private slotNodes: Node[] = [];
   private modal = '';
   private musicFromPause = false;
+  private musicTap: (()=>void) | null = null;
   private orderGuide = true;
   private storyIndex = 0;
   private storyLine = 0;
@@ -165,6 +166,7 @@ export class AtelierGame extends Component {
   }
 
   onDestroy() {
+    this.cancelMusicTap();
     this.clearCraftFlights();
     this.releaseInputs(this.node);
     input.off(Input.EventType.KEY_DOWN, this.onKey, this);
@@ -198,7 +200,7 @@ export class AtelierGame extends Component {
       music:this.music?.snapshot(),
       story: this.modal === 'story' ? { id: STORIES[this.storyIndex].id, line: this.storyLine } : null };
   }
-  private onHide() { this.persist(); this.video?.pause(); this.sound.pause(); this.music?.setHidden(true); }
+  private onHide() { this.cancelMusicTap();this.persist(); this.video?.pause(); this.sound.pause(); this.music?.setHidden(true); }
   private onShow() { this.tickEnergy(); this.music?.setHidden(false); }
   private fitCamera() {
     const size=view.getFrameSize();
@@ -357,6 +359,7 @@ export class AtelierGame extends Component {
     this.closeModal(); this.screen = page; this.slot = -1; this.craftTap=null; this.selected = -1; this.hint = []; this.render();
   }
   private render() {
+    this.cancelMusicTap();
     this.craftFlights.forEach((flight,index)=>{if(!['craft','contestCraft'].includes(this.screen)||this.save.reduced||this.workingDraft[index]!==flight.type)this.clearCraftFlight(index);});
     this.layoutCounts.clear(); this.layoutKeys.clear();
     this.clear(this.page);
@@ -396,13 +399,23 @@ export class AtelierGame extends Component {
     const names = { home:'珠光小店', orders:'顾客委托', craft:'手串工坊', match:'珠材花园', decor:'小店焕新', album:'作品图鉴', journal:'我们的故事', contest:'参加比赛', contestCraft:'参赛手作' };
     this.image('pencil-ui-header',0,0,720,84);
     if(this.screen!=='home')this.button('‹',24,16,44,50,()=>this.screen==='match'?this.pauseMatch():this.navigate('home'));
-    this.text(names[this.screen],78,18,195,48,28).isBold=true;
-    this.text('珠 '+rules.total(this.save.inventory),322,23,65,39,25,INK,this.page,true);
-    this.text('金 '+this.save.coins,448,23,66,39,25,GOLD,this.page,true);
-    this.text(String(this.save.energy),582,23,36,39,25,INK,this.page,true);
-    this.hitButton('珠 '+rules.total(this.save.inventory),280,16,110,52,()=>this.inventory());
-    this.hitButton('♥ '+this.save.energy,534,16,89,52,()=>this.info('体力','每 3 分钟恢复一点，上限 10。\n采珠消耗 1 点；手作、装修与阅读不耗体力。'));
-    this.hitButton('⚙',643,16,53,52,()=>this.settings());
+    this.text(names[this.screen],78,18,178,48,28).isBold=true;
+    this.text(String(rules.total(this.save.inventory)),307,23,53,39,23,INK,this.page,true);
+    this.text(String(this.save.coins),421,23,51,39,23,GOLD,this.page,true);
+    this.accessibility?.text('金 '+this.save.coins,false);
+    this.text(String(this.save.energy),532,23,30,39,23,INK,this.page,true);
+    this.hitButton('珠 '+rules.total(this.save.inventory),266,16,99,52,()=>this.inventory());
+    this.hitButton('♥ '+this.save.energy,490,16,76,52,()=>this.info('体力','每 3 分钟恢复一点，上限 10。\n采珠消耗 1 点；手作、装修与阅读不耗体力。'));
+    this.hitButton('⚙',580,16,53,52,()=>this.settings());
+    const music=this.rect('Music shortcut',647,16,53,52,'#eee5d2',this.page,14,'#d9cab0');
+    this.text('♪',0,0,53,52,32,SAGE,music,true);
+    let origin:Vec3|null=null;
+    music.on(Node.EventType.TOUCH_START,(e:EventTouch)=>{origin=this.localPoint(e);});
+    music.on(Node.EventType.TOUCH_MOVE,(e:EventTouch)=>{if(origin&&Vec3.distance(origin,this.localPoint(e))>12)origin=null;});
+    music.on(Node.EventType.TOUCH_CANCEL,()=>{origin=null;});
+    music.on(Node.EventType.TOUCH_END,(e:EventTouch)=>{if(!origin||Vec3.distance(origin,this.localPoint(e))>12)return;origin=null;if(!this.busy&&!this.modal){this.play();this.headerMusicTap();}});
+    this.accessibleButton('下一首背景音乐',()=>this.toast('正在播放 · '+this.nextMusic()));
+    this.accessibleButton('调整背景音乐音量',()=>this.musicDialog());
     if (this.screen === 'match') return;
     this.navigation();
   }
@@ -1745,6 +1758,7 @@ export class AtelierGame extends Component {
     this.button('开始制作 · 当前委托',178,1165,364,70,()=>this.navigate('craft'),this.page,true);
   }
   private dialog(id: string,title: string) {
+    this.cancelMusicTap();
     this.stopVideo();this.clear(this.overlay);this.modal=id;this.dialogueState=null;this.recordReturn=null;
     this.accessibility?.showDialog(title);
     const blocker=this.rect('Modal backdrop',0,0,720,1280,'#403a2cc4',this.overlay,0);blocker.addComponent(BlockInputEvents);
@@ -1780,6 +1794,16 @@ export class AtelierGame extends Component {
     this.button('重新开始',110,871,500,60,()=>this.resetDialog(),this.overlay);
     this.text('Cocos 原生版 · 本地自动存档\n原网页存档可通过 JSON 导入继续',110,952,500,66,20,MUTED,this.overlay,true);
   }
+  private cancelMusicTap() { if(this.musicTap){this.unschedule(this.musicTap);this.musicTap=null;} }
+  private nextMusic() {
+    const i=MUSIC_TRACKS.findIndex(t=>t.id===this.save.music.track),track=MUSIC_TRACKS[(i+1)%MUSIC_TRACKS.length];
+    this.save.music.track=track.id;this.save.music.enabled=true;this.persist();this.music?.update(this.save.music);return track.name;
+  }
+  private headerMusicTap() {
+    if(this.musicTap){this.cancelMusicTap();this.musicDialog();return;}
+    this.musicTap=()=>{this.musicTap=null;if(!this.busy&&!this.modal)this.toast('正在播放 · '+this.nextMusic());};
+    this.scheduleOnce(this.musicTap,.32);
+  }
   private musicDialog(fromPause=false) {
     this.dialog('music','小店的背景音乐');
     this.musicFromPause=fromPause;
@@ -1807,7 +1831,7 @@ export class AtelierGame extends Component {
     accessibleVolume=this.accessibility?.range?.('背景音乐音量',Math.round(this.save.music.volume*100),value=>{change(value/100);this.persist();});
     redraw();
     this.button(this.save.music.enabled?'暂停音乐':'播放音乐',105,888,245,58,()=>{this.save.music.enabled=!this.save.music.enabled;this.persist();this.music?.update(this.save.music);this.musicDialog(fromPause);},this.overlay);
-    this.button('下一首',370,888,245,58,()=>{const i=MUSIC_TRACKS.findIndex(t=>t.id===this.save.music.track);this.save.music.track=MUSIC_TRACKS[(i+1)%MUSIC_TRACKS.length].id;this.save.music.enabled=true;this.persist();this.music?.update(this.save.music);this.musicDialog(fromPause);},this.overlay,true);
+    this.button('下一首',370,888,245,58,()=>{this.nextMusic();this.musicDialog(fromPause);},this.overlay,true);
     if(fromPause)this.button('返回暂停',105,969,510,48,()=>this.pauseMatch(),this.overlay);
     else this.text('首次点按后开始播放 · 音乐与操作音效独立',105,969,510,48,20,MUTED,this.overlay,true);
   }

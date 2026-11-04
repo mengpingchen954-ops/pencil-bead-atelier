@@ -483,7 +483,7 @@
     {
       "asset": "pencil-ui-header.jpg",
       "source": "003-首页-新店开局.png",
-      "method": "Resource header with pearl/coin/heart/settings icons; title, inventory, coins and energy are live native text"
+      "method": "Compact pearl/coin/heart/settings header with room for a native music shortcut; all resource values remain live native text"
     },
     {
       "asset": "pencil-ui-primary.jpg",

@@ -1,4 +1,4 @@
-System.register(["./application.e38a6.js"], function (_export, _context) {
+System.register(["./application.fdf43.js"], function (_export, _context) {
   "use strict";
 
   var Application, canvas, $p, bcr, application;
@@ -6,8 +6,8 @@ System.register(["./application.e38a6.js"], function (_export, _context) {
     return System["import"](url);
   }
   return {
-    setters: [function (_applicationE38a6Js) {
-      Application = _applicationE38a6Js.Application;
+    setters: [function (_applicationFdf43Js) {
+      Application = _applicationFdf43Js.Application;
     }],
     execute: function () {
       canvas = document.getElementById('GameCanvas');

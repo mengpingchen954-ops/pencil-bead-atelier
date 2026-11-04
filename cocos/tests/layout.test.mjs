@@ -63,6 +63,30 @@ test('entry scene contains eighteen real editable layouts, visible home art, lab
   }
 });
 
+test('header music distinguishes single and double taps, cancels abandoned gestures and preserves game progress',()=>{
+  const {game,actions}=pausedGame('home'),scheduled=new Set();
+  game.scheduleOnce=fn=>scheduled.add(fn);game.unschedule=fn=>scheduled.delete(fn);
+  game.save.sound=false;game.render();const before=JSON.stringify({...game.save,music:null});
+  const event=(x=674)=>({getUILocation:()=>({x,y:1238})});
+  const tap=()=>{const n=game.page.children.find(n=>n.name==='Music shortcut');n.events.start(event());n.events.end(event());};
+  const flush=()=>{for(const fn of [...scheduled]){scheduled.delete(fn);fn();}};
+  const labels=game.page.getComponentsInChildren(Label).map(n=>n.string);
+  assert.ok(labels.includes(String(game.save.coins)));assert.equal(labels.includes('金 '+game.save.coins),false);
+  assert.equal(labels.includes('珠 '+rules.total(game.save.inventory)),false);
+  tap();assert.equal(game.save.music.track,'glimmer');assert.equal(scheduled.size,1);
+  flush();assert.equal(game.save.music.track,'calm');assert.equal(game.save.music.enabled,true);
+  tap();tap();assert.equal(scheduled.size,0);assert.equal(game.modal,'music');flush();assert.equal(game.save.music.track,'calm');
+  actions.get('+')();assert.equal(game.save.music.volume,.45);game.closeModal();
+  tap();game.render();flush();assert.equal(game.save.music.track,'calm');
+  tap();game.settings();flush();assert.equal(game.save.music.track,'calm');game.closeModal();game.render();
+  const n=game.page.children.find(n=>n.name==='Music shortcut');
+  n.events.start(event());n.events.cancel();n.events.end(event());flush();assert.equal(game.save.music.track,'calm');
+  n.events.start(event());n.events.move(event(700));n.events.end(event());flush();assert.equal(game.save.music.track,'calm');
+  game.save.music.track='healing';actions.get('下一首背景音乐')();assert.equal(game.save.music.track,'glimmer');
+  actions.get('调整背景音乐音量')();assert.equal(game.modal,'music');
+  assert.equal(JSON.stringify({...game.save,music:null}),before);
+});
+
 test('all persistent navigation uses the home dimensions and five destinations without covering page controls',()=>{
   const game=new AtelierGame();game.page=new Node('Page');game.overlay=new Node('Dialogs');game.notices=new Node('Notices');
   game.textures.set('pencil-floor',{name:'pencil-floor'});
