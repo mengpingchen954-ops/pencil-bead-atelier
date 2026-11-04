@@ -46,17 +46,6 @@
       "method": "Crop and resize"
     },
     {
-      "asset": "pencil-cover.jpg",
-      "source": "33ea85ec227c3784a7322cdb208d8283.png",
-      "cropAt1143x2048": [
-        91,
-        241,
-        1052,
-        1013
-      ],
-      "method": "Crop and resize"
-    },
-    {
       "asset": "pencil-delivery.jpg",
       "source": "7c3cbc7c2fdd8028625e24557a283ddc.png",
       "cropAt1143x2048": [
@@ -445,6 +434,11 @@
       "asset": "pencil-dialogue-grandma.png",
       "source": "pencil-dialogue-stage.jpg",
       "method": "Registered transparent grandma silhouette from the existing dialogue art; native Sprite tint dims only this character when not speaking"
+    },
+    {
+      "asset": "pencil-cover.jpg",
+      "source": "001-游戏封面.png",
+      "method": "User-supplied complete floral cover; proportional resize to 1140×2040, JPEG quality 94; native start hit area over the painted button"
     }
   ]
 }

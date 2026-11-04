@@ -345,7 +345,7 @@ export class AtelierGame extends Component {
     this.boardNodes = []; this.slotNodes = [];
     this.rect('Paper', 0, 0, 720, 1280, PAPER);
     for(let y=0;y<1280;y+=720*112/680)this.image('pencil-paper',0,y,720,720*112/680);
-    if(['cover','delivery','dialogue','packing'].includes(this.screen))this.image('pencil-frame',0,0,720,1280);
+    if(['delivery','dialogue','packing'].includes(this.screen))this.image('pencil-frame',0,0,720,1280);
     // Subtle stationary paper grain, generated once per page instead of every frame.
     const grain = this.box('Paper fibres', 0, 0, 720, 1280).addComponent(Graphics);
     grain.strokeColor = color('#b6a17b14'); grain.lineWidth = 1;
@@ -397,14 +397,13 @@ export class AtelierGame extends Component {
     });
   }
   private cover() {
-    this.text('AH HE’S LITTLE ATELIER',50,110,620,44,22,MUTED,this.page,true);
-    this.text('珠光小店物语',30,167,660,88,51,INK,this.page,true);
-    this.rect('Illustration mount',35,320,650,526,'#b7986e',this.page,18);
-    this.image('pencil-cover',42,327,636,512);
-    this.text('一间小店，两代人的手作时光',60,910,600,54,28,SAGE,this.page,true);
-    this.text('与奶奶一起，把日子慢慢串成光。',40,982,640,56,26,MUTED,this.page,true);
-    this.button('打开小店  →',160,1080,400,78,()=>{this.save.started=true;this.persist();this.navigate('home');if(!this.save.completed.length)this.firstOrder();},this.page,true);
-    this.text('消除采珠  ·  手串定制  ·  小店经营',70,1190,580,40,21,MUTED,this.page,true);
+    this.image('pencil-cover',0,0,720,1280);
+    this.accessibility?.text('AH HE’S LITTLE ATELIER。珠光小店物语。一间小店，两代人的手作时光。与奶奶一起，把日子慢慢串成光。消除采珠，手串定制，小店经营。',false);
+    // The supplied cover includes the button artwork; keep its native hit area and accessible action live.
+    const open=()=>{this.save.started=true;this.persist();this.navigate('home');if(!this.save.completed.length)this.firstOrder();};
+    const button=this.box('Button: 打开小店  →',183,1042,354,84);
+    button.on(Node.EventType.TOUCH_END,(e:EventTouch)=>{e.propagationStopped=true;if(this.busy)return;this.play();open();});
+    this.accessibleButton('打开小店  →',open);
   }
   private firstOrder() {
     const begin=()=>{this.save=rules.recordFirstStep(this.save,'craft');this.persist();this.closeModal();this.navigate('craft');};
