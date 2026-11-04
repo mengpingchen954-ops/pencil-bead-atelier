@@ -439,6 +439,21 @@
       "asset": "pencil-cover.jpg",
       "source": "001-游戏封面.png",
       "method": "User-supplied complete floral cover; proportional resize to 1140×2040, JPEG quality 94; native start hit area over the painted button"
+    },
+    {
+      "asset": "pencil-orders-primary.jpg",
+      "source": "008-委托列表-前三份.png",
+      "method": "Blank painted green button; example reward and action text removed"
+    },
+    {
+      "asset": "pencil-orders-neutral.jpg",
+      "source": "008-委托列表-前三份.png",
+      "method": "Blank neutral button; example locked-state text removed"
+    },
+    {
+      "asset": "pencil-orders-page.jpg",
+      "source": "008-委托列表-前三份.png",
+      "method": "Floral paper, three blank commission cards with charm badges and floral sprigs, static heading and navigation; all sample stock, coins, energy, progress, customer/order/requirements, action labels and page numbers removed"
     }
   ]
 }

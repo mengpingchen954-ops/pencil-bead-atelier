@@ -350,7 +350,7 @@ export class AtelierGame extends Component {
     const grain = this.box('Paper fibres', 0, 0, 720, 1280).addComponent(Graphics);
     grain.strokeColor = color('#b6a17b14'); grain.lineWidth = 1;
     for (let i=0;i<180;i++) { const x=(i*173)%720,y=(i*97)%1280; grain.moveTo(x,-y); grain.lineTo(x+3,-y-1); } grain.stroke();
-    if (!['cover','delivery','dialogue','memories','packing','storyMap','craft','contestCraft','orderArrival','album'].includes(this.screen)) this.chrome();
+    if (!['cover','orders','delivery','dialogue','memories','packing','storyMap','craft','contestCraft','orderArrival','album'].includes(this.screen)) this.chrome();
     switch (this.screen) {
       case 'cover': this.cover(); break;
       case 'home': this.home(); break;
@@ -447,23 +447,47 @@ export class AtelierGame extends Component {
   }
   private orders() {
     const repeat=this.repeatOrder,current=this.currentOrder();
-    this.text('CUSTOMER WISHES',48,136,624,28,18,MUTED);
-    this.text('为每一份心意，认真配色',48,180,624,58,38);
-    this.text(repeat?'回头客第 '+(this.save.repeatOrders+1)+' 单':'顾客委托 · '+this.save.completed.length+' / 6 已交付',48,254,624,36,22,SAGE);
+    this.image('pencil-orders-page',0,0,720,1280);
+    this.accessibility?.text('顾客委托。CUSTOMER WISHES。为每一份心意，认真配色。',false);
+    const text=(value:string,x:number,y:number,w:number,h:number,size=23,fill='#604534',center=false)=>{
+      const label=this.text(value,x,y,w,h,size,fill,this.page,center);label.fontFamily='serif';return label;
+    };
+    const hit=(name:string,x:number,y:number,w:number,h:number,action:()=>void,enabled=true)=>{
+      const node=this.box('Button: '+name,x,y,w,h);
+      this.accessibleButton(name,action,this.page,enabled);
+      if(enabled)node.on(Node.EventType.TOUCH_END,(e:EventTouch)=>{e.propagationStopped=true;if(this.busy)return;this.play();action();});
+      return node;
+    };
+    text('珠 '+rules.total(this.save.inventory),328,24,100,43,26,INK,true);
+    text('金 '+this.save.coins,440,24,100,43,26,GOLD,true);
+    text('♥ '+this.save.energy,550,24,68,43,26,INK,true);
+    hit('‹',24,15,60,64,()=>this.navigate('home'));
+    hit('珠 '+rules.total(this.save.inventory),328,20,100,54,()=>this.inventory());
+    hit('♥ '+this.save.energy,548,20,76,55,()=>this.info('体力','每 3 分钟恢复一点，上限 10。\n采珠消耗 1 点；手作、装修与阅读不耗体力。'));
+    hit('⚙',632,18,60,58,()=>this.settings());
+    (['home','orders','craft','decor','album'] as Page[]).forEach((page,i)=>hit(['小店','委托','手作','装修','图鉴'][i],i*144,1165,144,115,()=>this.navigate(page)));
+    text(repeat?'回头客第 '+(this.save.repeatOrders+1)+' 单':'顾客委托 · '+this.save.completed.length+' / 6 已交付',52,233,550,40,22,'#66795d');
     const start=this.ordersPage*3;
     (repeat?RETURN_ORDERS:ORDERS).slice(start,start+3).forEach((o,offset)=>{
-      const i=start+offset,y=326+offset*246,done=repeat?i<this.save.repeatOrders%ORDERS.length:this.save.completed.includes(o.id),unlocked=repeat?o.id===current.id:i<=this.save.completed.length;
-      this.rect('Order '+o.id,48,y,624,222,done?'#edf0e5':'#fffaf1',this.page,22,'#dfd1b6');
-      this.image('bead-'+o.main,70,y+24,80,80);
-      this.text(o.customer+' · '+o.occasion,172,y+22,o.id==='sea'&&unlocked&&!repeat?290:470,32,21,MUTED);
-      this.text(o.name,172,y+66,470,44,32);
-      this.text(`${BEADS[o.main].short} ≥${o.mainNeed} · ${BEADS[o.accent].short} ≥${o.accentNeed} · ${CHARMS[o.charm]}`,72,y+137,335,60,21,MUTED);
-      if(!repeat&&o.id==='sea'&&unlocked)this.button('听听她的故事',484,y+18,164,54,()=>this.seaChat());
-      this.button(done?'已交付':unlocked?'按单制作 '+o.reward+'金':repeat?'等待来店':'尚未解锁',434,y+140,214,60,()=>{this.save.orderId=o.id;this.persist();this.navigate('orderArrival');},this.page,unlocked&&!done,unlocked&&!done);
+      const i=start+offset,y=300+offset*237,done=repeat?i<this.save.repeatOrders%ORDERS.length:this.save.completed.includes(o.id),unlocked=repeat?o.id===current.id:i<=this.save.completed.length,enabled=unlocked&&!done;
+      this.box('Order '+o.id,40,y,640,220);
+      text(o.customer+' · '+o.occasion,197,y+22,378,38,20,'#74604c');
+      text(o.name,197,y+64,388,52,31);
+      text(`${BEADS[o.main].short} ≥${o.mainNeed} · ${BEADS[o.accent].short} ≥${o.accentNeed} · ${CHARMS[o.charm]}`,74,y+149,354,40,22,'#66795d');
+      if(!repeat&&o.id==='sea'&&unlocked){
+        text('听听她的故事 ›',197,y+111,210,32,18,'#66795d');
+        hit('听听她的故事',197,y+108,210,40,()=>this.seaChat());
+      }
+      const label=done?'已交付':enabled?'按单制作 '+o.reward+'金':'等待来店';
+      this.image(enabled?'pencil-orders-primary':'pencil-orders-neutral',442,y+139,214,62);
+      text(label,450,y+139,198,62,24,enabled?PAPER:'#826952',true);
+      hit(label,442,y+139,214,62,()=>{this.save.orderId=o.id;this.persist();this.navigate('orderArrival');},enabled);
     });
-    this.button('← 前三份',48,1094,200,62,()=>{this.ordersPage=0;this.render();},this.page,false,this.ordersPage>0);
-    this.text((this.ordersPage+1)+' / 2',270,1100,180,50,22,MUTED,this.page,true);
-    this.button('后三份 →',472,1094,200,62,()=>{this.ordersPage=1;this.render();},this.page,false,this.ordersPage<1);
+    text('← 前三份',80,1033,186,60,24,this.ordersPage>0?'#604534':'#826952',true);
+    text((this.ordersPage+1)+' / 2',310,1040,100,48,24,'#604534',true);
+    text('后三份 →',452,1033,186,60,24,this.ordersPage<1?'#604534':'#826952',true);
+    hit('← 前三份',78,1033,190,60,()=>{this.ordersPage=0;this.render();},this.ordersPage>0);
+    hit('后三份 →',450,1033,190,60,()=>{this.ordersPage=1;this.render();},this.ordersPage<1);
   }
   private orderArrival() {
     const o=this.currentOrder(),shortage=this.orderMaterialDeficits().some((n:number)=>n>0)||rules.total(this.save.inventory)<12;
