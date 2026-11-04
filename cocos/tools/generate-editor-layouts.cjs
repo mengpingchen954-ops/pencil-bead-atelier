@@ -46,6 +46,7 @@ class Mask {}
 class EditBox {}
 EditBox.InputMode={ANY:0,SINGLE_LINE:6};EditBox.EventType={TEXT_CHANGED:'text-changed',EDITING_RETURN:'editing-return'};
 Sprite.SizeMode={CUSTOM:0};
+Sprite.Type={SLICED:1};
 class Node {
   constructor(name){this.name=name;this.children=[];this.components=[];this.position=new Vec3();this.scale=new Vec3(1,1,1);this.rotation={x:0,y:0,z:0,w:1};this.active=true;}
   set parent(n){this._parent=n;if(n)n.children.push(this);}get parent(){return this._parent;}
@@ -101,7 +102,7 @@ function node(n,parent){
       originalLabel=JSON.stringify({...values,color:c.color.toHEX()});
       comp('cc.Label',{...Object.fromEntries(fields.map(k=>['_'+k,c[k]])),_color:{__type__:'cc.Color',...c.color},_isSystemFontUsed:true,_font:null,_cacheMode:0});
     }
-    if(c instanceof Sprite){originalImage=c.spriteFrame.name;comp('cc.Sprite',{_spriteFrame:{__uuid__:c.spriteFrame.uuid,__expectedType__:'cc.SpriteFrame'},_sizeMode:0,_type:0,_color:{__type__:'cc.Color',r:255,g:255,b:255,a:255},_srcBlendFactor:2,_dstBlendFactor:4});}
+    if(c instanceof Sprite){originalImage=c.spriteFrame.name;comp('cc.Sprite',{_spriteFrame:{__uuid__:c.spriteFrame.uuid,__expectedType__:'cc.SpriteFrame'},_sizeMode:0,_type:c.type||0,_color:{__type__:'cc.Color',r:255,g:255,b:255,a:255,...c.color},_srcBlendFactor:2,_dstBlendFactor:4});}
     if(c instanceof Mask)comp('cc.Mask',{_type:0,_inverted:false,_alphaThreshold:.1,_segments:64});
     if(c instanceof Graphics)drawing=JSON.stringify(c.commands);
   }

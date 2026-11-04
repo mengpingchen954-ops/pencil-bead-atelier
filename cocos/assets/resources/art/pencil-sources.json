@@ -454,6 +454,46 @@
       "asset": "pencil-orders-page.jpg",
       "source": "008-委托列表-前三份.png",
       "method": "Floral paper, three blank commission cards with charm badges and floral sprigs, static heading and navigation; all sample stock, coins, energy, progress, customer/order/requirements, action labels and page numbers removed"
+    },
+    {
+      "asset": "pencil-ui-header.jpg",
+      "source": "003-首页-新店开局.png",
+      "method": "Resource header with pearl/coin/heart/settings icons; title, inventory, coins and energy are live native text"
+    },
+    {
+      "asset": "pencil-ui-primary.jpg",
+      "source": "003-首页-新店开局.png",
+      "method": "Blank sage painted button; green darkened for at least 4.5:1 paper-text contrast in its content area; rounded cream corners retained"
+    },
+    {
+      "asset": "pencil-ui-neutral.jpg",
+      "source": "003-首页-新店开局.png",
+      "method": "Blank cream painted button, no baked icon or action text"
+    },
+    {
+      "asset": "pencil-ui-craft.png",
+      "source": "003-首页-新店开局.png",
+      "method": "Transparent action icon from the reference; native tint follows the active/neutral button state"
+    },
+    {
+      "asset": "pencil-ui-bag.png",
+      "source": "003-首页-新店开局.png",
+      "method": "Transparent action icon from the reference; native tint follows the active/neutral button state"
+    },
+    {
+      "asset": "pencil-ui-active.jpg",
+      "source": "003-首页-新店开局.png",
+      "method": "Watercolour selection wash, original home icon and text removed"
+    },
+    {
+      "asset": "pencil-home-page.jpg",
+      "source": "003-首页-新店开局.png",
+      "method": "Supplied home illustration and decorative frame; customer, order, reward, stock status, sample bracelet, primary actions and story/chapter progress removed for live native rendering"
+    },
+    {
+      "asset": "pencil-ui-panel.jpg",
+      "source": "003-首页-新店开局.png",
+      "method": "Blank floral paper frame for shared dialogs and information cards"
     }
   ]
 }

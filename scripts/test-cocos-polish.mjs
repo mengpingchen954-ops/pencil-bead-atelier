@@ -39,7 +39,7 @@ try{
  await page.screenshot({path:'artifacts/polish/home.png'});
  assert.equal((await state()).save.completed.length,1);
  assert.equal(await page.getByRole('button',{name:'按单制作',exact:true}).count(),1);
- await tap(507,928);assert.equal((await state()).modal,'intro');
+ await tap(507,857);assert.equal((await state()).modal,'intro');
  await page.screenshot({path:'artifacts/polish/intro.png'});
  await action('再采一些备用');
  await page.screenshot({path:'artifacts/polish/match.png'});
