@@ -448,10 +448,6 @@ export class AtelierGame extends Component {
     this.text(order.name+'  ›',72,698,392,61,35).isBold=true;
     const shortage=this.orderMaterialDeficits().some((n:number)=>n>0)||rules.total(this.save.inventory)<12;
     this.text(this.materialNeed(),72,762,375,45,22,shortage?MUTED:SAGE);
-    const preview=this.box('Commission palette preview',471,696,180,138);preview.setScale(1,.65,1);
-    this.ellipse('Palette wash',88,81,82,60,'#e5e8d6',preview);
-    this.bracelet(order.palette,88,76,60,preview);this.image('charm-'+order.charm,75,128,28,34,preview);
-    this.text('委托配色参考',491,800,148,18,14,MUTED,this.page,true);
     this.button('按单制作',72,821,276,72,()=>this.navigate('orderArrival'),this.page,!shortage,true,'leading-craft');
     this.button('消除采珠',369,821,284,72,()=>this.matchIntro(),this.page,shortage,true,'leading-bag');
     const pending=pendingStory(this.save);

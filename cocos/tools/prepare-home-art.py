@@ -69,12 +69,11 @@ for rect,sample in [
     ((502,650,615,684),(75,687,437,703)),
     ((68,704,449,752),(75,687,437,703)),
     ((68,763,440,804),(75,687,437,703)),
-    ((449,688,657,813),(75,687,437,703)),
     ((68,818,654,895),(75,687,437,703)),
     ((43,936,327,969),(45,922,327,936)),
     ((574,936,678,970),(486,922,571,936)),
 ]:page=patch(page,rect,sample)
-save(page,'pencil-home-page.jpg','Supplied home illustration and decorative frame; customer, order, reward, stock status, sample bracelet, primary actions and story/chapter progress removed for live native rendering')
+save(page,'pencil-home-page.jpg','Supplied home illustration, decorative frame and original watercolour bracelet retained; customer, order, reward, stock status, primary actions and story/chapter progress removed for live native rendering')
 panel=patch(page,(67,644,671,904),(75,687,437,703))
 save(panel.crop(bounds((21,625,687,916))),'pencil-ui-panel.jpg','Blank floral paper frame for shared dialogs and information cards',(90,48,70,48))
 manifest_path.write_text(json.dumps(manifest,ensure_ascii=False,indent=2)+'\n',encoding='utf-8')

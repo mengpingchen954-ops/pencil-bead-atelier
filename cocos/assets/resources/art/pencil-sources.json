@@ -456,6 +456,31 @@
       "method": "Floral paper, three blank commission cards with charm badges and floral sprigs, static heading and navigation; all sample stock, coins, energy, progress, customer/order/requirements, action labels and page numbers removed"
     },
     {
+      "asset": "pencil-first-order-stage.jpg",
+      "source": "002-首次开局-林阿姨需求.png",
+      "method": "Unoccupied upper reference room reframed as a close window backdrop; original flower/header/plaque/footer preserved, both baked people and all fixed UI removed"
+    },
+    {
+      "asset": "pencil-first-order-panel.jpg",
+      "source": "002-首次开局-林阿姨需求.png",
+      "method": "Blank floral dialogue paper with no baked speaker, line, tutorial hint or button"
+    },
+    {
+      "asset": "pencil-dialogue-lin.png",
+      "source": "002-首次开局-林阿姨需求.png",
+      "method": "Only Lin Auntie from the supplied first-order reference, feathered transparent silhouette; displayed alone while she speaks"
+    },
+    {
+      "asset": "pencil-speaker-ahe.png",
+      "source": "002-首次开局-林阿姨需求.png",
+      "method": "Independent transparent Ah He portrait from the first-order reference; shown only for her own lines"
+    },
+    {
+      "asset": "pencil-speaker-grandma.png",
+      "source": "pencil-dialogue-grandma.png",
+      "method": "Cropped registered grandmother cutout from existing pencil-dialogue-grandma.png, shown only for her own lines"
+    },
+    {
       "asset": "pencil-ui-header.jpg",
       "source": "003-首页-新店开局.png",
       "method": "Resource header with pearl/coin/heart/settings icons; title, inventory, coins and energy are live native text"
@@ -488,37 +513,12 @@
     {
       "asset": "pencil-home-page.jpg",
       "source": "003-首页-新店开局.png",
-      "method": "Supplied home illustration and decorative frame; customer, order, reward, stock status, sample bracelet, primary actions and story/chapter progress removed for live native rendering"
+      "method": "Supplied home illustration, decorative frame and original watercolour bracelet retained; customer, order, reward, stock status, primary actions and story/chapter progress removed for live native rendering"
     },
     {
       "asset": "pencil-ui-panel.jpg",
       "source": "003-首页-新店开局.png",
       "method": "Blank floral paper frame for shared dialogs and information cards"
-    },
-    {
-      "asset": "pencil-first-order-stage.jpg",
-      "source": "002-首次开局-林阿姨需求.png",
-      "method": "Unoccupied upper reference room reframed as a close window backdrop; original flower/header/plaque/footer preserved, both baked people and all fixed UI removed"
-    },
-    {
-      "asset": "pencil-first-order-panel.jpg",
-      "source": "002-首次开局-林阿姨需求.png",
-      "method": "Blank floral dialogue paper with no baked speaker, line, tutorial hint or button"
-    },
-    {
-      "asset": "pencil-dialogue-lin.png",
-      "source": "002-首次开局-林阿姨需求.png",
-      "method": "Only Lin Auntie from the supplied first-order reference, feathered transparent silhouette; displayed alone while she speaks"
-    },
-    {
-      "asset": "pencil-speaker-ahe.png",
-      "source": "002-首次开局-林阿姨需求.png",
-      "method": "Independent transparent Ah He portrait from the first-order reference; shown only for her own lines"
-    },
-    {
-      "asset": "pencil-speaker-grandma.png",
-      "source": "pencil-dialogue-grandma.png",
-      "method": "Cropped registered grandmother cutout from existing pencil-dialogue-grandma.png, shown only for her own lines"
     }
   ]
 }

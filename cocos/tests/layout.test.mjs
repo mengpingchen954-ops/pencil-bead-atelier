@@ -55,7 +55,6 @@ test('entry scene contains eighteen real editable layouts, visible home art, lab
   assert.ok(scene.filter(n => n.__type__ === 'cc.Label').length > 100);
   const homeArt = pages[0]._children.map(r => scene[r.__id__]).find(n => n._name === 'pencil-home-page');
   assert.ok(homeArt?._components.some(r => scene[r.__id__].__type__ === 'cc.Sprite'));
-  assert.ok(pages[0]._children.map(r=>scene[r.__id__]).some(n=>n._name==='Commission palette preview'));
   assert.ok(scene.some(n=>n.__type__==='cc.Sprite'&&n._type===1));
   const keys = scene.filter(n => n.key).map(n => n.key);
   assert.equal(new Set(keys).size, keys.length);
@@ -64,16 +63,17 @@ test('entry scene contains eighteen real editable layouts, visible home art, lab
   }
 });
 
-test('home previews the current commission recipe and charm without consuming stock or changing the player draft',()=>{
+test('home keeps live commission details and saved drafts with the supplied decorative artwork',()=>{
   const game=new AtelierGame();game.page=new Node('Page');game.overlay=new Node('Dialogs');game.notices=new Node('Notices');
   const {ORDERS,RETURN_ORDERS}=load(root+'/assets/scripts/content.ts');
   for(let i=0;i<=ORDERS.length;i++){
     const order=i===ORDERS.length?RETURN_ORDERS[0]:ORDERS[i];
     game.save={...rules.freshSave(),started:true,completed:ORDERS.slice(0,i).map(o=>o.id),orderId:order.id,draft:Array(12).fill(1)};
     const before=JSON.stringify(game.save);game.screen='home';game.render();
-    const preview=game.page.children.find(n=>n.name==='Commission palette preview');
-    assert.deepEqual(preview.children.filter(n=>/^bead-\d$/.test(n.name)).map(n=>Number(n.name.at(-1))),Array.from(order.palette));
-    assert.ok(preview.children.some(n=>n.name==='charm-'+order.charm));
+    const labels=game.page.getComponentsInChildren(Label).map(n=>n.string);
+    assert.ok(labels.includes(order.name+'  ›'));
+    assert.ok(labels.includes('酬谢 '+order.reward+' 金'));
+    assert.equal(labels.includes('委托配色参考'),false);
     assert.equal(JSON.stringify(game.save),before);
   }
 });
