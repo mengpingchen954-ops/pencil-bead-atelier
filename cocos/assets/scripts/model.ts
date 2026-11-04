@@ -7,6 +7,7 @@ import { storyUnlocked } from "./story.ts";
 import { freshSeaHeart, normalizeSeaHeart } from "./heart.ts";
 import { freshCompetitions, normalizeCompetitions } from "./competition.ts";
 import { normalizeMusic } from "./music-settings.ts";
+import { freshCommerce, normalizeCommerce, salesProgress } from "./commerce.ts";
 export const SAVE_KEY = "pencil-bead-atelier-v1";
 export function rng(seed = 1) {
   let a = seed >>> 0;
@@ -97,6 +98,7 @@ export function newSession(seed = 1, level = 1, order = null, save = null) {
   const early = level <= 3 && supply.length > 0;
   return {
     board,
+    freeGather: !order,
     seed,
     moves: config.moves,
     target: config.target,
@@ -141,8 +143,9 @@ export function findSupplyMove(board,goals) {
   return null;
 }
 export function bankEarlyCollection(save,session) {
-  if(!session||session.level>3)return {save,session};
+  if(!session||session.level>3&&!session.freeGather)return {save,session};
   const previous=session.banked||Array(6).fill(0);
+  if(session.collected.every((n,i)=>n<=previous[i]))return {save,session};
   return {save:{...save,inventory:save.inventory.map((n,i)=>n+Math.max(0,session.collected[i]-previous[i]))},session:{...session,banked:[...session.collected]}};
 }
 export function goalProgress(session) {
@@ -335,7 +338,7 @@ export function useTool(session, tool, index = 0) {
 export function sessionRewards(session, save = null) {
   if (session?.status !== 'won') return [0, 0, 0, 0, 0, 0];
   const reward = [...session.collected];
-  if(session.supplyOnly)return reward;
+  if(session.supplyOnly||session.freeGather)return reward;
   const order = session.rewardOrder || (save ? currentOrder(save) : null);
   if (!order) return reward;
   const needed = Array(6).fill(0);
@@ -345,6 +348,7 @@ export function sessionRewards(session, save = null) {
 export function freshSave() {
   return {
     version: 1,
+    commerce: freshCommerce(),
     seaHeart: freshSeaHeart(),
     competitions: freshCompetitions(),
     started: false,
@@ -396,6 +400,7 @@ export function pendingDelivery(save) {
 export function normalizeSave(input) {
   const s = freshSave();
   if (!input || input.version !== 1) return s;
+  s.commerce = normalizeCommerce(input.commerce);
   for (const k of ["coins", "rep", "level"]) s[k] = bounded(input[k]);
   s.level = Math.max(1, s.level);
   s.started = !!input.started;
@@ -447,7 +452,7 @@ export function normalizeSave(input) {
     .filter((x) => validWork(x) && Number.isInteger(x.number) && x.number > 0 && x.number <= s.repeatOrders)
     .slice(-6).map((x) => ({ id:x.id, beads:[...x.beads], charm:x.charm, number:x.number }));
   s.seaHeart = normalizeSeaHeart(input.seaHeart, s.completed);
-  s.competitions = normalizeCompetitions(input.competitions, s.completed);
+  s.competitions = normalizeCompetitions(input.competitions, Array(Math.max(s.completed.length,Math.min(6,salesProgress(s)))).fill("sale"));
   s.collection = s.collection.map(item => ({id:item.id, beads:[...item.beads], charm:item.charm,
     ...(item.id === 'sea' ? { gift:{...normalizeSeaHeart({facts:s.seaHeart.facts,gift:item.gift || s.seaHeart.gift},s.completed).gift},
       ...(s.seaHeart.visited ? {travelCharm:s.seaHeart.travelCharm} : {}) } : {})}));

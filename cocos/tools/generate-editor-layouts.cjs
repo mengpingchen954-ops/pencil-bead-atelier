@@ -122,6 +122,10 @@ for(const page of ['home','cover','orders','craft','match','decor','album','jour
   game.page=new Node(page);game.page.parent=layouts;game.page.addComponent(UITransform).setAnchorPoint(0,1);game.page.getComponent(UITransform).setContentSize(720,1280);
   game.overlay=new Node('Dialogs');game.notices=new Node('Notices');
   if(page==='dialogue'){game.overlay=game.page;game.storyLine=4;}
+  if(page==='orders'){
+    const trade=load(path.join(root,'assets/scripts/commerce.ts'));game.save.inventory=Array(6).fill(50);
+    for(let i=0;i<3;i++)game.save=trade.finishWork({...game.save,draft:Array(12).fill(i),charm:['daisy','moon','heart'][i]},1000+i);
+  }
   if(page==='match')game.session=rules.newSession(42,1);
   if(page==='packing')game.save={...game.save,inventory:Array(6).fill(20),draft:load(path.join(root,'assets/scripts/content.ts')).ORDERS[0].palette.slice()};
   if(page==='delivery')game.save=rules.deliver({...game.save,inventory:Array(6).fill(20),draft:load(path.join(root,'assets/scripts/content.ts')).ORDERS[0].palette.slice()});

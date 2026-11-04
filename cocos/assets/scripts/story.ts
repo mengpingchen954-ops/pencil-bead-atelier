@@ -5,7 +5,10 @@ import { STORIES, ORDERS } from "./content.ts";
 export function storyUnlocked(save, scene) {
   if (!scene) return false;
   if (scene.furniture) return save.upgrades[scene.furniture] >= 1;
-  return !scene.afterOrder || save.completed.includes(scene.afterOrder);
+  const sold=save.commerce?.works.filter(w=>w.status==='sold').length||0;
+  const index=ORDERS.findIndex(o=>o.id===scene.afterOrder);
+  return !scene.afterOrder || save.completed.includes(scene.afterOrder) ||
+    sold>0 && index>=0 && save.completed.length+sold>=index+1;
 }
 
 export function pendingStory(save) {
@@ -39,7 +42,7 @@ export function storyRoute(save) {
     const unlocked=scenes.some(s=>storyUnlocked(save,s)),read=scenes.every(s=>save.seenStories.includes(s.id));
     const needed=scenes.find(s=>!storyUnlocked(save,s));
     const order=ORDERS.find(o=>o.id===needed?.afterOrder);
-    return {...stop,unlocked,read,hint:order?'完成「'+order.name+'」委托':'故事已解锁'};
+    return {...stop,unlocked,read,hint:order?'累计售出 '+(ORDERS.indexOf(order)+1)+' 件作品':'故事已解锁'};
   });
   const main=STORIES.filter(s=>!s.furniture),next=main.find(s=>storyUnlocked(save,s)&&!save.seenStories.includes(s.id));
   const current=stops.find(s=>s.scenes.includes(next?.id))||stops.filter(s=>s.unlocked).slice(-1)[0];

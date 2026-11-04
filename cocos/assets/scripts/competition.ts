@@ -1,3 +1,4 @@
+import { salesProgress } from "./commerce.ts";
 export const COMPETITIONS = [
   { id:'spring', title:'街角花园灵感赛', theme:'把春天留在手腕上', description:'用绿玉与花珠，做一条像街角小花园的手串。', unlock:1, main:3, accent:5, charm:'daisy', reward:60 },
   { id:'sea', title:'海风配色交流赛', theme:'天刚亮时的海', description:'用蓝晶与珍珠，留住海面初亮时的一点宁静。', unlock:3, main:2, accent:0, charm:'moon', reward:80 },
@@ -33,7 +34,7 @@ export function normalizeCompetitions(raw:any, completed:string[]) {
 }
 export function beginCompetition(save:any,id:string,replace=false) {
   const event=COMPETITIONS.find(e=>e.id===id);
-  if(!event||save.completed.length<event.unlock||save.competitions.entries.some((e:any)=>e.id===id))return null;
+  if(!event||salesProgress(save)<event.unlock||save.competitions.entries.some((e:any)=>e.id===id))return null;
   const draft=save.competitions.draft;
   if(draft?.id===id)return save;
   if(draft&&!replace)return null;
@@ -41,7 +42,7 @@ export function beginCompetition(save:any,id:string,replace=false) {
 }
 export function submitCompetition(save:any) {
   const draft=save.competitions.draft,event=COMPETITIONS.find(e=>e.id===draft?.id);
-  if(!event||save.completed.length<event.unlock||save.competitions.entries.some((e:any)=>e.id===event.id))return null;
+  if(!event||salesProgress(save)<event.unlock||save.competitions.entries.some((e:any)=>e.id===event.id))return null;
   const result=evaluateCompetition(event.id,draft.beads,draft.charm);
   if(!result)return null;
   return {...save,coins:save.coins+result.reward,competitions:{draft:null,

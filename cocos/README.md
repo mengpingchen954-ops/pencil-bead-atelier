@@ -1,5 +1,7 @@
 # 珠光小店物语 · Cocos Creator 原生版
 
+当前版本使用自由DIY与售珠橱窗：所有关卡所得实时入库，十二颗珠材自由搭配，保存成品时扣料，定价上架后售出才获得金币；售出件数解锁剧情和赛事。规则由 `commerce.ts` 实现，旧存档与收藏保留。新流程浏览器验收使用根目录 `scripts/test-cocos-commerce.mjs`。下文委托流程为历史版本记录。
+
 对话人物按当前说话人切换明暗：奶奶或阿禾发言时本人保持原色，另一人变暗；旁白和画外角色发言时，两人均变暗。透明人物图层从现有 `pencil-dialogue-stage.jpg` 原位拆出，背景、字号、对白框及存档保持原样。`python tools/prepare-dialogue-characters.py` 可重建两张图层；图层作为原插画的子节点，沿用其位置和尺寸。
 
 完整游戏已迁入 `assets`，使用 **Cocos Creator 3.8.2 / TypeScript / 原生 2D UI**。

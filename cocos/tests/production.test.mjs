@@ -30,6 +30,13 @@ test('Creator production bundle preserves collection iteration and complete game
   }
   const model=load([...definitions.keys()].find(n=>n.endsWith('/model.ts')));
   const content=load([...definitions.keys()].find(n=>n.endsWith('/content.ts')));
+  const trade=load([...definitions.keys()].find(n=>n.endsWith('/commerce.ts')));
+  let free=trade.finishWork({...model.freshSave(),inventory:Array(6).fill(40),draft:Array(12).fill(5),charm:'heart'},1000);
+  assert.ok(free);assert.equal(free.coins,80);assert.equal(free.inventory[5],28);
+  const price=trade.suggestedPrice(free.commerce.works[0].beads);
+  free=trade.listWork(free,1,price,2000);assert.equal(free.coins,80);
+  free=trade.settleSales(model.normalizeSave(free),50000);assert.equal(free.coins,80+price);assert.equal(free.commerce.works[0].status,'sold');
+  assert.equal(trade.settleSales(free,60000),free);assert.equal(free.completed.length,0);
   assert.equal(typeof model.activateSpecial,'function');
   const staged=model.newSession(971,15,content.ORDERS[1]);
   assert.equal(model.goalProgress(staged).length,4);assert.ok(staged.obstacles.some(Boolean));

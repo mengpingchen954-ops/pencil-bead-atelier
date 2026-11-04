@@ -53,7 +53,7 @@ test('story route groups every existing main scene once, derives locks from exac
  assert.deepEqual(route.stops.filter(s=>s.unlocked).map(s=>s.id),['family']);
  assert.deepEqual(STORY_STOPS.flatMap(s=>s.scenes),STORIES.filter(s=>!s.furniture).map(s=>s.id));
  assert.equal(storyRoute({...save,completed:['rose']}).stops.find(s=>s.id==='workshop').unlocked,false);
- assert.match(route.stops.find(s=>s.id==='workshop').hint,/给奶奶的一朵花/);assert.equal(JSON.stringify(save),before);
+ assert.match(route.stops.find(s=>s.id==='workshop').hint,/累计售出 1 件作品/);assert.equal(JSON.stringify(save),before);
  const earned=storyRoute({...save,completed:['daisy'],seenStories:['old-table']});assert.equal(earned.currentId,'workshop');assert.equal(earned.nextStoryId,'first-receipt');assert.equal(earned.read,1);
 });
 

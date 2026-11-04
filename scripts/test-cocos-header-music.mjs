@@ -34,12 +34,12 @@ try{
  }
  await page.setViewportSize({width:540,height:960});await page.waitForTimeout(180);
  for(let i=0;i<MUSIC_TRACKS.length;i++){const t=(await state()).save.music.track;await tap();await page.waitForTimeout(420);assert.equal((await state()).save.music.track,next(t));await audioReady();}
- for(const source of ['委托','装修','手账','参加比赛']){
+ for(const source of ['售珠','装修','手账','参加比赛']){
   await action('小店');await action(source);const t=(await state()).save.music.track;await tap();await page.waitForTimeout(420);assert.equal((await state()).save.music.track,next(t));
   await double();assert.equal((await state()).modal,'music');await escape();await page.screenshot({path:dir+'/page-'+(await state()).screen+'.png'});
  }
  await action('小店');let t=(await state()).save.music.track;await tap();await tap(607,42);await page.waitForTimeout(450);assert.equal((await state()).modal,'settings');assert.equal((await state()).save.music.track,t);await escape();
- await tap();await action('委托');await page.waitForTimeout(450);assert.equal((await state()).save.music.track,t,'Leaving must cancel a pending single tap');
+ await tap();await action('售珠');await page.waitForTimeout(450);assert.equal((await state()).save.music.track,t,'Leaving must cancel a pending single tap');
  // A mouse double-click follows the same native touch gesture path.
  const p=await point(674,42);await page.mouse.dblclick(p.x,p.y,{delay:80});await page.waitForTimeout(420);assert.equal((await state()).modal,'music');assert.equal((await state()).save.music.track,t);
  await page.screenshot({path:dir+'/volume.png'});await action('−');assert.equal((await state()).save.music.volume,.65);await action('+');assert.equal((await state()).save.music.volume,.75);
@@ -47,7 +47,7 @@ try{
  await slider.fill('100');await slider.dispatchEvent('input');await audioReady();assert.equal((await state()).save.music.volume,1);await escape();
  const persisted=(await state()).save;await page.reload({waitUntil:'networkidle'});await ready();assert.deepEqual((await state()).save.music,persisted.music);assert.deepEqual(withoutMusic((await state()).save),withoutMusic(saved));
  await action('调整背景音乐音量');assert.equal((await state()).modal,'music');await escape();t=(await state()).save.music.track;await action('下一首背景音乐');assert.equal((await state()).save.music.track,next(t));await audioReady();
- await action('消除采珠');await action('再采一些备用');assert.equal((await state()).screen,'match');const session=(await state()).session;
+ await action('消除采珠');await action('开始采珠 · 16 步');assert.equal((await state()).screen,'match');const session=(await state()).session;
  await double();assert.equal((await state()).modal,'music');await page.waitForTimeout(500);assert.deepEqual((await state()).session,session);await escape();assert.equal((await state()).screen,'match');
  await page.screenshot({path:dir+'/match.png'});assert.deepEqual(errors,[]);
  fs.writeFileSync(dir+'/report.json',JSON.stringify({base,singleTapNext:true,doubleTapVolumeWithoutSwitch:true,allSixSongsPlay:true,volumeZeroToFull:true,mouseDoubleClick:true,sixSharedHeaders:true,cancelPendingOnLeaveOrModal:true,semanticControls:true,savedPreferences:true,progressUnchanged:true,matchPreserved:true,widths:[360,390,540,1440],errors},null,2));
