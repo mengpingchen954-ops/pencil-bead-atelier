@@ -7,6 +7,7 @@ import {
 } from 'cc';
 import { BEADS, MATERIALS, ORDERS, RETURN_ORDERS, CHAPTERS, STORIES, JOURNEY, FURNITURE, CHARMS, CLEAN_SPOTS, REPAIRS } from './content';
 import * as rules from './model';
+import { DAILY_REWARDS, ENERGY_EXCHANGE, dailyStatus, claimDaily } from './daily';
 import { materialStock, charmType } from './materials';
 import { craftChecks, finishWork, listWork, withdrawWork, settleSales, suggestedPrice, priceBounds, saleDuration, salesProgress } from './commerce';
 import { pendingStory, storyUnlocked, finishStory, STORY_STOPS, storyRoute } from './story';
@@ -91,6 +92,7 @@ export class AtelierGame extends Component {
   private keyboardCursor = 0;
   private keyboardArmed = -1;
   private storageFailed = false;
+  private dailyCalendarDay = -1;
   private toastGeneration = 0;
   private accessibility: BrowserAccessibility;
   private camera: Camera;
@@ -196,6 +198,7 @@ export class AtelierGame extends Component {
       goals: this.session ? rules.goalProgress(this.session) : [],
       supply: this.session ? rules.goalProgress({...this.session,objectives:this.session.supplyGoals||[]}):[],
       save: this.save, session: this.session, selected: this.selected, slot: this.slot,
+      daily:dailyStatus(this.save),
       sales:{tab:this.salesTab,page:this.ordersPage,works:this.save.commerce.works},
       delivery: rules.pendingDelivery(this.save),
       dialogue: this.dialogueState,
@@ -225,9 +228,13 @@ export class AtelierGame extends Component {
     if(this.camera&&size.width>0)this.camera.orthoHeight=Math.max(640,360*size.height/size.width);
   }
   private tickEnergy() {
-    const energy = this.save.energy;
+    const energy = this.save.energy,day=dailyStatus(this.save).today;
+    const newDay=day!==this.dailyCalendarDay;this.dailyCalendarDay=day;
     this.save = rules.refreshEnergy(this.save);
-    if (energy !== this.save.energy) { this.persist(); if (!this.busy && !this.modal) this.render(); }
+    if(energy!==this.save.energy)this.persist();
+    if(!this.busy&&(energy!==this.save.energy||newDay)){
+      if(this.modal==='daily')this.dailyDialog();else if(!this.modal)this.render();
+    }
   }
   private persist() {
     try { sys.localStorage.setItem(rules.SAVE_KEY, JSON.stringify(this.save)); this.storageFailed = false; }
@@ -473,6 +480,9 @@ export class AtelierGame extends Component {
     this.image('pencil-home-page',0,0,720,1280);
     this.accessibility?.text('AH HE’S LITTLE ATELIER。一颗珠子，一段新生活。阿禾手作，午后营业中。',false);
     this.chrome();
+    const daily=dailyStatus(this.save);this.dailyCalendarDay=daily.today;
+    this.button(daily.canClaim?'每日签到':'今日已签到',492,211,174,45,()=>this.dailyDialog(),this.page,daily.canClaim);
+    if(daily.canClaim)this.ellipse('Daily reward dot',655,215,6,6,'#b97665');
     const chapter=CHAPTERS[Math.min(2,Math.floor(salesProgress(this.save)/2))];
     const works=this.save.commerce.works,ready=works.filter(w=>w.status==='ready').length,listing=works.filter(w=>w.status==='listing').length,sold=works.filter(w=>w.status==='sold').length;
     this.rect('Shop sales summary',62,640,598,166,'#faf5e9',this.page,15);
@@ -495,6 +505,31 @@ export class AtelierGame extends Component {
     this.hitButton('故事解锁',43,988,198,110,()=>this.navigate('storyMap'));
     this.hitButton('手账',260,988,198,110,()=>this.navigate('journal'));
     this.hitButton('参加比赛',479,988,198,110,()=>this.navigate('contest'));
+  }
+  private dailyDialog() {
+    const status=dailyStatus(this.save);
+    this.dialog('daily','每日签到 · 小店的心意');
+    this.text(status.canClaim?'今天也来小店坐坐，收一份小心意。':'今日心意已收好，明天再来。',103,335,514,40,25,SAGE,this.overlay,true);
+    this.text(status.canClaim?'今日可领第 '+status.day+' 天奖励':('已连续签到 '+status.streak+' 天'),105,382,510,36,23,INK,this.overlay,true);
+    DAILY_REWARDS.forEach((reward,i)=>{
+      const day=i+1,last=i===6,x=last?105:105+(i%3)*173,y=last?754:438+Math.floor(i/3)*151,w=last?510:164,h=last?104:140;
+      const received=day<=status.completed,current=day===status.day;
+      const card=this.rect('Daily day '+day,x,y,w,h,received?'#e5eadf':current?'#f1e1bf':'#f7f1e6',this.overlay,14,current?'#aa8752':'#d9c9ad');
+      this.text(last?'第七天 · 满满心意':'第 '+day+' 天',10,7,w-20,30,22,INK,card,last);
+      this.text(reward.coins+' 金币  +  '+reward.energy+' 体力',last?15:7,last?41:46,w-(last?30:14),last?32:38,last?26:19,SAGE,card,true);
+      this.text(received?'已领取':current?'今日奖励':'待签到',10,last?77:101,w-20,24,17,received?SAGE:MUTED,card,true);
+    });
+    this.text('北京时间每日 00:00 更新 · 七日循环\n漏签后从第 1 天开始 · 满额体力每点折合 '+ENERGY_EXCHANGE+' 金币',102,873,516,66,19,MUTED,this.overlay,true);
+    this.button(status.canClaim?'领取今日奖励':'今日已领取',130,959,460,64,()=>this.collectDaily(),this.overlay,true,status.canClaim);
+  }
+  private collectDaily() {
+    const now=Date.now(),before=this.save,refreshed=rules.refreshEnergy(this.save,now);
+    const next=claimDaily(refreshed,now);
+    if(!next){this.dailyDialog();return;}
+    this.save=next;this.persist();
+    if(this.storageFailed){this.save=before;this.dailyDialog();return this.toast('未能保存签到记录，请检查存储空间后重试。');}
+    this.closeModal();this.render();this.dailyDialog();this.play('success');
+    this.toast('签到成功 · +'+(next.coins-refreshed.coins)+' 金币'+(next.energy>refreshed.energy?' · +'+(next.energy-refreshed.energy)+' 体力':'')+' · 已连续 '+next.daily.streak+' 天');
   }
   private orders() {
     this.image('pencil-frame',0,0,720,1280);this.chrome();

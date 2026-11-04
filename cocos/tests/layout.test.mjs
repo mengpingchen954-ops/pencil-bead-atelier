@@ -573,3 +573,12 @@ test('double taps remove one bead across native rerenders, while slow taps, othe
  const n=game.slotNodes[0];n.events.start(touch(0));n.events.move(touch(1));n.events.end(touch(1));assert.equal(game.craftTap,null);assert.equal(game.save.draft[1],0);tap(1);assert.equal(game.save.draft[1],0);
  assert.deepEqual(game.save.inventory,stock);
 });
+
+test('native daily entry previews seven days, claims once, preserves materials and shows completed status',()=>{
+ const {game,actions}=pausedGame('home');game.save.energy=5;game.save.energyAt=Date.now();game.render();
+ assert.ok(actions.has('每日签到'));const stock=JSON.stringify([game.save.inventory,game.save.gatheredStock,game.save.materialUnlocked]);const coins=game.save.coins;
+ actions.get('每日签到')();assert.equal(game.modal,'daily');assert.equal(game.save.coins,coins);assert.equal(game.overlay.children.filter(n=>n.name.startsWith('Daily day ')).length,7);
+ const claim=actions.get('领取今日奖励');claim();claim();assert.equal(game.save.coins,coins+30);assert.equal(game.save.energy,6);assert.equal(game.save.daily.streak,1);
+ assert.equal(actions.has('领取今日奖励'),false);assert.ok(game.page.children.some(n=>n.name==='Button: 今日已签到'));assert.equal(JSON.stringify([game.save.inventory,game.save.gatheredStock,game.save.materialUnlocked]),stock);
+ game.dismiss();game.render();actions.get('今日已签到')();assert.equal(game.modal,'daily');assert.equal(game.save.coins,coins+30);
+});

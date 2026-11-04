@@ -65869,6 +65869,12 @@
       },
       {
         "__id__": 2484
+      },
+      {
+        "__id__": 6303
+      },
+      {
+        "__id__": 6314
       }
     ],
     "_active": true,
@@ -182605,5 +182611,405 @@
     "originalLabel": "{\"string\":\"点已有珠子，可替换或取下；撤销随时可用。\",\"fontSize\":19,\"lineHeight\":29,\"fontFamily\":\"serif\",\"enableWrapText\":true,\"overflow\":2,\"horizontalAlign\":1,\"verticalAlign\":1,\"color\":\"69574bff\"}",
     "originalImage": "",
     "_id": "a0869fe1-6bae-4761-afe8-e9f2856ff861"
+  },
+  {
+    "__type__": "cc.Node",
+    "_name": "Button: 每日签到",
+    "_objFlags": 0,
+    "_parent": {
+      "__id__": 2265
+    },
+    "_children": [
+      {
+        "__id__": 6306
+      },
+      {
+        "__id__": 6310
+      }
+    ],
+    "_active": true,
+    "_components": [
+      {
+        "__id__": 6304
+      },
+      {
+        "__id__": 6305
+      }
+    ],
+    "_prefab": null,
+    "_lpos": {
+      "__type__": "cc.Vec3",
+      "x": 492,
+      "y": -211,
+      "z": 0
+    },
+    "_lrot": {
+      "__type__": "cc.Quat",
+      "x": 0,
+      "y": 0,
+      "z": 0,
+      "w": 1
+    },
+    "_lscale": {
+      "__type__": "cc.Vec3",
+      "x": 1,
+      "y": 1,
+      "z": 1
+    },
+    "_layer": 33554432,
+    "_euler": {
+      "__type__": "cc.Vec3",
+      "x": 0,
+      "y": 0,
+      "z": 0
+    },
+    "_id": "ee99f6c1-8e57-4051-8540-581aa6ae4bec"
+  },
+  {
+    "__type__": "cc.UITransform",
+    "_name": "",
+    "_objFlags": 0,
+    "node": {
+      "__id__": 6303
+    },
+    "_enabled": true,
+    "__prefab": null,
+    "_contentSize": {
+      "__type__": "cc.Size",
+      "width": 174,
+      "height": 45
+    },
+    "_anchorPoint": {
+      "__type__": "cc.Vec2",
+      "x": 0,
+      "y": 1
+    },
+    "_id": "84f0895b-da38-42cf-95ed-ca05619d25b5"
+  },
+  {
+    "__type__": "4d968hsASNKm7zepxiVThtE",
+    "_name": "",
+    "_objFlags": 0,
+    "node": {
+      "__id__": 6303
+    },
+    "_enabled": true,
+    "__prefab": null,
+    "key": "home/492,211,174,45:0",
+    "drawing": "[[\"fillColor\",98,115,81,255],[\"roundRect\",0,-45,174,45,14],[\"fill\"],[\"strokeColor\",216,197,145,255],[\"lineWidth\",1.5],[\"roundRect\",5,-40,164,35,10],[\"stroke\"]]",
+    "originalDrawing": "[[\"fillColor\",98,115,81,255],[\"roundRect\",0,-45,174,45,14],[\"fill\"],[\"strokeColor\",216,197,145,255],[\"lineWidth\",1.5],[\"roundRect\",5,-40,164,35,10],[\"stroke\"]]",
+    "originalLabel": "",
+    "originalImage": "",
+    "_id": "80bf045d-db04-45dc-9651-b1f89a37b62f"
+  },
+  {
+    "__type__": "cc.Node",
+    "_name": "Painted surface",
+    "_objFlags": 0,
+    "_parent": {
+      "__id__": 6303
+    },
+    "_children": [],
+    "_active": true,
+    "_components": [
+      {
+        "__id__": 6307
+      },
+      {
+        "__id__": 6308
+      },
+      {
+        "__id__": 6309
+      }
+    ],
+    "_prefab": null,
+    "_lpos": {
+      "__type__": "cc.Vec3",
+      "x": 0,
+      "y": 0,
+      "z": 0
+    },
+    "_lrot": {
+      "__type__": "cc.Quat",
+      "x": 0,
+      "y": 0,
+      "z": 0,
+      "w": 1
+    },
+    "_lscale": {
+      "__type__": "cc.Vec3",
+      "x": 1,
+      "y": 1,
+      "z": 1
+    },
+    "_layer": 33554432,
+    "_euler": {
+      "__type__": "cc.Vec3",
+      "x": 0,
+      "y": 0,
+      "z": 0
+    },
+    "_id": "cb566740-752e-4130-bed2-ca8b22de8a04"
+  },
+  {
+    "__type__": "cc.UITransform",
+    "_name": "",
+    "_objFlags": 0,
+    "node": {
+      "__id__": 6306
+    },
+    "_enabled": true,
+    "__prefab": null,
+    "_contentSize": {
+      "__type__": "cc.Size",
+      "width": 174,
+      "height": 45
+    },
+    "_anchorPoint": {
+      "__type__": "cc.Vec2",
+      "x": 0,
+      "y": 1
+    },
+    "_id": "d62a834c-220c-4bda-9357-4ca7474c2d26"
+  },
+  {
+    "__type__": "cc.Sprite",
+    "_name": "",
+    "_objFlags": 0,
+    "node": {
+      "__id__": 6306
+    },
+    "_enabled": true,
+    "__prefab": null,
+    "_spriteFrame": {
+      "__uuid__": "8474b2e1-04c9-4dba-a614-9403854550e9@f9941",
+      "__expectedType__": "cc.SpriteFrame"
+    },
+    "_sizeMode": 0,
+    "_type": 1,
+    "_color": {
+      "__type__": "cc.Color",
+      "r": 255,
+      "g": 255,
+      "b": 255,
+      "a": 255
+    },
+    "_srcBlendFactor": 2,
+    "_dstBlendFactor": 4,
+    "_id": "d8430694-4263-4a7a-b08c-614bcb6dbf54"
+  },
+  {
+    "__type__": "4d968hsASNKm7zepxiVThtE",
+    "_name": "",
+    "_objFlags": 0,
+    "node": {
+      "__id__": 6306
+    },
+    "_enabled": true,
+    "__prefab": null,
+    "key": "home/492,211,174,45:0/0,0,174,45:0",
+    "drawing": "",
+    "originalDrawing": "",
+    "originalLabel": "",
+    "originalImage": "pencil-ui-primary",
+    "_id": "cca23d54-b2b9-4214-a88a-b0ab64e3b2d6"
+  },
+  {
+    "__type__": "cc.Node",
+    "_name": "每日签到",
+    "_objFlags": 0,
+    "_parent": {
+      "__id__": 6303
+    },
+    "_children": [],
+    "_active": true,
+    "_components": [
+      {
+        "__id__": 6311
+      },
+      {
+        "__id__": 6312
+      },
+      {
+        "__id__": 6313
+      }
+    ],
+    "_prefab": null,
+    "_lpos": {
+      "__type__": "cc.Vec3",
+      "x": 10,
+      "y": 0,
+      "z": 0
+    },
+    "_lrot": {
+      "__type__": "cc.Quat",
+      "x": 0,
+      "y": 0,
+      "z": 0,
+      "w": 1
+    },
+    "_lscale": {
+      "__type__": "cc.Vec3",
+      "x": 1,
+      "y": 1,
+      "z": 1
+    },
+    "_layer": 33554432,
+    "_euler": {
+      "__type__": "cc.Vec3",
+      "x": 0,
+      "y": 0,
+      "z": 0
+    },
+    "_id": "f32af438-720b-45bb-aed6-04ca6b6e961a"
+  },
+  {
+    "__type__": "cc.UITransform",
+    "_name": "",
+    "_objFlags": 0,
+    "node": {
+      "__id__": 6310
+    },
+    "_enabled": true,
+    "__prefab": null,
+    "_contentSize": {
+      "__type__": "cc.Size",
+      "width": 154,
+      "height": 45
+    },
+    "_anchorPoint": {
+      "__type__": "cc.Vec2",
+      "x": 0,
+      "y": 1
+    },
+    "_id": "cef090ab-a056-4415-8005-5337df801712"
+  },
+  {
+    "__type__": "cc.Label",
+    "_name": "",
+    "_objFlags": 0,
+    "node": {
+      "__id__": 6310
+    },
+    "_enabled": true,
+    "__prefab": null,
+    "_string": "每日签到",
+    "_fontSize": 23,
+    "_lineHeight": 35,
+    "_fontFamily": "serif",
+    "_enableWrapText": true,
+    "_overflow": 2,
+    "_horizontalAlign": 1,
+    "_verticalAlign": 1,
+    "_color": {
+      "__type__": "cc.Color",
+      "r": 250,
+      "g": 246,
+      "b": 233,
+      "a": 255
+    },
+    "_isSystemFontUsed": true,
+    "_font": null,
+    "_cacheMode": 0,
+    "_id": "4da44232-662f-40f6-aa6f-ea455e64cc54"
+  },
+  {
+    "__type__": "4d968hsASNKm7zepxiVThtE",
+    "_name": "",
+    "_objFlags": 0,
+    "node": {
+      "__id__": 6310
+    },
+    "_enabled": true,
+    "__prefab": null,
+    "key": "home/492,211,174,45:0/10,0,154,45:0",
+    "drawing": "",
+    "originalDrawing": "",
+    "originalLabel": "{\"string\":\"每日签到\",\"fontSize\":23,\"lineHeight\":35,\"fontFamily\":\"serif\",\"enableWrapText\":true,\"overflow\":2,\"horizontalAlign\":1,\"verticalAlign\":1,\"color\":\"faf6e9ff\"}",
+    "originalImage": "",
+    "_id": "8f5673ac-2713-4d5c-9ec7-3ae575a4b467"
+  },
+  {
+    "__type__": "cc.Node",
+    "_name": "Daily reward dot",
+    "_objFlags": 0,
+    "_parent": {
+      "__id__": 2265
+    },
+    "_children": [],
+    "_active": true,
+    "_components": [
+      {
+        "__id__": 6315
+      },
+      {
+        "__id__": 6316
+      }
+    ],
+    "_prefab": null,
+    "_lpos": {
+      "__type__": "cc.Vec3",
+      "x": 649,
+      "y": -209,
+      "z": 0
+    },
+    "_lrot": {
+      "__type__": "cc.Quat",
+      "x": 0,
+      "y": 0,
+      "z": 0,
+      "w": 1
+    },
+    "_lscale": {
+      "__type__": "cc.Vec3",
+      "x": 1,
+      "y": 1,
+      "z": 1
+    },
+    "_layer": 33554432,
+    "_euler": {
+      "__type__": "cc.Vec3",
+      "x": 0,
+      "y": 0,
+      "z": 0
+    },
+    "_id": "74f2bf5c-5897-4799-8586-c90e05d54ab5"
+  },
+  {
+    "__type__": "cc.UITransform",
+    "_name": "",
+    "_objFlags": 0,
+    "node": {
+      "__id__": 6314
+    },
+    "_enabled": true,
+    "__prefab": null,
+    "_contentSize": {
+      "__type__": "cc.Size",
+      "width": 12,
+      "height": 12
+    },
+    "_anchorPoint": {
+      "__type__": "cc.Vec2",
+      "x": 0,
+      "y": 1
+    },
+    "_id": "b43893b4-8f9a-4e04-93de-a2a553276c43"
+  },
+  {
+    "__type__": "4d968hsASNKm7zepxiVThtE",
+    "_name": "",
+    "_objFlags": 0,
+    "node": {
+      "__id__": 6314
+    },
+    "_enabled": true,
+    "__prefab": null,
+    "key": "home/649,209,12,12:0",
+    "drawing": "[[\"fillColor\",185,118,101,255],[\"ellipse\",6,-6,6,6],[\"fill\"]]",
+    "originalDrawing": "[[\"fillColor\",185,118,101,255],[\"ellipse\",6,-6,6,6],[\"fill\"]]",
+    "originalLabel": "",
+    "originalImage": "",
+    "_id": "dd2e1c3d-de09-4016-995d-3d5a2708a36e"
   }
 ]
