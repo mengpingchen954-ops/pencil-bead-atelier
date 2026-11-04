@@ -428,8 +428,8 @@ export class AtelierGame extends Component {
     const begin=()=>{this.save=rules.recordFirstStep(this.save,'craft');this.persist();this.closeModal();this.navigate('craft');};
     const line='想送奶奶一朵花，颜色清淡一点。';
     const stage=this.dialogueStage('first-order','第一份心意','林阿姨',line,[['林阿姨',line]],()=>this.firstOrder(),begin);
-    this.text('奶奶已经备好了珠材，先做一条喜欢的手串。',82,1183,305,57,21,SAGE,stage);
-    this.button('开始做手串',396,1180,242,56,begin,stage,true);
+    this.text('奶奶已经备好了珠材，先做一条喜欢的手串。',76,1057,308,61,21,MUTED,stage);
+    this.button('开始做手串',414,1057,228,56,begin,stage,true);
   }
   private get repeatOrder() { return this.save.completed.length===ORDERS.length; }
   private currentOrder() { return rules.currentOrder(this.save); }
@@ -1849,12 +1849,12 @@ export class AtelierGame extends Component {
     for(const key of this.layoutCounts.keys())if(key.startsWith('dialogue/'))this.layoutCounts.delete(key);
     const stage=this.container('Dialogue stage',this.overlay);this.layoutKeys.set(stage,'dialogue');
     this.rect('Dialogue backdrop',0,0,720,1280,'#899879',stage,0).addComponent(BlockInputEvents);
-    const illustration=this.image('pencil-dialogue-stage',0,0,720,930,stage),size=illustration.getComponent(UITransform)!.contentSize;
-    for(const [id,name] of [['ahe','阿禾'],['grandma','奶奶']]){
-      const portrait=this.image('pencil-dialogue-'+id,0,0,size.width,size.height,illustration).getComponent(Sprite);
-      if(portrait)portrait.color=color(speaker===name?'#ffffff':'#787878');
-    }
-    this.text(title,218,301,284,66,25,PAPER,stage,true);
+    this.image('pencil-first-order-stage',0,0,720,1280,stage);
+    const first=id==='first-order',top=choices?775:first?840:925;
+    const portrait=({'阿禾':'pencil-speaker-ahe','奶奶':'pencil-speaker-grandma','林阿姨':'pencil-dialogue-lin'} as Record<string,string>)[speaker];
+    // Only the current speaker has a portrait. Narration and offscreen voices keep the empty scene.
+    if(portrait)this.image(portrait,110,400,500,top-380,stage);
+    this.text(title,218,240,284,66,25,PAPER,stage,true);
     this.image('icon-book',568,49,36,39,stage);
     this.button('记录',548,95,76,44,()=>this.dialogueRecord(title,records,resume),stage);
     const icon=this.box('Skip icon',650,53,40,34,stage).addComponent(Graphics);
@@ -1864,11 +1864,9 @@ export class AtelierGame extends Component {
     for(const [x,action] of [[548,()=>this.dialogueRecord(title,records,resume)],[635,skip]] as const){
       this.box('Dialogue control touch area',x,42,84,102,stage).on(Node.EventType.TOUCH_END,(e:EventTouch)=>{e.propagationStopped=true;if(!this.busy){this.play();action();}});
     }
-    const top=choices?775:925;
-    this.rect('Dialogue card shadow',38,top+7,648,1250-top,'#5e59486b',stage,13);
-    this.rect('Dialogue card',34,top,652,1250-top,'#fff8ed',stage,12,'#967554');
-    this.rect('Dialogue card lining',43,top+8,634,1234-top,'#fff8ed',stage,7,'#d1b895');
-    this.polygon('Dialogue pointer',[[565,top+9],[590,top-22],[618,top+9]],'#fff8ed',stage,'#b79a77');
+    this.rect('Dialogue card shadow',38,top+7,648,(first?1146:1250)-top,'#5e59486b',stage,13);
+    const card=this.rect('Dialogue card',36,top,648,(first?1146:1250)-top,'#fff8ed',stage,12,'#967554');
+    this.skin(card,'pencil-first-order-panel');
     this.text(speaker,82,top+22,550,58,34,'#69452e',stage);
     this.rect('Dialogue rule',82,top+91,556,2,'#d1b895',stage,0);
     const text=this.text(body,82,top+106,556,choices?112:140,choices?25:29,'#69452e',stage);

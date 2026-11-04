@@ -25,7 +25,7 @@ try{
  };
  const escape=async()=>{await page.locator('#GameCanvas').focus();await page.keyboard.press('Escape');};
  await page.goto(base,{waitUntil:'networkidle'});await ready();await action('打开小店  →');assert.equal((await state()).modal,'first-order');
- await page.screenshot({path:dir+'/one-line-order.png'});await tap(517,1207);let s=await state();assert.equal(s.screen,'craft');assert.ok(s.save.firstSteps.craft);assert.equal(s.save.level,1);
+ await page.screenshot({path:dir+'/one-line-order.png'});await tap(528,1085);let s=await state();assert.equal(s.screen,'craft');assert.ok(s.save.firstSteps.craft);assert.equal(s.save.level,1);
  const initialStock=s.save.inventory,energy=s.save.energy;assert.ok(initialStock[0]>=8&&initialStock[3]>=3);
  await page.screenshot({path:dir+'/large-workshop.png'});
  await addAt(0,0);await addAt(3,1);assert.equal((await state()).save.draft[1],3);
