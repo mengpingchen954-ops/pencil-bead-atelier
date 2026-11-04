@@ -1,5 +1,7 @@
 # 珠光小店物语 · Cocos Creator 原生版
 
+对话人物按当前说话人切换明暗：奶奶或阿禾发言时本人保持原色，另一人变暗；旁白和画外角色发言时，两人均变暗。透明人物图层从现有 `pencil-dialogue-stage.jpg` 原位拆出，背景、字号、对白框及存档保持原样。`python tools/prepare-dialogue-characters.py` 可重建两张图层；图层作为原插画的子节点，沿用其位置和尺寸。
+
 完整游戏已迁入 `assets`，使用 **Cocos Creator 3.8.2 / TypeScript / 原生 2D UI**。
 
 ## 在 Creator 中运行

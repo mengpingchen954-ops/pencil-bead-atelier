@@ -435,6 +435,16 @@
       "asset": "pencil-collection-detail-card.jpg",
       "source": "6ae1af85d86ffb235b875b03aaf35186.png",
       "method": "Blank memory-card border; removed sample portrait and text"
+    },
+    {
+      "asset": "pencil-dialogue-ahe.png",
+      "source": "pencil-dialogue-stage.jpg",
+      "method": "Registered transparent ahe silhouette from the existing dialogue art; native Sprite tint dims only this character when not speaking"
+    },
+    {
+      "asset": "pencil-dialogue-grandma.png",
+      "source": "pencil-dialogue-stage.jpg",
+      "method": "Registered transparent grandma silhouette from the existing dialogue art; native Sprite tint dims only this character when not speaking"
     }
   ]
 }

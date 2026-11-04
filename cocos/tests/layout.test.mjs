@@ -424,6 +424,22 @@ test('dialogue templates change presentation while the speaker and dialogue stay
   assert.equal([...game.layoutKeys].find(([node,k])=>k===key)?.[0].getComponent(Label).string,'阿禾');
 });
 
+test('dialogue keeps only its actual visible speaker in full color, including transcript return and offscreen speech',()=>{
+  const game=new AtelierGame();game.page=new Node('Page');game.overlay=new Node('Dialogs');game.notices=new Node('Notices');
+  game.save=rules.freshSave();game.screen='home';
+  for(const id of ['stage','ahe','grandma'])game.textures.set('pencil-dialogue-'+id,{name:'pencil-dialogue-'+id,originalSize:{width:720,height:930}});
+  const tint=id=>game.overlay.children[0].children.find(n=>n.name==='pencil-dialogue-stage').children.find(n=>n.name==='pencil-dialogue-'+id).getComponent(Sprite).color.toHEX();
+  for(const [line,ahe,grandma] of [[4,'787878ff','ffffffff'],[5,'ffffffff','787878ff'],[0,'787878ff','787878ff']]){
+    game.storyLine=line;game.storyText();assert.equal(tint('ahe'),ahe);assert.equal(tint('grandma'),grandma);
+  }
+  game.storyLine=4;game.storyText();game.dialogueRecord('记录',[['奶奶','测试']],()=>game.storyText());game.dismiss();
+  assert.equal(tint('ahe'),'787878ff');assert.equal(tint('grandma'),'ffffffff');
+  game.dialogueStage('sea-chat','小满的故事','小满','画外对话',[],()=>{},()=>{});
+  assert.equal(tint('ahe'),'787878ff');assert.equal(tint('grandma'),'787878ff');
+  const backdrop=game.overlay.children[0].children.find(n=>n.name==='pencil-dialogue-stage');
+  assert.equal(backdrop.getComponent(Sprite).color,undefined,'background itself is never dimmed');
+});
+
 test('character memory navigation, locked tiles, replay and crafting preserve actual commission and economy', () => {
  const game=new AtelierGame(),actions=new Map();
  game.node=new Node('AtelierGame');game.page=new Node('Page');game.overlay=new Node('Dialogs');game.notices=new Node('Notices');

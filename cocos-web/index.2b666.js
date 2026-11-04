@@ -1,4 +1,4 @@
-System.register(["./application.edceb.js"], function (_export, _context) {
+System.register(["./application.1b7d4.js"], function (_export, _context) {
   "use strict";
 
   var Application, canvas, $p, bcr, application;
@@ -6,8 +6,8 @@ System.register(["./application.edceb.js"], function (_export, _context) {
     return System["import"](url);
   }
   return {
-    setters: [function (_applicationEdcebJs) {
-      Application = _applicationEdcebJs.Application;
+    setters: [function (_application1b7d4Js) {
+      Application = _application1b7d4Js.Application;
     }],
     execute: function () {
       canvas = document.getElementById('GameCanvas');

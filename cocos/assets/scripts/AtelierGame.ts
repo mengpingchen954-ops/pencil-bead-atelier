@@ -1820,7 +1820,11 @@ export class AtelierGame extends Component {
     for(const key of this.layoutCounts.keys())if(key.startsWith('dialogue/'))this.layoutCounts.delete(key);
     const stage=this.container('Dialogue stage',this.overlay);this.layoutKeys.set(stage,'dialogue');
     this.rect('Dialogue backdrop',0,0,720,1280,'#899879',stage,0).addComponent(BlockInputEvents);
-    this.image('pencil-dialogue-stage',0,0,720,930,stage);
+    const illustration=this.image('pencil-dialogue-stage',0,0,720,930,stage),size=illustration.getComponent(UITransform)!.contentSize;
+    for(const [id,name] of [['ahe','阿禾'],['grandma','奶奶']]){
+      const portrait=this.image('pencil-dialogue-'+id,0,0,size.width,size.height,illustration).getComponent(Sprite);
+      if(portrait)portrait.color=color(speaker===name?'#ffffff':'#787878');
+    }
     this.text(title,218,301,284,66,25,PAPER,stage,true);
     this.image('icon-book',568,49,36,39,stage);
     this.button('记录',548,95,76,44,()=>this.dialogueRecord(title,records,resume),stage);
