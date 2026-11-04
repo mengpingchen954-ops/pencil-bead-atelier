@@ -45,6 +45,7 @@ export class AtelierGame extends Component {
   private selected = -1;
   private slot = -1;
   private craftMaterial = 0;
+  private craftTap: {index:number;at:number} | null = null;
   private craftMotion: Node;
   private craftFlights = new Map<number,{node:Node;type:number}>();
   private craftRipples = new WeakSet<Node>();
@@ -353,7 +354,7 @@ export class AtelierGame extends Component {
     if (page === 'orderArrival') this.orderGuide = true;
     if (page === 'orders') this.ordersPage = Math.floor((this.repeatOrder ? this.save.repeatOrders % ORDERS.length : Math.min(this.save.completed.length, ORDERS.length - 1)) / 3);
     if(this.save.firstSteps?.craft&&this.save.completed.length===1&&['craft','orderArrival'].includes(page)){this.save=rules.recordFirstStep(this.save,'secondOrder');this.persist();}
-    this.closeModal(); this.screen = page; this.slot = -1; this.selected = -1; this.hint = []; this.render();
+    this.closeModal(); this.screen = page; this.slot = -1; this.craftTap=null; this.selected = -1; this.hint = []; this.render();
   }
   private render() {
     this.craftFlights.forEach((flight,index)=>{if(!['craft','contestCraft'].includes(this.screen)||this.save.reduced||this.workingDraft[index]!==flight.type)this.clearCraftFlight(index);});
@@ -540,7 +541,7 @@ export class AtelierGame extends Component {
   private get workingCharm() { return this.contestEntry?.charm || this.save.charm; }
   private set workingCharm(charm:string) { if(this.contestEntry)this.contestEntry.charm=charm;else this.save.charm=charm; }
   private get workingUndo() { return this.contestEntry?this.contestUndo:this.undo; }
-  private remember() { this.workingUndo.push({draft:[...this.workingDraft],charm:this.workingCharm}); if(this.workingUndo.length>60)this.workingUndo.shift(); }
+  private remember() { this.craftTap=null;this.workingUndo.push({draft:[...this.workingDraft],charm:this.workingCharm}); if(this.workingUndo.length>60)this.workingUndo.shift(); }
   private slotPos(i: number) {
     const a=i*Math.PI/6-Math.PI/2, x=360+Math.cos(a)*228, y=532+Math.sin(a)*228;
     return {x,y};
@@ -573,7 +574,7 @@ export class AtelierGame extends Component {
     this.text(first?'点一颗喜欢的珠材':'把心意，一颗颗串起',213,463,294,40,25,'#9a8262',this.page,true);
     this.text(`${this.workingDraft.filter(t=>t!==null).length} / 12 颗`,250,507,220,45,33,SAGE,this.page,true);
     this.text('已选 '+BEADS[this.craftMaterial].name,211,557,298,34,23,INK,this.page,true);
-    this.text('点珠弹入 · 拖动调整位置',204,598,312,35,21,MUTED,this.page,true);
+    this.text('点选后换珠 · 双击移除',204,598,312,35,21,MUTED,this.page,true);
     this.image('charm-'+this.workingCharm,336,645,48,48);
     this.workingDraft.forEach((type: number|null,i: number)=>{
       const p=this.slotPos(i),n=this.box('Slot '+i,p.x-46,p.y-46,92,92),active=this.slot===i;
@@ -585,17 +586,17 @@ export class AtelierGame extends Component {
       this.accessibleButton(`第${i+1}槽：${type===null?'空槽':BEADS[type].name}`,()=>this.selectCraftSlot(i));
     });
     this.text(event?'赛事提供珠材 · 委托草稿独立保留':this.materialNeed(),38,828,644,32,22,MUTED,this.page,true);
-    this.text('点珠材加入手串 · 拖动调整位置',60,865,600,28,21,MUTED,this.page,true);
+    this.text(this.slot>=0?'再点下方珠材，替换选中位置':'点珠材加入 · 拖动换位 · 双击移除',60,865,600,28,21,MUTED,this.page,true);
     BEADS.forEach((b,i)=>{
       const x=39+i*108;
       const chosen=this.craftMaterial===i,n=this.rect('Bead material '+i,x,900,102,94,chosen?'#e6d39d':'#fffaf040',this.page,13,chosen?'#9b7b43':'#cbb799');
       this.image('bead-'+i,21,0,60,60,n);
       this.text(event?b.short:b.short+' '+Math.max(0,this.save.inventory[i]-counts[i]),0,61,102,30,20,INK,n,true);
-      const choose=()=>{this.craftMaterial=i;this.slot=-1;this.place(i);};n.on(Node.EventType.TOUCH_END,choose);
+      const choose=()=>{this.craftMaterial=i;this.place(i);};n.on(Node.EventType.TOUCH_END,choose);
       this.accessibleButton('放入'+b.name,choose);
     });
     Object.entries(CHARMS).forEach(([id,name],i)=>this.button((this.workingCharm===id?'✓ ':'')+name,50+i*212,1011,196,44,()=>{this.remember();this.workingCharm=id;this.persist();this.render();},this.page,this.workingCharm===id));
-    const controls=[['撤销','icon-undo',()=>{const s=this.workingUndo.pop();if(!s)return this.toast('还没有可撤销的操作。');this.workingDraft=s.draft;this.workingCharm=s.charm;this.slot=-1;this.persist();this.render();}],['移除','icon-bin',()=>{if(this.slot<0)return this.toast('先点选一颗珠子。');this.remember();this.workingDraft[this.slot]=null;this.slot=-1;this.persist();this.render();}],['预览','preview',()=>this.previewCraft()]] as const;
+    const controls=[['撤销','icon-undo',()=>{this.craftTap=null;const s=this.workingUndo.pop();if(!s)return this.toast('还没有可撤销的操作。');this.workingDraft=s.draft;this.workingCharm=s.charm;this.slot=-1;this.persist();this.render();}],['移除','icon-bin',()=>this.removeCraftBead()],['预览','preview',()=>this.previewCraft()]] as const;
     controls.forEach(([label,,action],i)=>this.button(label,28+i*100,1070,92,45,action));
     this.button('替换',328,1070,92,45,()=>this.slot<0?this.toast('先点选要替换的珠子。'):this.place(this.craftMaterial));
     this.button('参考配色',428,1070,143,45,()=>this.sample());
@@ -608,10 +609,18 @@ export class AtelierGame extends Component {
       this.confirmDelivery();
     },this.page,ready);
     finish.children.find(n=>n.getComponent(Label))!.getComponent(Label)!.fontSize=29;
-    this.text(ready?'作品已符合委托，准备装进礼盒。':this.slot>=0?'已选第 '+(this.slot+1)+' 颗 · 可取下，或用当前珠材替换。':'点已有珠子，可替换或取下；撤销随时可用。',45,1220,630,26,19,ready?SAGE:MUTED,this.page,true);
+    this.text(this.slot>=0?'已选第 '+(this.slot+1)+' 槽 · 点下方珠材替换，双击珠子移除。':ready?'作品已符合委托，准备装进礼盒。':'点选后换珠，双击移除；拖动换位，撤销随时可用。',45,1220,630,26,19,ready?SAGE:MUTED,this.page,true);
   }
   private selectCraftSlot(index:number) {
-    this.slot=this.slot===index?-1:index;this.render();
+    if(this.modal)return;
+    const at=Date.now(),last=this.craftTap;
+    if(this.workingDraft[index]!==null&&last?.index===index&&at-last.at>=0&&at-last.at<=320){this.slot=index;this.removeCraftBead();return;}
+    this.slot=this.slot===index?-1:index;this.craftTap={index,at};this.render();
+  }
+  private removeCraftBead() {
+    if(this.modal)return;
+    if(this.slot<0||this.workingDraft[this.slot]===null)return this.toast('先点选一颗珠子。');
+    this.clearCraftFlight(this.slot);this.remember();this.workingDraft[this.slot]=null;this.slot=-1;this.persist();this.render();
   }
   private previewCraft() {
     this.dialog('craft-preview','作品预览');
@@ -623,8 +632,10 @@ export class AtelierGame extends Component {
   }
   private place(type: number) {
     if(this.modal||!Number.isInteger(type)||type<0||type>5)return;
+    this.craftTap=null;
     const index=rules.craftTarget(this.workingDraft,this.slot);
     if(index<0){this.render();return this.toast('手串已满，可拖动换位，或点选一颗后替换。');}
+    if(this.workingDraft[index]===type){this.render();return;}
     if(!this.contestEntry&&!rules.canPlace(this.save,type,index)){this.render();return this.toast(BEADS[type].name+'不足，点工具栏「采珠」获取。');}
     this.clearCraftFlight(index);
     this.remember();this.workingDraft[index]=type;this.slot=-1;this.persist();
@@ -684,7 +695,7 @@ export class AtelierGame extends Component {
     });
     n.on(Node.EventType.TOUCH_MOVE,(e: EventTouch)=>{
       if(!start||this.workingDraft[index]===null)return;
-      const p=this.localPoint(e);if(Vec3.distance(start,p)>14)dragged=true;
+      const p=this.localPoint(e);if(Vec3.distance(start,p)>14){dragged=true;this.craftTap=null;}
       if(dragged){n.setSiblingIndex(this.page.children.length-1);n.setPosition(p.x-46,p.y+46);}
     });
     n.on(Node.EventType.TOUCH_END,(e: EventTouch)=>{
@@ -694,7 +705,7 @@ export class AtelierGame extends Component {
       }else{start=null;this.selectCraftSlot(index);return;}
       start=null;this.render();
     });
-    n.on(Node.EventType.TOUCH_CANCEL,()=>{if(original)n.setPosition(original);start=null;dragged=false;});
+    n.on(Node.EventType.TOUCH_CANCEL,()=>{if(original)n.setPosition(original);start=null;dragged=false;this.craftTap=null;});
   }
   private sample() {
     if(this.contestEntry){this.contestSample();return;}

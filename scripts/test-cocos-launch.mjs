@@ -42,8 +42,9 @@ try{
  s=await state();const second=s.save.draft.findIndex(n=>n===1);await drag(first,second);assert.equal((await state()).save.draft[first],1);assert.equal((await state()).save.draft[second],0);await action('撤销');
  await tap((await state()).crafting.slots[first]);await action('移除');assert.equal((await state()).save.draft[first],null);await action('撤销');assert.equal((await state()).save.draft[first],0);
  const draft=(await state()).save.draft.slice();await material(2);await action('撤销');await idle();assert.deepEqual((await state()).save.draft,draft);
- // Selecting an occupied groove never changes the random-add behavior.
- await tap((await state()).crafting.slots[first]);for(let i=0;i<6;i++)await material(i);
+ // A selected bead is replaced directly; undo clears selection before more random additions.
+ await tap((await state()).crafting.slots[first]);await material(3);assert.equal((await state()).save.draft[first],3);assert.equal((await state()).save.draft.filter(n=>n!==null).length,6);await action('撤销');
+ for(let i=0;i<6;i++)await material(i);
  s=await state();assert.equal(s.save.draft.filter(n=>n!==null).length,12);const full=s.save.draft.slice();await material(3);assert.deepEqual((await state()).save.draft,full);await idle();
  await tap((await state()).crafting.slots[first]);await action('替换');assert.equal((await state()).save.draft[first],3);await action('撤销');await idle();assert.deepEqual((await state()).save.draft,full);
  // Observe actual rendered bead children; impact must move nearby art, never groove hit targets.
@@ -68,6 +69,8 @@ try{
  for(const bead of ripple.final){if(bead.index===first)continue;const before=ripple.baseline[bead.index];assert.ok(Math.hypot(bead.x-before.x,bead.y-before.y)<.001,'ripple returns to the exact original pose');}
  assert.deepEqual((await state()).save.draft,full);
  await page.screenshot({path:dir+'/settled.png'});await page.reload({waitUntil:'networkidle'});await ready();assert.deepEqual((await state()).save.draft,full);await action('按单制作');await action('开始制作');assert.equal((await state()).crafting.flights.length,0);
+ // A double tap during flight cancels its eventual landing instead of respawning the removed bead.
+ await tap((await state()).crafting.slots[first]);await action('移除');await material(4);await tap((await state()).crafting.slots[first]);await tap((await state()).crafting.slots[first]);assert.equal((await state()).save.draft[first],null);await page.waitForTimeout(1050);assert.equal((await state()).save.draft[first],null);assert.equal((await state()).crafting.flights.length,0);await action('撤销');assert.equal((await state()).save.draft[first],4);
  // Leaving during flight preserves the reserved draft, without ghost beads on return.
  await tap((await state()).crafting.slots[first]);await action('移除');await material(4);const leaving=(await state()).save.draft.slice();await action('返回委托');assert.equal((await state()).screen,'orders');await action('按单制作 180金');await action('开始制作');assert.deepEqual((await state()).save.draft,leaving);assert.equal((await state()).crafting.flights.length,0);
  const reduced={...initial,reduced:true,inventory:[1,0,0,0,0,0]};await page.evaluate(save=>{window.name='qa-save:'+JSON.stringify(save);},reduced);await page.reload({waitUntil:'networkidle'});await ready();await action('按单制作');await action('开始制作');await material(0);s=await state();assert.equal(s.crafting.flights.length,0);assert.equal(s.save.draft.filter(n=>n===0).length,1);const limited=s.save.draft.slice();await material(0);await material(2);assert.deepEqual((await state()).save.draft,limited);

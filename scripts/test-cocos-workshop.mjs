@@ -3,8 +3,8 @@ import assert from 'node:assert/strict';
 import fs from 'node:fs';
 import {freshSave} from '../cocos/assets/scripts/model.ts';
 import {ORDERS} from '../cocos/assets/scripts/content.ts';
-const base=process.env.GAME_URL||'http://127.0.0.1:8321/';
-fs.mkdirSync('artifacts/workshop',{recursive:true});
+const base=process.env.GAME_URL||'http://127.0.0.1:8321/',dir=process.env.WORKSHOP_ARTIFACTS||'artifacts/workshop';
+fs.mkdirSync(dir,{recursive:true});
 const browser=await chromium.launch({headless:true});
 try {
  const context=await browser.newContext({viewport:{width:540,height:960},isMobile:true,hasTouch:true});
@@ -16,13 +16,30 @@ try {
  const state=async()=>JSON.parse(await page.evaluate(()=>window.render_game_to_text()));
  const action=async name=>page.getByRole('button',{name,exact:true}).dispatchEvent('click');
  const point=async(x,y)=>{const b=await page.locator('#GameCanvas').boundingBox(),scale=Math.min(b.width/720,b.height/1280);return {x:b.x+b.width/2+(x-360)*scale,y:b.y+b.height/2+(y-640)*scale};};
- const tap=async(x,y)=>{const p=await point(x,y);await page.touchscreen.tap(p.x,p.y);};
+ const tap=async(x,y)=>{const p=await point(x,y);await page.touchscreen.tap(p.x,p.y);await page.evaluate(()=>new Promise(resolve=>requestAnimationFrame(()=>requestAnimationFrame(resolve))));};
  const at=async p=>tap(p.x,p.y);
  const escape=async()=>{await page.locator('#GameCanvas').focus();await page.keyboard.press('Escape');};
  const fixture=async save=>{await page.evaluate(s=>{window.name='qa-save:'+JSON.stringify(s);},save);await page.reload({waitUntil:'networkidle'});await ready();await action('按单制作');await action('开始制作');};
  await page.goto(base,{waitUntil:'networkidle'});await ready();await action('按单制作');await action('开始制作');
+ const full=Array.from({length:12},(_,i)=>i%6);await fixture({...initial,draft:full});
+ for(let i=0;i<12;i++){
+  let current=await state();await at(current.crafting.slots[i]);assert.equal((await state()).slot,i);
+  const type=(full[i]+1)%6;await at(current.crafting.materials[type]);current=await state();const replaced=full.slice();replaced[i]=type;
+  assert.deepEqual(current.save.draft,replaced);assert.equal(current.save.draft.filter(n=>n!==null).length,12);assert.deepEqual(current.save.inventory,initial.inventory);
+  if(i===8)await page.screenshot({path:dir+'/direct-replacement.png'});await action('撤销');assert.deepEqual((await state()).save.draft,full);
+  await at(current.crafting.slots[i]);await at(current.crafting.slots[i]);const removed=full.slice();removed[i]=null;
+  assert.deepEqual((await state()).save.draft,removed);assert.equal((await state()).slot,-1);
+  if(i===8)await page.screenshot({path:dir+'/double-tap-removed.png'});await at(current.crafting.slots[i]);assert.deepEqual((await state()).save.draft,removed);
+  await action('撤销');assert.deepEqual((await state()).save.draft,full);
+ }
+ let current=await state(),q=await point(current.crafting.slots[2].x,current.crafting.slots[2].y);await page.mouse.dblclick(q.x,q.y,{delay:70});await page.waitForTimeout(80);assert.equal((await state()).save.draft[2],null);await action('撤销');
+ await fixture({...initial,draft:[0,...Array(11).fill(null)]});current=await state();await at(current.crafting.slots[0]);await at(current.crafting.materials[3]);assert.equal((await state()).save.draft[0],3);assert.equal((await state()).save.draft.filter(n=>n!==null).length,1);
+ await at(current.crafting.slots[5]);await at(current.crafting.materials[2]);assert.equal((await state()).save.draft[5],2);assert.equal((await state()).save.draft.filter(n=>n!==null).length,2);
+ await fixture({...initial,inventory:[1,0,0,0,0,0],draft:[0,...Array(11).fill(null)]});current=await state();await at(current.crafting.slots[0]);await at(current.crafting.materials[1]);assert.deepEqual((await state()).save.draft,[0,...Array(11).fill(null)]);assert.equal((await state()).slot,0);
+ await at(current.crafting.materials[0]);assert.equal((await state()).slot,0);await at(current.crafting.slots[0]);await at(current.crafting.slots[0]);assert.equal((await state()).save.draft[0],null);await action('撤销');assert.equal((await state()).save.draft[0],0);
+ await fixture(initial);
  let s=await state();assert.equal(s.crafting.orderId,'daisy');assert.equal(s.crafting.slots.length,12);
- await page.screenshot({path:'artifacts/workshop/empty.png'});
+ await page.screenshot({path:dir+'/empty.png'});
  await tap(440,1180);assert.equal((await state()).screen,'craft');assert.equal((await state()).save.coins,initial.coins);
  await at(s.crafting.materials[0]);s=await state();const origin=s.save.draft.findIndex(n=>n===0),target=(origin+1)%12;
  assert.equal(s.save.draft.filter(n=>n!==null).length,1);
@@ -39,11 +56,11 @@ try {
  await tap(500,1092);assert.equal((await state()).modal,'sample');await action('按参考排珠');
  s=await state();assert.deepEqual(s.save.draft,ORDERS[0].palette);assert.deepEqual(s.save.inventory,initial.inventory);assert.equal(s.save.coins,initial.coins);
  await tap(274,1092);s=await state();assert.equal(s.modal,'craft-preview');assert.deepEqual(s.crafting.beads,ORDERS[0].palette);
- await page.screenshot({path:'artifacts/workshop/preview.png'});await tap(360,907);assert.equal((await state()).modal,'');
+ await page.screenshot({path:dir+'/preview.png'});await tap(360,907);assert.equal((await state()).modal,'');
  await action('月牙');await tap(440,1180);assert.equal((await state()).screen,'craft');await action('✓ 月牙');await action('雏菊');
- await page.waitForTimeout(2900);await page.screenshot({path:'artifacts/workshop/commission.png'});
- for(const [width,height] of [[360,800],[390,844],[1440,900]]){await page.setViewportSize({width,height});await page.screenshot({path:`artifacts/workshop/layout-${width}.png`});s=await state();assert.equal(s.crafting.slots.length,12);await at(s.crafting.slots[0]);assert.equal((await state()).slot,0);await at(s.crafting.slots[0]);}
- await page.setViewportSize({width:540,height:960});await tap(650,42);assert.equal((await state()).modal,'pause');await escape();
+ await page.waitForTimeout(2900);await page.screenshot({path:dir+'/commission.png'});
+ for(const [width,height] of [[360,800],[390,844],[1440,900]]){await page.setViewportSize({width,height});await page.waitForTimeout(360);await page.screenshot({path:`${dir}/layout-${width}.png`});s=await state();assert.equal(s.crafting.slots.length,12);await at(s.crafting.slots[0]);assert.equal((await state()).slot,0);await page.waitForTimeout(360);await at(s.crafting.slots[0]);assert.deepEqual((await state()).save.draft,ORDERS[0].palette);}
+ await page.setViewportSize({width:540,height:960});await page.waitForTimeout(200);await tap(650,42);assert.equal((await state()).modal,'pause');await escape();
  await tap(440,1180);assert.equal((await state()).modal,'first-finished');await action('装进礼盒');s=await state();assert.equal(s.screen,'packing');assert.deepEqual(s.packing.beads,ORDERS[0].palette);assert.deepEqual(s.save.inventory,initial.inventory);
  await escape();assert.equal((await state()).screen,'craft');
  await tap(70,42);assert.equal((await state()).screen,'orders');await action('按单制作 180金');await action('开始制作');assert.equal((await state()).screen,'craft');
@@ -54,7 +71,10 @@ try {
  await action('听故事');assert.equal((await state()).modal,'sea-chat');await escape();await tap(70,42);await escape();
  await action('参加比赛');await page.getByRole('button',{name:'报名参加',exact:true}).first().dispatchEvent('click');s=await state();assert.equal(s.screen,'contestCraft');assert.equal(s.crafting.contestId,'spring');
  await at(s.crafting.materials[3]);await at(s.crafting.slots[0]);await tap(74,1092);assert.ok((await state()).crafting.beads.every(n=>n===null));
- await tap(500,1092);await action('以此为起点排珠');await page.screenshot({path:'artifacts/workshop/contest.png'});await tap(440,1180);assert.equal((await state()).modal,'contest-submit');await action('提交评审');s=await state();assert.equal(s.modal,'contest-result');assert.equal(s.save.coins,initial.coins+60);assert.deepEqual(s.save.draft,commission);assert.equal(s.save.charm,'moon');assert.deepEqual(s.save.inventory,initial.inventory);
- assert.deepEqual(errors,[]);fs.writeFileSync('artifacts/workshop/report.json',JSON.stringify({base,nativeTouch:true,dragAndSwap:true,undoRemoveReplace:true,preview:true,orderValidation:true,packing:true,inventoryGuard:true,contestIsolation:true,reload:true,threeViewports:true,errors},null,2));
+ await tap(500,1092);await action('以此为起点排珠');
+ s=await state();const contest=s.crafting.beads.slice(),ct=(contest[4]+1)%6;await at(s.crafting.slots[4]);await at(s.crafting.materials[ct]);assert.equal((await state()).crafting.beads[4],ct);assert.deepEqual((await state()).save.draft,commission);await action('撤销');
+ await at(s.crafting.slots[4]);await at(s.crafting.slots[4]);assert.equal((await state()).crafting.beads[4],null);assert.deepEqual((await state()).save.draft,commission);await action('撤销');assert.deepEqual((await state()).crafting.beads,contest);
+ await page.screenshot({path:dir+'/contest.png'});await tap(440,1180);assert.equal((await state()).modal,'contest-submit');await action('提交评审');s=await state();assert.equal(s.modal,'contest-result');assert.equal(s.save.coins,initial.coins+60);assert.deepEqual(s.save.draft,commission);assert.equal(s.save.charm,'moon');assert.deepEqual(s.save.inventory,initial.inventory);
+ assert.deepEqual(errors,[]);fs.writeFileSync(dir+'/report.json',JSON.stringify({base,nativeTouch:true,allTwelveSlotsDirectReplaceAndDoubleTap:true,mouseDoubleClick:true,sparseAndSelectedEmptySlots:true,sameTypeNoop:true,dragAndSwap:true,undoRemoveReplace:true,preview:true,orderValidation:true,packing:true,inventoryGuard:true,contestIsolation:true,reload:true,threeViewports:true,errors},null,2));
  console.log('Workshop passed: native round grooves, placement, touch drag and swap, replacement/remove/undo, exact preview, guarded commission to packing, stock, sea chat, contest isolation and award, reload and three viewports.');
 } finally {await browser.close();}

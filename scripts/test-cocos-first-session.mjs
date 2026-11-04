@@ -18,6 +18,7 @@ try{
  const groove=async i=>{const p=(await state()).crafting.slots[i];await tap(p.x,p.y);};
  const material=async i=>{const p=(await state()).crafting.materials[i];await tap(p.x,p.y);};
  const addAt=async(type,index)=>{
+  const selected=(await state()).slot;if(selected>=0)await groove(selected);
   const before=(await state()).save.draft.slice();await material(type);let s=await state();
   const from=s.save.draft.findIndex((n,i)=>n!==before[i]);assert.ok(from>=0);
   await page.waitForFunction(()=>!JSON.parse(window.render_game_to_text()).crafting.flights.length);
@@ -34,7 +35,7 @@ try{
  await groove(0);await action('移除');assert.equal((await state()).save.draft[0],null);await action('撤销');assert.equal((await state()).save.draft[0],0);
  for(let i=2;i<12;i++){await addAt(ORDERS[0].palette[i],i);assert.equal((await state()).busy,false);}
  s=await state();assert.deepEqual(s.save.draft,ORDERS[0].palette);assert.deepEqual(s.save.inventory,initialStock);assert.equal(s.save.energy,energy);
- for(const [width,height] of [[360,800],[390,844],[1440,900]]){await page.setViewportSize({width,height});await page.waitForTimeout(180);await page.screenshot({path:dir+`/workshop-${width}.png`});await groove(0);assert.equal((await state()).slot,0);await groove(0);}
+ for(const [width,height] of [[360,800],[390,844],[1440,900]]){await page.setViewportSize({width,height});await page.waitForTimeout(360);await page.screenshot({path:dir+`/workshop-${width}.png`});await groove(0);assert.equal((await state()).slot,0);await page.waitForTimeout(360);await groove(0);}
  await page.setViewportSize({width:540,height:960});await page.waitForTimeout(160);await action('完成制作');assert.equal((await state()).modal,'first-finished');await page.screenshot({path:dir+'/first-closeup.png'});
  await action('装进礼盒');assert.equal((await state()).screen,'packing');await action('完成包装');s=await state();assert.equal(s.screen,'delivery');assert.deepEqual(s.delivery.work.beads,ORDERS[0].palette);assert.ok(s.save.firstSteps.firstDelivery);assert.equal(s.save.level,1);assert.equal(s.save.energy,energy);
  await action('继续营业');assert.equal((await state()).modal,'first-feedback');await page.screenshot({path:dir+'/customer-feedback.png'});await action('记录');await action('返回对话');assert.equal((await state()).modal,'first-feedback');await action('领取下一份委托');s=await state();assert.equal(s.screen,'orderArrival');assert.equal(s.incomingOrder.id,'sea');assert.ok(s.save.firstSteps.secondOrder);

@@ -546,18 +546,43 @@ test('early failed gathering banks every collected color once through result, Es
  assert.deepEqual(rules.normalizeSave(JSON.parse(saved)).inventory,game.save.inventory);
 });
 
-test('material taps reserve random empty slots, ignore selection, guard stock/full drafts and undo safely',()=>{
+test('material taps add randomly when unselected and replace the selected slot with stock and undo guards',()=>{
  const game=new AtelierGame(),actions=new Map();game.node=new Node('AtelierGame');game.page=new Node('Page');game.overlay=new Node('Dialogs');game.notices=new Node('Notices');
  game.persist=()=>{};game.toast=()=>{};game.play=()=>{};
  game.accessibility={clear(){actions.clear();},text(){},button(name,action){actions.set(name,action);},showDialog(){},closeDialog(){}};
  game.save={...rules.freshSave(),reduced:true,inventory:[2,2,0,2,0,0]};game.screen='craft';game.render();
  actions.get('第1槽：空槽')();assert.equal(game.save.draft.filter(n=>n!==null).length,0);
  for(const name of ['月光珍珠','蔷薇红晶','森绿玉珠','月光珍珠','蔷薇红晶','森绿玉珠']){
-  const before=game.save.draft.slice();game.slot=0;actions.get('放入'+name)();
+  const before=game.save.draft.slice();game.slot=-1;actions.get('放入'+name)();
   const changed=game.save.draft.map((n,i)=>n!==before[i]?i:-1).filter(i=>i>=0);assert.equal(changed.length,1);assert.equal(before[changed[0]],null);
  }
  const stock=game.save.inventory.slice(),draft=game.save.draft.slice();actions.get('放入月光珍珠')();assert.deepEqual(game.save.draft,draft);actions.get('放入雾蓝水晶')();assert.deepEqual(game.save.draft,draft);
  actions.get('撤销')();assert.equal(game.save.draft.filter(n=>n!==null).length,5);assert.deepEqual(game.save.inventory,stock);
  game.save.inventory=Array(6).fill(20);game.save.draft=Array(12).fill(0);game.render();const full=game.save.draft.slice();actions.get('放入森绿玉珠')();assert.deepEqual(game.save.draft,full);
- actions.get('第1槽：月光珍珠')();actions.get('替换')();assert.equal(game.save.draft[0],3);actions.get('撤销')();assert.deepEqual(Array.from(game.save.draft),full);
+ actions.get('第1槽：月光珍珠')();actions.get('放入森绿玉珠')();assert.equal(game.save.draft[0],3);assert.equal(game.save.draft.filter(n=>n!==null).length,12);actions.get('撤销')();assert.deepEqual(Array.from(game.save.draft),full);
+ actions.get('第1槽：月光珍珠')();const history=game.undo.length;actions.get('放入月光珍珠')();assert.equal(game.undo.length,history);assert.equal(game.slot,0);
+ game.save.inventory[2]=0;actions.get('放入雾蓝水晶')();assert.deepEqual(Array.from(game.save.draft),full);assert.equal(game.slot,0);assert.equal(game.undo.length,history);
+ actions.get('替换')();assert.deepEqual(Array.from(game.save.draft),full);
+ game.save.draft=Array(12).fill(null);game.save.draft[4]=0;game.slot=4;game.render();actions.get('放入森绿玉珠')();assert.equal(game.save.draft[4],3);assert.equal(game.save.draft.filter(n=>n!==null).length,1);
+ game.slot=7;actions.get('放入蔷薇红晶')();assert.equal(game.save.draft[7],1);assert.equal(game.save.draft.filter(n=>n!==null).length,2);
+ assert.deepEqual(game.save.inventory,[20,20,0,20,20,20]);
+});
+
+test('double taps remove one bead across native rerenders, while slow taps, other slots, dragging and cancellation do not',()=>{
+ const game=new AtelierGame(),actions=new Map();game.node=new Node('AtelierGame');game.page=new Node('Page');game.overlay=new Node('Dialogs');game.notices=new Node('Notices');
+ game.persist=()=>{};game.toast=()=>{};game.play=()=>{};
+ game.accessibility={clear(){actions.clear();},text(){},button(name,action){actions.set(name,action);},showDialog(){},closeDialog(){}};
+ game.save={...rules.freshSave(),reduced:true,draft:[0,1,2,...Array(9).fill(null)]};game.screen='craft';game.render();
+ const touch=i=>{const p=game.slotPos(i);return {getUILocation:()=>({x:p.x,y:1280-p.y})};};
+ const tap=i=>{const n=game.slotNodes[i];n.events.start(touch(i));n.events.end(touch(i));};
+ const stock=game.save.inventory.slice();tap(0);const firstNode=game.slotNodes[0];assert.equal(game.slot,0);assert.equal(game.undo.length,0);
+ tap(0);assert.notEqual(game.slotNodes[0],firstNode);assert.equal(game.save.draft[0],null);assert.equal(game.slot,-1);assert.equal(game.undo.length,1);
+ actions.get('撤销')();assert.equal(game.save.draft[0],0);assert.equal(game.craftTap,null);
+ tap(0);game.craftTap.at-=500;tap(0);assert.equal(game.save.draft[0],0);assert.equal(game.slot,-1);assert.equal(game.undo.length,0);
+ game.craftTap=null;game.slot=0;tap(0);tap(0);assert.equal(game.save.draft[0],null,'double tap also removes an already selected bead');actions.get('撤销')();
+ tap(0);tap(1);assert.equal(game.save.draft[0],0);assert.equal(game.save.draft[1],1);tap(1);assert.equal(game.save.draft[1],null);actions.get('撤销')();
+ tap(8);tap(8);assert.equal(game.undo.length,0);assert.equal(game.save.draft[8],null);
+ tap(0);game.slotNodes[0].events.start(touch(0));game.slotNodes[0].events.cancel();tap(0);assert.equal(game.save.draft[0],0);
+ const n=game.slotNodes[0];n.events.start(touch(0));n.events.move(touch(1));n.events.end(touch(1));assert.equal(game.craftTap,null);assert.equal(game.save.draft[1],0);tap(1);assert.equal(game.save.draft[1],0);
+ assert.deepEqual(game.save.inventory,stock);
 });
