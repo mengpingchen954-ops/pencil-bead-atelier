@@ -30,7 +30,7 @@ test("craft launches choose only free grooves, while an occupied selection can b
   assert.equal(craftTarget(draft, 11, () => 0), 11);
   assert.equal(craftTarget(Array(12).fill(0)), -1);
   assert.equal(craftTarget(Array(12).fill(0), 5), 5);
-  const save = { ...freshSave(), inventory: [1, 0, 0, 0, 0, 0], draft: [0, ...Array(11).fill(null)] };
+  const save = { ...freshSave(), inventory: [1, 0, 0, 0, 0, 0], gatheredStock:[1,0,0,0,0,0], draft: [0, ...Array(11).fill(null)] };
   assert.equal(canPlace(save, 0, 1), false);
   assert.equal(canPlace(save, 0, 0), true);
 });
@@ -153,7 +153,7 @@ test("handmade delivery conserves stock and grants its reward only once", () => 
   const s = freshSave(),
     o = ORDERS[0];
   assert.equal(deliver(s), null);
-  s.inventory = Array(6).fill(20);
+  s.inventory = Array(6).fill(20);s.gatheredStock=Array(48).fill(20);s.charm="daisy";
   s.draft = [...o.palette];
   assert.equal(
     canPlace({ ...s, inventory: [8, 20, 20, 20, 20, 20] }, 0, 0),
@@ -204,7 +204,7 @@ test("malformed saves are bounded and energy recovery respects time", () => {
   });
   assert.equal(s.coins, 0);
   assert.equal(s.energy, 10);
-  assert.deepEqual(s.inventory, [0, 0, 0, 8, 0, 0]);
+  assert.deepEqual(s.inventory, [0, 0, 0, 8, 0, 0,...Array(42).fill(0)]);
   assert.deepEqual(s.completed, ["daisy"]);
   assert.equal(s.draft[0], null);
   assert.equal(s.upgrades.chair, 2);

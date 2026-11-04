@@ -39,17 +39,17 @@
       "id": "f9941",
       "name": "spriteFrame",
       "userData": {
-        "trimType": "auto",
+        "trimType": "none",
         "trimThreshold": 1,
         "rotated": false,
         "offsetX": 0,
-        "offsetY": 9.5,
-        "trimX": 32,
-        "trimY": 27,
+        "offsetY": 0,
+        "trimX": 0,
+        "trimY": 0,
         "width": 192,
-        "height": 183,
-        "rawWidth": 256,
-        "rawHeight": 256,
+        "height": 192,
+        "rawWidth": 192,
+        "rawHeight": 192,
         "borderTop": 0,
         "borderBottom": 0,
         "borderLeft": 0,
@@ -59,19 +59,22 @@
         "pivotX": 0.5,
         "pivotY": 0.5,
         "meshType": 0,
+        "isUuid": true,
+        "imageUuidOrDatabaseUri": "0f764382-4594-4c6d-8d53-0e161e694f34@6c48a",
+        "atlasUuid": "",
         "vertices": {
           "rawPosition": [
             -96,
-            -91.5,
+            -96,
             0,
             96,
-            -91.5,
+            -96,
             0,
             -96,
-            91.5,
+            96,
             0,
             96,
-            91.5,
+            96,
             0
           ],
           "indexes": [
@@ -83,39 +86,36 @@
             3
           ],
           "uv": [
-            32,
-            229,
-            224,
-            229,
-            32,
-            46,
-            224,
-            46
+            0,
+            192,
+            192,
+            192,
+            0,
+            0,
+            192,
+            0
           ],
           "nuv": [
-            0.125,
-            0.1796875,
-            0.875,
-            0.1796875,
-            0.125,
-            0.89453125,
-            0.875,
-            0.89453125
+            0,
+            0,
+            1,
+            0,
+            0,
+            1,
+            1,
+            1
           ],
           "minPos": [
             -96,
-            -91.5,
+            -96,
             0
           ],
           "maxPos": [
             96,
-            91.5,
+            96,
             0
           ]
-        },
-        "isUuid": true,
-        "imageUuidOrDatabaseUri": "0f764382-4594-4c6d-8d53-0e161e694f34@6c48a",
-        "atlasUuid": ""
+        }
       },
       "ver": "1.0.12",
       "imported": true,

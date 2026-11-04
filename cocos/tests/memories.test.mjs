@@ -20,7 +20,7 @@ test('reading a known story updates memories without changing rewards or exposin
  assert.equal(save.coins,before.coins);assert.deepEqual(save.inventory,before.inventory);assert.equal(JSON.stringify(save),snapshot);
 });
 test('customer memories derive from actual chat, paid works and the saved return visit',()=>{
- let save={...freshSave(),inventory:Array(6).fill(1000)};
+ let save={...freshSave(),charm:"daisy",inventory:Array(6).fill(1000)};
  save=deliver({...save,draft:[...ORDERS[0].palette].reverse()});
  save=askSea(save,'fear');let people=characterMemories(save),xiaoman=people.find(p=>p.id==='xiaoman');
  assert.equal(xiaoman.unlock,true);assert.ok(xiaoman.known.some(k=>k.text.includes('慢慢走')));assert.equal(people.find(p=>p.id==='teacher').unlock,false);

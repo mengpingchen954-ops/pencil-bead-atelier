@@ -6,7 +6,7 @@ import {storyUnlocked,storyRoute} from '../assets/scripts/story.ts';
 import {STORIES} from '../assets/scripts/content.ts';
 import {beginCompetition} from '../assets/scripts/competition.ts';
 
-const prepared=()=>({...freshSave(),inventory:Array(6).fill(40),draft:Array(12).fill(5),charm:'heart'});
+const prepared=()=>({...freshSave(),inventory:Array(48).fill(40),gatheredStock:Array(48).fill(40),materialUnlocked:Array(48).fill(true),draft:Array(12).fill(5),charm:'heart'});
 test('free DIY accepts a single color and any charm, reserves actual stock once, and pays nothing on save',()=>{
   const save=prepared(),snapshot=structuredClone(save),next=finishWork(save,1000);
   assert.ok(next);assert.deepEqual(save,snapshot);assert.equal(next.inventory[5],28);assert.equal(next.coins,save.coins);assert.equal(next.rep,save.rep);
@@ -44,7 +44,7 @@ test('all gathering levels bank precisely the beads eliminated, including failur
   for(const level of [1,4,15,16]){
     const save=freshSave(),session=newSession(124,level),result=move(session,...findMove(session.board));assert.ok(result.valid);assert.equal(session.freeGather,true);assert.equal(session.rewardOrder,null);
     const bank=bankEarlyCollection(save,result.session),again=bankEarlyCollection(bank.save,{...bank.session,status:'lost'});
-    assert.deepEqual(bank.save.inventory,save.inventory.map((n,i)=>n+result.session.collected[i]));assert.deepEqual(again.save.inventory,bank.save.inventory);
+    assert.deepEqual(bank.save.inventory,save.inventory.map((n,i)=>n+(result.session.collected[result.session.materialTypes.indexOf(i)]||0)));assert.deepEqual(again.save.inventory,bank.save.inventory);
     assert.deepEqual(sessionRewards({...bank.session,status:'won'},bank.save),result.session.collected);
   }
 });

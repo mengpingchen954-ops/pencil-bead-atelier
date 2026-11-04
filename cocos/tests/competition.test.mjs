@@ -16,7 +16,7 @@ test('judges use the published rubric, with gold, silver, bronze and participati
   assert.equal(evaluateCompetition('spring',Array(12).fill(3),'daisy').medal,'银色巧思奖');
   assert.equal(evaluateCompetition('spring',[3,3,3,3,3,3,5,5,5,0,0,0],'heart').medal,'铜色心意奖');
   assert.equal(evaluateCompetition('spring',Array(12).fill(1),'heart').medal,'参与纪念奖');
-  for(const beads of [Array(12),Array(12).fill(null),Array(11).fill(3),Array(12).fill(9),Array(12).fill(NaN)])assert.equal(evaluateCompetition('spring',beads,'daisy'),null);
+  for(const beads of [Array(12),Array(12).fill(null),Array(11).fill(3),Array(12).fill(99),Array(12).fill(NaN)])assert.equal(evaluateCompetition('spring',beads,'daisy'),null);
   assert.equal(evaluateCompetition('spring',competitionPalette('spring'),'unknown'),null);
 });
 test('submissions reward once and leave commission work, inventory, stories and energy intact',()=>{

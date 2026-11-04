@@ -31,7 +31,7 @@ test('Creator production bundle preserves collection iteration and complete game
   const model=load([...definitions.keys()].find(n=>n.endsWith('/model.ts')));
   const content=load([...definitions.keys()].find(n=>n.endsWith('/content.ts')));
   const trade=load([...definitions.keys()].find(n=>n.endsWith('/commerce.ts')));
-  let free=trade.finishWork({...model.freshSave(),inventory:Array(6).fill(40),draft:Array(12).fill(5),charm:'heart'},1000);
+  let free=trade.finishWork({...model.freshSave(),inventory:Array(48).fill(40),gatheredStock:Array(48).fill(40),materialUnlocked:Array(48).fill(true),draft:Array(12).fill(5),charm:'heart'},1000);
   assert.ok(free);assert.equal(free.coins,80);assert.equal(free.inventory[5],28);
   const price=trade.suggestedPrice(free.commerce.works[0].beads);
   free=trade.listWork(free,1,price,2000);assert.equal(free.coins,80);

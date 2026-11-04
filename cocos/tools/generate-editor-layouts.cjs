@@ -43,6 +43,7 @@ class Label {}
 Label.Overflow={SHRINK:2};Label.HorizontalAlign={LEFT:0,CENTER:1};Label.VerticalAlign={TOP:0,CENTER:1};
 class Sprite {}
 class Mask {}
+class UIOpacity {}
 class EditBox {}
 EditBox.InputMode={ANY:0,SINGLE_LINE:6};EditBox.EventType={TEXT_CHANGED:'text-changed',EDITING_RETURN:'editing-return'};
 Sprite.SizeMode={CUSTOM:0};
@@ -62,7 +63,7 @@ class Node {
 }
 Node.EventType={TOUCH_END:'end',TOUCH_START:'start',TOUCH_MOVE:'move',TOUCH_CANCEL:'cancel'};
 const decorator=(...args)=>args.length===1&&typeof args[0]==='function'?args[0]:()=>{};
-const cc={_decorator:{ccclass:()=>x=>x,property:decorator,executeInEditMode:x=>x},Component,Node,UITransform,Graphics,Color,Label,Sprite,Mask,EditBox,Vec3,Enum:x=>x,Layers:{Enum:{UI_2D:1<<25}},SpriteFrame:class{},AudioSource:class{},BlockInputEvents:class{},Tween:{stopAllByTarget(){}}};
+const cc={_decorator:{ccclass:()=>x=>x,property:decorator,executeInEditMode:x=>x},Component,Node,UITransform,Graphics,Color,Label,Sprite,Mask,UIOpacity,EditBox,Vec3,Enum:x=>x,Layers:{Enum:{UI_2D:1<<25}},SpriteFrame:class{},AudioSource:class{},BlockInputEvents:class{},Tween:{stopAllByTarget(){}}};
 const cache={};
 function load(file){
   if(file==='cc')return cc;if(file==='cc/env')return {EDITOR:false};
@@ -103,6 +104,7 @@ function node(n,parent){
       comp('cc.Label',{...Object.fromEntries(fields.map(k=>['_'+k,c[k]])),_color:{__type__:'cc.Color',...c.color},_isSystemFontUsed:true,_font:null,_cacheMode:0});
     }
     if(c instanceof Sprite){originalImage=c.spriteFrame.name;comp('cc.Sprite',{_spriteFrame:{__uuid__:c.spriteFrame.uuid,__expectedType__:'cc.SpriteFrame'},_sizeMode:0,_type:c.type||0,_color:{__type__:'cc.Color',r:255,g:255,b:255,a:255,...c.color},_srcBlendFactor:2,_dstBlendFactor:4});}
+    if(c instanceof UIOpacity)comp('cc.UIOpacity',{_opacity:c.opacity});
     if(c instanceof Mask)comp('cc.Mask',{_type:0,_inverted:false,_alphaThreshold:.1,_segments:64});
     if(c instanceof Graphics)drawing=JSON.stringify(c.commands);
   }
@@ -118,12 +120,12 @@ const camera=new Node('UI Camera');camera.parent=canvas;camera.setPosition(0,0,1
 const origin=new Node('Atelier');origin.parent=canvas;origin.setPosition(-360,640);origin.addComponent(UITransform).setAnchorPoint(0,1);origin.getComponent(UITransform).setContentSize(720,1280);
 const layouts=new Node('EditableLayouts');layouts.parent=origin;
 for(const page of ['home','cover','orders','craft','match','decor','album','journal','contest','contestCraft','delivery','dialogue','memories','packing','storyMap','pause','orderArrival','collectionDetail']){
-  const game=new AtelierGame();game.textures=textures;game.save=rules.freshSave();game.screen=page;
+  const game=new AtelierGame();game.textures=textures;game.save={...rules.freshSave(),charm:'daisy'};game.screen=page;
   game.page=new Node(page);game.page.parent=layouts;game.page.addComponent(UITransform).setAnchorPoint(0,1);game.page.getComponent(UITransform).setContentSize(720,1280);
   game.overlay=new Node('Dialogs');game.notices=new Node('Notices');
   if(page==='dialogue'){game.overlay=game.page;game.storyLine=4;}
   if(page==='orders'){
-    const trade=load(path.join(root,'assets/scripts/commerce.ts'));game.save.inventory=Array(6).fill(50);
+    const trade=load(path.join(root,'assets/scripts/commerce.ts'));game.save.inventory=Array(48).fill(50);game.save.gatheredStock=Array(48).fill(50);
     for(let i=0;i<3;i++)game.save=trade.finishWork({...game.save,draft:Array(12).fill(i),charm:['daisy','moon','heart'][i]},1000+i);
   }
   if(page==='match')game.session=rules.newSession(42,1);

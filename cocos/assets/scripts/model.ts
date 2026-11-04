@@ -1,6 +1,6 @@
 // @ts-nocheck
 // Rules and narrative retained from the original game; engine-independent.
-import { BEADS, ORDERS, RETURN_ORDERS, FURNITURE, STORIES, CLEAN_SPOTS, REPAIRS } from "./content.ts";
+import { BEADS, MATERIALS, CHARMS, ORDERS, RETURN_ORDERS, FURNITURE, STORIES, CLEAN_SPOTS, REPAIRS } from "./content.ts";
 import { levelConfig } from "./levels.ts";
 export { levelConfig } from "./levels.ts";
 import { storyUnlocked } from "./story.ts";
@@ -8,6 +8,7 @@ import { freshSeaHeart, normalizeSeaHeart } from "./heart.ts";
 import { freshCompetitions, normalizeCompetitions } from "./competition.ts";
 import { normalizeMusic } from "./music-settings.ts";
 import { freshCommerce, normalizeCommerce, salesProgress } from "./commerce.ts";
+import { materialPalette, materialStock, validBead } from './materials.ts';
 export const SAVE_KEY = "pencil-bead-atelier-v1";
 export function rng(seed = 1) {
   let a = seed >>> 0;
@@ -99,6 +100,7 @@ export function newSession(seed = 1, level = 1, order = null, save = null) {
   return {
     board,
     freeGather: !order,
+    materialTypes: order ? [0,1,2,3,4,5] : materialPalette(level),
     seed,
     moves: config.moves,
     target: config.target,
@@ -146,7 +148,11 @@ export function bankEarlyCollection(save,session) {
   if(!session||session.level>3&&!session.freeGather)return {save,session};
   const previous=session.banked||Array(6).fill(0);
   if(session.collected.every((n,i)=>n<=previous[i]))return {save,session};
-  return {save:{...save,inventory:save.inventory.map((n,i)=>n+Math.max(0,session.collected[i]-previous[i]))},session:{...session,banked:[...session.collected]}};
+  const inventory=Array.from({length:MATERIALS.length},(_,i)=>save.inventory[i]||0), gatheredStock=Array.from({length:MATERIALS.length},(_,i)=>save.gatheredStock?.[i]||0), materialUnlocked=Array.from({length:MATERIALS.length},(_,i)=>save.materialUnlocked?.[i]===true);
+  session.collected.forEach((n,i)=>{const amount=Math.max(0,n-previous[i]),type=(session.materialTypes||[0,1,2,3,4,5])[i];
+    if(amount&&MATERIALS[type]){inventory[type]+=amount;gatheredStock[type]+=amount;materialUnlocked[type]=true;}
+  });
+  return {save:{...save,inventory,gatheredStock,materialUnlocked},session:{...session,banked:[...session.collected]}};
 }
 export function goalProgress(session) {
   const objectives = session.objectives || [{ kind: 'total', target: session.target }];
@@ -155,7 +161,7 @@ export function goalProgress(session) {
     const current = goal.kind === 'total' ? total(session.collected) : goal.kind === 'color'
       ? session.collected[goal.type] : session.cleared?.[goal.kind] || 0;
     const label = goal.kind === 'total' ? '采集珠材' : goal.kind === 'color'
-      ? BEADS[goal.type].short : goal.kind === 'paper' ? '打开纸袋' : '解开线结';
+      ? MATERIALS[(session.materialTypes||[0,1,2,3,4,5])[goal.type]].short : goal.kind === 'paper' ? '打开纸袋' : '解开线结';
     return { ...goal, target, current, label, done: current >= target };
   });
 }
@@ -357,7 +363,10 @@ export function freshSave() {
     energy: 10,
     energyAt: Date.now(),
     level: 1,
-    inventory: [10, 0, 0, 5, 2, 0],
+    inventory: Array(MATERIALS.length).fill(0),
+    gatheredStock: Array(MATERIALS.length).fill(0),
+    materialUnlocked: Array(MATERIALS.length).fill(false),
+    beadSize: 8,
     starterKit: true,
     firstSteps: {},
     completed: [],
@@ -367,7 +376,7 @@ export function freshSave() {
     deliveryReceipt: null,
     upgrades: { chair: 0, display: 0, desk: 0 },
     draft: Array(12).fill(null),
-    charm: "daisy",
+    charm: "none",
     orderId: "daisy",
     sound: true,
     music: normalizeMusic(null),
@@ -411,9 +420,12 @@ export function normalizeSave(input) {
   s.energyAt = Number.isFinite(input.energyAt)
     ? Math.min(Date.now(), Math.max(0, input.energyAt))
     : Date.now();
-  s.inventory = Array.from({ length: 6 }, (_, i) =>
+  s.inventory = Array.from({ length: MATERIALS.length }, (_, i) =>
     bounded(input.inventory?.[i]),
   );
+  s.gatheredStock = s.inventory.map((n,i)=>Math.min(n,bounded(input.gatheredStock?.[i])));
+  s.materialUnlocked = s.inventory.map((_,i)=>input.materialUnlocked?.[i]===true||s.gatheredStock[i]>0);
+  s.beadSize = [6,8,10,12].includes(input.beadSize)?input.beadSize:8;
   s.completed = Array.from(
     new Set(
       (Array.isArray(input.completed) ? input.completed : []).filter((id) =>
@@ -422,7 +434,6 @@ export function normalizeSave(input) {
     ),
   );
   s.starterKit = true;
-  if(input.starterKit!==true&&!s.completed.length)s.inventory=s.inventory.map((n,i)=>Math.max(n,[10,0,0,5,2,0][i]));
   s.firstSteps = Object.fromEntries(['craft','firstDelivery','secondOrder','firstGather','secondDelivery'].flatMap(key=>
     Number.isFinite(input.firstSteps?.[key])&&input.firstSteps[key]>0?[[key,Math.min(Date.now(),input.firstSteps[key])]]:[]));
   for (const f of FURNITURE)
@@ -436,13 +447,13 @@ export function normalizeSave(input) {
   s.draft = Array.from({ length: 12 }, (_, i) =>
     Number.isInteger(input.draft?.[i]) &&
     input.draft[i] >= 0 &&
-    input.draft[i] < 6
+    input.draft[i] < BEADS.length
       ? input.draft[i]
       : null,
   );
-  s.charm = ["daisy", "moon", "heart"].includes(input.charm)
+  s.charm = Object.prototype.hasOwnProperty.call(CHARMS,input.charm)
     ? input.charm
-    : "daisy";
+    : "none";
   s.repeatOrders = s.completed.length === ORDERS.length ? bounded(input.repeatOrders) : 0;
   s.orderId = currentOrder({ ...s, orderId: input.orderId }).id;
   s.collection = (Array.isArray(input.collection) ? input.collection : [])
@@ -469,15 +480,15 @@ export function normalizeSave(input) {
   return s;
 }
 export function draftCounts(draft) {
-  const a = [0, 0, 0, 0, 0, 0];
-  for (const n of draft) if (Number.isInteger(n) && n >= 0 && n < 6) a[n]++;
+  const a = Array(Math.max(6,...draft.filter(validBead).map(n=>n+1))).fill(0);
+  for (const n of draft) if (validBead(n)) a[n]++;
   return a;
 }
 export function canPlace(save, type, index) {
   if (
     !Number.isInteger(type) ||
     type < 0 ||
-    type > 5 ||
+    type >= BEADS.length ||
     !Number.isInteger(index) ||
     index < 0 ||
     index >= 12
@@ -485,7 +496,7 @@ export function canPlace(save, type, index) {
     return false;
   const counts = draftCounts(save.draft);
   if (save.draft[index] === type) counts[type]--;
-  return counts[type] < save.inventory[type];
+  return (counts[type]||0) < materialStock(save,type);
 }
 export function craftTarget(draft, selected = -1, random = Math.random) {
   if (Number.isInteger(selected) && selected >= 0 && selected < 12)
@@ -521,7 +532,7 @@ export function deliver(save) {
     ...save,
     coins: save.coins + order.reward,
     rep: save.rep + order.rep,
-    inventory: save.inventory.map((n, i) => n - counts[i]),
+    inventory: save.inventory.map((n, i) => n - (counts[i]||0)),
     completed,
     repeatOrders,
     deliveryReceipt: {id:order.id,repeat,number:repeat?repeatOrders:completed.length},

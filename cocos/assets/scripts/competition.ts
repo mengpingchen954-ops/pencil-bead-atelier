@@ -1,12 +1,13 @@
 import { salesProgress } from "./commerce.ts";
+import { BEADS, CHARMS } from './content.ts';
 export const COMPETITIONS = [
   { id:'spring', title:'街角花园灵感赛', theme:'把春天留在手腕上', description:'用绿玉与花珠，做一条像街角小花园的手串。', unlock:1, main:3, accent:5, charm:'daisy', reward:60 },
   { id:'sea', title:'海风配色交流赛', theme:'天刚亮时的海', description:'用蓝晶与珍珠，留住海面初亮时的一点宁静。', unlock:3, main:2, accent:0, charm:'moon', reward:80 },
   { id:'light', title:'小城星光手作赛', theme:'为普通日子留一束光', description:'用金星与红心，给平凡的一天添上一点闪光。', unlock:5, main:4, accent:1, charm:'heart', reward:100 },
 ];
-export const CONTEST_CHARMS = ['daisy','moon','heart'];
+export const CONTEST_CHARMS = Object.keys(CHARMS);
 export function freshCompetitions() { return { draft:null, entries:[] }; }
-const validBeads = (beads:any, partial=false) => Array.isArray(beads)&&beads.length===12&&Array.from(beads).every((n:any)=>(partial&&n===null)||(Number.isInteger(n)&&n>=0&&n<6));
+const validBeads = (beads:any, partial=false) => Array.isArray(beads)&&beads.length===12&&Array.from(beads).every((n:any)=>(partial&&n===null)||(Number.isInteger(n)&&n>=0&&n<BEADS.length));
 export function evaluateCompetition(id:string, beads:any, charm:string) {
   const event=COMPETITIONS.find(e=>e.id===id);
   if(!event||!validBeads(beads)||!CONTEST_CHARMS.includes(charm))return null;

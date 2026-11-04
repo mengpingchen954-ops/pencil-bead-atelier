@@ -3,7 +3,7 @@ import assert from 'node:assert/strict';
 import {ORDERS} from '../assets/scripts/content.ts';
 import {freshSave, deliver, normalizeSave, pendingDelivery} from '../assets/scripts/model.ts';
 
-const prepared=()=>({...freshSave(),started:true,inventory:Array(6).fill(100),draft:[...ORDERS[0].palette]});
+const prepared=()=>({...freshSave(),charm:"daisy",started:true,inventory:Array(6).fill(100),draft:[...ORDERS[0].palette]});
 test('a delivery records its exact handmade work and earned rewards in the same transaction',()=>{
  const before=prepared(),after=deliver(before),receipt=pendingDelivery(after);
  assert.equal(after.coins-before.coins,receipt.order.reward);assert.equal(after.rep-before.rep,receipt.order.rep);

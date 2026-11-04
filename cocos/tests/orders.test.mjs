@@ -4,7 +4,7 @@ import { ORDERS, RETURN_ORDERS } from '../assets/scripts/content.ts';
 import { freshSave, normalizeSave, currentOrder, checkOrder, deliver, draftCounts } from '../assets/scripts/model.ts';
 
 function finishStoryOrders() {
-  let save={...freshSave(),started:true,inventory:Array(6).fill(200)};
+  let save={...freshSave(),started:true,inventory:[...Array(6).fill(200),...Array(42).fill(0)]};
   for(const order of ORDERS)save=deliver({...save,draft:order.palette.slice(),charm:order.charm});
   return save;
 }
@@ -37,7 +37,7 @@ test('returning commissions enforce recipes, consume stock and reward only a com
     assert.equal(deliver({...prepared,charm:order.charm==='heart'?'moon':'heart'}),null);
     save=deliver(prepared);
     assert.equal(save.coins,before.coins+order.reward);
-    assert.deepEqual(save.inventory,before.inventory.map((n,j)=>n-draftCounts(order.palette)[j]));
+    assert.deepEqual(save.inventory,before.inventory.map((n,j)=>n-(draftCounts(order.palette)[j]||0)));
     assert.equal(save.repeatOrders,i+1);
     assert.equal(deliver(save),null);
     assert.deepEqual(save.collection,history);assert.deepEqual(save.completed,progress);

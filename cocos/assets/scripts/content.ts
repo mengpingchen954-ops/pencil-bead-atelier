@@ -2,47 +2,329 @@
 // Rules and narrative retained from the original game; engine-independent.
 export const BEADS = [
   {
-    name: "月光珍珠",
-    short: "珍珠",
-    color: "#eadfc9",
-    dark: "#a48c73",
-    shape: "circle",
+    "name": "珍珠",
+    "short": "珍珠",
+    "color": "#eee4d8",
+    "dark": "#94776a",
+    "shape": "circle",
+    "category": 0,
+    "cell": 0
   },
   {
-    name: "蔷薇红晶",
-    short: "红心",
-    color: "#cf8d91",
-    dark: "#9e6368",
-    shape: "heart",
+    "name": "玛瑙",
+    "short": "玛瑙",
+    "color": "#cc887c",
+    "dark": "#94776a",
+    "shape": "circle",
+    "category": 0,
+    "cell": 5
   },
   {
-    name: "雾蓝水晶",
-    short: "蓝晶",
-    color: "#a2c2d1",
-    dark: "#628caa",
-    shape: "diamond",
+    "name": "蓝晶石",
+    "short": "蓝晶石",
+    "color": "#8cbbd5",
+    "dark": "#94776a",
+    "shape": "circle",
+    "category": 0,
+    "cell": 4
   },
   {
-    name: "森绿玉珠",
-    short: "绿玉",
-    color: "#a9b98c",
-    dark: "#74845d",
-    shape: "leaf",
+    "name": "翡翠",
+    "short": "翡翠",
+    "color": "#80b89c",
+    "dark": "#94776a",
+    "shape": "circle",
+    "category": 0,
+    "cell": 1
   },
   {
-    name: "蜜金星珠",
-    short: "金星",
-    color: "#e3c37c",
-    dark: "#ae8d47",
-    shape: "star",
+    "name": "蜂蜜耀石",
+    "short": "蜂蜜耀石",
+    "color": "#dfb565",
+    "dark": "#94776a",
+    "shape": "circle",
+    "category": 0,
+    "cell": 8
   },
   {
-    name: "紫雾花珠",
-    short: "花珠",
-    color: "#c3accb",
-    dark: "#927a9e",
-    shape: "flower",
+    "name": "耀石",
+    "short": "耀石",
+    "color": "#b593d0",
+    "dark": "#94776a",
+    "shape": "circle",
+    "category": 0,
+    "cell": 2
   },
+  {
+    "name": "月光石",
+    "short": "月光石",
+    "color": "#b4b4e2",
+    "dark": "#94776a",
+    "shape": "circle",
+    "category": 0,
+    "cell": 3
+  },
+  {
+    "name": "粉珍珠",
+    "short": "粉珍珠",
+    "color": "#efd0c4",
+    "dark": "#94776a",
+    "shape": "circle",
+    "category": 0,
+    "cell": 6
+  },
+  {
+    "name": "浅翡翠",
+    "short": "浅翡翠",
+    "color": "#b6d4c4",
+    "dark": "#94776a",
+    "shape": "circle",
+    "category": 0,
+    "cell": 7
+  },
+  {
+    "name": "紫月光石",
+    "short": "紫月光石",
+    "color": "#cca9d2",
+    "dark": "#94776a",
+    "shape": "circle",
+    "category": 0,
+    "cell": 9
+  },
+  {
+    "name": "海蓝玛瑙",
+    "short": "海蓝玛瑙",
+    "color": "#88bfd7",
+    "dark": "#94776a",
+    "shape": "circle",
+    "category": 0,
+    "cell": 10
+  },
+  {
+    "name": "樱花珍珠",
+    "short": "樱花珍珠",
+    "color": "#ecaaa6",
+    "dark": "#94776a",
+    "shape": "circle",
+    "category": 0,
+    "cell": 11
+  },
+  {
+    "name": "金发晶",
+    "short": "金发晶",
+    "color": "#d0ae71",
+    "dark": "#94776a",
+    "shape": "circle",
+    "category": 1,
+    "cell": 0
+  },
+  {
+    "name": "银发晶",
+    "short": "银发晶",
+    "color": "#c3b8a6",
+    "dark": "#94776a",
+    "shape": "circle",
+    "category": 1,
+    "cell": 1
+  },
+  {
+    "name": "铜发晶",
+    "short": "铜发晶",
+    "color": "#a67d70",
+    "dark": "#94776a",
+    "shape": "circle",
+    "category": 1,
+    "cell": 2
+  },
+  {
+    "name": "钛晶",
+    "short": "钛晶",
+    "color": "#ddceb1",
+    "dark": "#94776a",
+    "shape": "circle",
+    "category": 1,
+    "cell": 3
+  },
+  {
+    "name": "粉兔毛",
+    "short": "粉兔毛",
+    "color": "#e6c0ba",
+    "dark": "#94776a",
+    "shape": "circle",
+    "category": 1,
+    "cell": 4
+  },
+  {
+    "name": "彩幽灵",
+    "short": "彩幽灵",
+    "color": "#a9b6a3",
+    "dark": "#94776a",
+    "shape": "circle",
+    "category": 1,
+    "cell": 5
+  },
+  {
+    "name": "胶花水晶",
+    "short": "胶花水晶",
+    "color": "#e4cbc6",
+    "dark": "#94776a",
+    "shape": "circle",
+    "category": 1,
+    "cell": 6
+  },
+  {
+    "name": "紫兔毛",
+    "short": "紫兔毛",
+    "color": "#c9bad7",
+    "dark": "#94776a",
+    "shape": "circle",
+    "category": 1,
+    "cell": 7
+  },
+  {
+    "name": "胶水晶",
+    "short": "胶水晶",
+    "color": "#a3b9ad",
+    "dark": "#94776a",
+    "shape": "circle",
+    "category": 1,
+    "cell": 8
+  },
+  {
+    "name": "黄胶花",
+    "short": "黄胶花",
+    "color": "#b5b1ae",
+    "dark": "#94776a",
+    "shape": "circle",
+    "category": 1,
+    "cell": 9
+  },
+  {
+    "name": "胶胶花",
+    "short": "胶胶花",
+    "color": "#b78e80",
+    "dark": "#94776a",
+    "shape": "circle",
+    "category": 1,
+    "cell": 10
+  },
+  {
+    "name": "紫胶花",
+    "short": "紫胶花",
+    "color": "#d9b6b2",
+    "dark": "#94776a",
+    "shape": "circle",
+    "category": 1,
+    "cell": 11
+  },
+  {
+    "name": "星月菩提",
+    "short": "星月菩提",
+    "color": "#e5d0af",
+    "dark": "#94776a",
+    "shape": "circle",
+    "category": 2,
+    "cell": 0
+  },
+  {
+    "name": "金刚菩提",
+    "short": "金刚菩提",
+    "color": "#a97960",
+    "dark": "#94776a",
+    "shape": "circle",
+    "category": 2,
+    "cell": 1
+  },
+  {
+    "name": "凤眼菩提",
+    "short": "凤眼菩提",
+    "color": "#d8ad7f",
+    "dark": "#94776a",
+    "shape": "circle",
+    "category": 2,
+    "cell": 2
+  },
+  {
+    "name": "龙眼菩提",
+    "short": "龙眼菩提",
+    "color": "#a49c7e",
+    "dark": "#94776a",
+    "shape": "circle",
+    "category": 2,
+    "cell": 3
+  },
+  {
+    "name": "核桃壳",
+    "short": "核桃壳",
+    "color": "#b78c5c",
+    "dark": "#94776a",
+    "shape": "circle",
+    "category": 2,
+    "cell": 4
+  },
+  {
+    "name": "招财菩提",
+    "short": "招财菩提",
+    "color": "#cd9987",
+    "dark": "#94776a",
+    "shape": "circle",
+    "category": 2,
+    "cell": 5
+  },
+  {
+    "name": "千眼菩提",
+    "short": "千眼菩提",
+    "color": "#dfceb2",
+    "dark": "#94776a",
+    "shape": "circle",
+    "category": 2,
+    "cell": 6
+  },
+  {
+    "name": "沉香",
+    "short": "沉香",
+    "color": "#8d7861",
+    "dark": "#94776a",
+    "shape": "circle",
+    "category": 2,
+    "cell": 7
+  },
+  {
+    "name": "黄花梨",
+    "short": "黄花梨",
+    "color": "#cb9b55",
+    "dark": "#94776a",
+    "shape": "circle",
+    "category": 2,
+    "cell": 8
+  },
+  {
+    "name": "檀木",
+    "short": "檀木",
+    "color": "#e2c9a3",
+    "dark": "#94776a",
+    "shape": "circle",
+    "category": 2,
+    "cell": 9
+  },
+  {
+    "name": "鸡翅木",
+    "short": "鸡翅木",
+    "color": "#a58c70",
+    "dark": "#94776a",
+    "shape": "circle",
+    "category": 2,
+    "cell": 10
+  },
+  {
+    "name": "乌木",
+    "short": "乌木",
+    "color": "#656362",
+    "dark": "#94776a",
+    "shape": "circle",
+    "category": 2,
+    "cell": 11
+  }
 ];
 export const ORDERS = [
   {
@@ -301,7 +583,8 @@ export const FURNITURE = [
     art: [],
   },
 ];
-export const CHARMS = { daisy: "雏菊", moon: "月牙", heart: "爱心" };
+export const CHARMS = {"none":"无饰品","sakura":"樱花吊坠","butterfly":"蝴蝶挂饰","star":"星星吊坠","moon":"月亮挂饰","bow":"蝴蝶结","pearl":"珍珠坠","drop":"水滴吊坠","leaf":"叶子挂饰","bell":"风铃","tassel":"流苏","daisy":"小花挂饰","heart":"爱心吊坠"};
+export const MATERIALS = [...BEADS, ...[{"id":"sakura","name":"樱花吊坠","short":"樱花吊坠","category":3,"cell":0,"color":"#d7a895"},{"id":"butterfly","name":"蝴蝶挂饰","short":"蝴蝶挂饰","category":3,"cell":1,"color":"#d7a895"},{"id":"star","name":"星星吊坠","short":"星星吊坠","category":3,"cell":2,"color":"#d7a895"},{"id":"moon","name":"月亮挂饰","short":"月亮挂饰","category":3,"cell":3,"color":"#d7a895"},{"id":"bow","name":"蝴蝶结","short":"蝴蝶结","category":3,"cell":4,"color":"#d7a895"},{"id":"pearl","name":"珍珠坠","short":"珍珠坠","category":3,"cell":5,"color":"#d7a895"},{"id":"drop","name":"水滴吊坠","short":"水滴吊坠","category":3,"cell":6,"color":"#d7a895"},{"id":"leaf","name":"叶子挂饰","short":"叶子挂饰","category":3,"cell":7,"color":"#d7a895"},{"id":"bell","name":"风铃","short":"风铃","category":3,"cell":8,"color":"#d7a895"},{"id":"tassel","name":"流苏","short":"流苏","category":3,"cell":9,"color":"#d7a895"},{"id":"daisy","name":"小花挂饰","short":"小花挂饰","category":3,"cell":10,"color":"#d7a895"},{"id":"heart","name":"爱心吊坠","short":"爱心吊坠","category":3,"cell":11,"color":"#d7a895"}]];
 export const CLEAN_SPOTS = [
   { id: "box-left", kind: "clutter", name: "收走左边的旧纸箱", x: 18, y: 73 },
   { id: "box-right", kind: "clutter", name: "收走右边的旧纸箱", x: 82, y: 75 },

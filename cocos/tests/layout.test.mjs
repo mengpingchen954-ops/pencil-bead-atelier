@@ -22,7 +22,7 @@ test('craft spring overshoots the wire once, rebounds inward and settles with bo
 
 test('sales tabs page real DIY works without changing stock or granting income',()=>{
   const {game,actions}=pausedGame('home');const trade=load(root+'/assets/scripts/commerce.ts');
-  game.save.inventory=Array(6).fill(100);
+  game.save.inventory=Array(48).fill(100);game.save.gatheredStock=Array(48).fill(100);game.save.materialUnlocked=Array(48).fill(true);
   for(let i=0;i<4;i++)game.save=trade.finishWork({...game.save,draft:Array(12).fill(i)},1000+i);
   const before=JSON.stringify(game.save);game.navigate('orders');
   const cards=()=>game.page.children.filter(n=>n.name.startsWith('Sale work '));
@@ -182,7 +182,7 @@ test('workshop grooves are round and the bracelet has room between neighboring b
   }
   game.save=rules.freshSave();game.page=new Node('Page');game.craft();
   for(const slot of game.slotNodes){
-    const recess=slot.children.find(n=>n.name==='Slot recess').getComponent(UITransform).contentSize;
+    const recess=slot.getComponent(UITransform).contentSize;
     assert.equal(recess.width,recess.height);
   }
 });
@@ -192,19 +192,19 @@ test('commission workshop previews its real draft and validates before entering 
   game.page=new Node('Page');game.overlay=new Node('Dialogs');game.notices=new Node('Notices');
   game.persist=()=>{};game.toast=()=>{};
   game.accessibility={clear(){},text(){},button(name,action){actions.set(name,action);},showDialog(){},closeDialog(){}};
-  game.save={...rules.freshSave(),reduced:true,inventory:Array(6).fill(100)};game.screen='craft';game.render();
+  game.save={...rules.freshSave(),reduced:true,inventory:Array(48).fill(100),gatheredStock:Array(48).fill(100),materialUnlocked:Array(48).fill(true)};game.screen='craft';game.render();
   const before=JSON.stringify(game.save),rendered=[];
   const original=game.bracelet.bind(game);game.bracelet=(beads,...args)=>{rendered.push([...beads]);return original(beads,...args);};
   actions.get('完成制作')();assert.equal(game.screen,'craft');
-  actions.get('放入月光珍珠')();assert.equal(game.workingDraft.filter(n=>n!==null).length,1);
+  actions.get('放入珍珠')();assert.equal(game.workingDraft.filter(n=>n!==null).length,1);
   const partial=JSON.stringify(game.save);actions.get('预览')();
   assert.equal(game.modal,'craft-preview');assert.deepEqual(rendered.at(-1),Array.from(game.save.draft));assert.equal(JSON.stringify(game.save),partial);
   actions.get('继续制作')();assert.equal(game.modal,'');
-  const index=game.save.draft.findIndex(n=>n!==null);actions.get(`第${index+1}槽：月光珍珠`)();actions.get('移除')();
+  const index=game.save.draft.findIndex(n=>n!==null);actions.get(`第${index+1}槽：珍珠`)();actions.get('移除')();
   assert.ok(game.save.draft.every(n=>n===null));actions.get('撤销')();assert.equal(game.save.draft[index],0);
   actions.get('参考配色')();actions.get('按参考排珠')();
   const stocked=JSON.stringify(game.save);actions.get('完成制作')();assert.equal(game.screen,'packing');assert.equal(JSON.stringify(game.save),stocked);
-  assert.equal(game.save.coins,JSON.parse(before).coins);assert.deepEqual(game.save.inventory,Array(6).fill(100));
+  assert.equal(game.save.coins,JSON.parse(before).coins);assert.deepEqual(game.save.inventory,Array(48).fill(100));
 });
 
 function pausedGame(screen='match') {
@@ -250,7 +250,7 @@ test('native controller connects chat, gift selection, delivery response, return
   game.node=new Node('AtelierGame');game.page=new Node('Page');game.overlay=new Node('Dialogs');game.notices=new Node('Notices');
   game.persist=()=>{};game.startStory=()=>{};
   game.accessibility={clear(){},text(){},button(name,action){actions.set(name,action);},showDialog(){actions.clear();},closeDialog(){actions.clear();},announce(){}};
-  game.save={...rules.freshSave(),started:true,completed:['daisy'],orderId:'sea',inventory:Array(6).fill(100)};
+  game.save={...rules.freshSave(),started:true,completed:['daisy'],orderId:'sea',inventory:Array(48).fill(100),gatheredStock:Array(48).fill(100),materialUnlocked:Array(48).fill(true)};
   const order=load(root+'/assets/scripts/content.ts').ORDERS.find(o=>o.id==='sea');
   game.save.draft=Array.from(order.palette);game.save.charm=order.charm;
   game.screen='craft';game.render();game.seaChat();
@@ -284,7 +284,7 @@ test('competition board connects native craft, isolated undo, one-time awards an
   game.screen='home';game.render();actions.get('参加比赛')();assert.equal(game.screen,'contest');
   actions.get('报名参加')();assert.equal(game.screen,'contestCraft');
   actions.get('参考配色')();actions.get('以此为起点排珠')();
-  actions.get('放入月光珍珠')();actions.get('第1槽：森绿玉珠')();actions.get('替换')();
+  actions.get('放入珍珠')();actions.get('第1槽：翡翠')();actions.get('替换')();
   assert.equal(game.save.competitions.draft.beads[0],0);
   actions.get('撤销')();assert.equal(game.save.competitions.draft.beads[0],3);
   assert.deepEqual(game.save.draft,commission);assert.equal(game.save.charm,'heart');assert.deepEqual(game.save.inventory,stock);
@@ -298,7 +298,7 @@ test('competition board connects native craft, isolated undo, one-time awards an
 
 test('old completed saves retain their archive and can freely make, list and sell new works',()=>{
  const {game,actions}=pausedGame('home'),content=load(root+'/assets/scripts/content.ts');
- game.save.inventory=Array(6).fill(100);for(const order of content.ORDERS)game.save=rules.deliver({...game.save,draft:Array.from(order.palette),charm:order.charm});
+ game.save.inventory=Array(48).fill(100);game.save.gatheredStock=Array(48).fill(100);game.save.materialUnlocked=Array(48).fill(true);for(const order of content.ORDERS)game.save=rules.deliver({...game.save,draft:Array.from(order.palette),charm:order.charm});
  game.save.deliveryReceipt=null;const archive=JSON.stringify(game.save.collection),coins=game.save.coins;
  game.render();actions.get('自由 DIY')();game.save.draft=Array(12).fill(1);game.save.charm='moon';game.render();
  actions.get('完成制作')();assert.equal(game.screen,'packing');actions.get('保存并上架')();assert.equal(game.modal,'listing');
@@ -316,7 +316,7 @@ test('collection catalog derives real works, locked cards, chapter progress and 
   game.persist=()=>{};game.scheduleOnce=()=>{};
   game.accessibility={clear(modal){if(!modal)actions.clear();},text(){},search(value,input){inputSearch=input;},button(name,action,modal,enabled){if(enabled)actions.set(name,action);},showDialog(){actions.clear();},closeDialog(){actions.clear();},announce(){}};
   const {ORDERS}=load(root+'/assets/scripts/content.ts');
-  game.save={...rules.freshSave(),started:true,reduced:true,inventory:Array(6).fill(100),draft:[0,...Array(11).fill(null)],charm:'heart'};
+  game.save={...rules.freshSave(),started:true,reduced:true,inventory:Array(48).fill(100),gatheredStock:Array(48).fill(100),materialUnlocked:Array(48).fill(true),draft:[0,...Array(11).fill(null)],charm:'heart'};
   game.legacyAlbum=true;game.navigate('album');assert.equal(game.snapshot().album.percent,0);assert.equal(game.snapshot().album.items.length,6);assert.ok(actions.has('未收集 · 给奶奶的一朵花'));
   actions.get('未收集 · 给奶奶的一朵花')();assert.equal(game.modal,'info');game.closeModal();game.render();
   const custom=[...ORDERS[0].palette].reverse();game.save=rules.deliver({...game.save,draft:custom,charm:ORDERS[0].charm});
@@ -337,7 +337,7 @@ test('returning collection uses recent actual works and retains exact bracelets 
   game.persist=()=>{};game.scheduleOnce=()=>{};
   game.accessibility={clear(modal){if(!modal)actions.clear();},text(){},button(name,action,modal,enabled){if(enabled)actions.set(name,action);},showDialog(){actions.clear();},closeDialog(){actions.clear();},announce(){}};
   const {ORDERS,RETURN_ORDERS}=load(root+'/assets/scripts/content.ts');
-  game.save={...rules.freshSave(),started:true,reduced:true,inventory:Array(6).fill(100)};
+  game.save={...rules.freshSave(),started:true,reduced:true,inventory:Array(48).fill(100),gatheredStock:Array(48).fill(100),materialUnlocked:Array(48).fill(true)};
   for(const order of ORDERS)game.save=rules.deliver({...game.save,draft:Array.from(order.palette),charm:order.charm});
   for(let i=0;i<8;i++){const o=rules.currentOrder(game.save);game.save=rules.deliver({...game.save,draft:Array.from(o.palette).reverse(),charm:o.charm});}
   game.save.deliveryReceipt=null;const before=JSON.stringify(game.save);game.legacyAlbum=true;game.navigate('album');actions.get('查看回头客作品')();let view=game.albumView();
@@ -347,7 +347,7 @@ test('returning collection uses recent actual works and retains exact bracelets 
 
 test('old commission entry points now open free DIY, and gathering is available with any stock',()=>{
  const {game,actions}=pausedGame('home'),before=JSON.stringify(game.save);game.navigate('orderArrival');assert.equal(game.screen,'craft');
- const labels=game.page.getComponentsInChildren(Label).map(l=>l.string);assert.ok(labels.includes('串满十二颗即可保存 · 颜色与吊坠自由选择'));
+ const labels=game.page.getComponentsInChildren(Label).map(l=>l.string);assert.ok(labels.includes('采珠获得材料后解锁'));
  assert.equal(JSON.stringify(game.save),before);actions.get('采珠')();assert.equal(game.modal,'intro');assert.ok([...actions.keys()].some(k=>k.startsWith('开始采珠 · ')));
  assert.equal(JSON.stringify(game.save),before);
 });
@@ -362,11 +362,11 @@ test('native goal HUD supports four objectives and claiming a win grants the dis
   assert.equal(game.goalLabels.length,4);assert.equal(game.boardNodes.length,64);
   assert.ok(game.obstacleNodes.filter(Boolean).length>0);
   game.session.status='won';game.session.collected=[4,2,1,2,0,1];
-  const before=game.save.inventory.slice(),reward=rules.sessionRewards(game.session,game.save);
+  const before=game.save.inventory.slice(),reward=rules.sessionRewards(game.session,game.save),types=game.session.materialTypes.slice();
   game.result();actions.get('收好珠材 · 回工坊')();
   assert.equal(game.screen,'craft');assert.equal(game.save.level,16);
-  assert.deepEqual(game.save.inventory,before.map((n,i)=>n+reward[i]));
-  game.claim();assert.deepEqual(game.save.inventory,before.map((n,i)=>n+reward[i]));
+  assert.deepEqual(game.save.inventory,before.map((n,i)=>n+(reward[types.indexOf(i)]||0)));
+  game.claim();assert.deepEqual(game.save.inventory,before.map((n,i)=>n+(reward[types.indexOf(i)]||0)));
 });
 
 test('reduced-motion renovation commits the purchase and opens grandmother response without locking controls', async () => {
@@ -390,7 +390,7 @@ test('native receipt displays the paid bracelet and only continues the story aft
   game.persist=()=>{stored=JSON.parse(JSON.stringify(game.save));};game.scheduleOnce=()=>{};game.toast=()=>{};game.startStory=()=>stories++;
   game.accessibility={clear(){},text(){},button(name,action){actions.set(name,action);},showDialog(){},closeDialog(){},announce(){}};
   const order=load(root+'/assets/scripts/content.ts').ORDERS[0];
-  game.save={...rules.freshSave(),started:true,reduced:true,inventory:Array(6).fill(20),draft:[...order.palette]};
+  game.save={...rules.freshSave(),charm:"daisy",started:true,reduced:true,inventory:Array(48).fill(20),gatheredStock:Array(48).fill(20),materialUnlocked:Array(48).fill(true),draft:[...order.palette]};
   game.screen='craft';game.deliverOrder();
   assert.equal(game.screen,'delivery');assert.equal(game.modal,'');assert.equal(stories,0);
   assert.equal(stored.coins,260);assert.deepEqual(rules.pendingDelivery(stored).work.beads,Array.from(order.palette));
@@ -468,7 +468,7 @@ test('character memory navigation, locked tiles, replay and crafting preserve ac
 });
 
 test('finished DIY preview can return unchanged and saves actual materials only once without paying',()=>{
- const {game,actions}=pausedGame('craft');game.save.inventory=Array(6).fill(50);game.save.draft=Array(12).fill(2);game.save.charm='heart';
+ const {game,actions}=pausedGame('craft');game.save.inventory=Array(48).fill(50);game.save.gatheredStock=Array(48).fill(50);game.save.materialUnlocked=Array(48).fill(true);game.save.draft=Array(12).fill(2);game.save.charm='heart';
  const before=JSON.stringify(game.save),coins=game.save.coins;game.confirmDelivery();assert.equal(game.screen,'packing');
  assert.deepEqual(game.snapshot().packing.beads,game.save.draft);assert.equal(JSON.stringify(game.save),before);
  actions.get('返回修改')();assert.equal(JSON.stringify(game.save),before);game.confirmDelivery();actions.get('保存作品')();
@@ -478,7 +478,7 @@ test('finished DIY preview can return unchanged and saves actual materials only 
 
 test('free DIY never rewrites the gifts or original works in imported sea memories',()=>{
  const {game}=pausedGame('craft'),orders=load(root+'/assets/scripts/content.ts').ORDERS;
- game.save.inventory=Array(6).fill(50);for(const order of orders.slice(0,2))game.save=rules.deliver({...game.save,draft:Array.from(order.palette),charm:order.charm});
+ game.save.inventory=Array(48).fill(50);game.save.gatheredStock=Array(48).fill(50);for(const order of orders.slice(0,2))game.save=rules.deliver({...game.save,draft:Array.from(order.palette),charm:order.charm});
  game.save.deliveryReceipt=null;const archive=JSON.stringify(game.save.collection),heart=JSON.stringify(game.save.seaHeart);
  game.save.draft=Array(12).fill(3);game.save.charm='heart';game.confirmDelivery();game.completePacking();
  assert.equal(game.save.commerce.works.length,1);assert.equal(JSON.stringify(game.save.collection),archive);assert.equal(JSON.stringify(game.save.seaHeart),heart);
@@ -503,7 +503,7 @@ test('enlarged collection keeps actual materials and archive stories read-only, 
  game.node=new Node('AtelierGame');game.page=new Node('Page');game.overlay=new Node('Dialogs');game.notices=new Node('Notices');
  game.persist=()=>{};game.scheduleOnce=()=>{};game.toast=()=>{};
  game.accessibility={clear(){actions.clear();},text(){},button(name,action,modal,enabled){if(enabled)actions.set(name,action);},showDialog(){actions.clear();},closeDialog(){actions.clear();},announce(){}};
- game.save={...rules.freshSave(),started:true,reduced:true,inventory:Array(6).fill(100)};
+ game.save={...rules.freshSave(),started:true,reduced:true,inventory:Array(48).fill(100),gatheredStock:Array(48).fill(100),materialUnlocked:Array(48).fill(true)};
  for(const o of ORDERS.slice(0,2))game.save=rules.deliver({...game.save,draft:Array.from(o.palette).reverse(),charm:o.charm});
  game.save.deliveryReceipt=null;game.save.collection[1].gift={blessing:'slow',paper:'sky',ribbon:'blue'};game.save.collection[1].travelCharm='heart';
  game.save.draft=[1,...Array(11).fill(null)];game.save.charm='heart';game.screen='album';game.albumQuery='小满';
@@ -528,7 +528,7 @@ test('early failed gathering banks every collected color once through result, Es
  game.accessibility={clear(){actions.clear();},text(){},button(name,action,modal,enabled){if(enabled)actions.set(name,action);},showDialog(){actions.clear();},closeDialog(){},announce(){}};
  game.save={...rules.freshSave(),reduced:true};game.screen='cover';game.render();actions.get('打开小店  →')();assert.equal(game.modal,'welcome-diy');actions.get('自由做一条')();assert.equal(game.screen,'craft');
  const stock=game.save.inventory.slice();game.session={...rules.newSession(91,1),status:'lost',moves:0,collected:[2,1,3,0,0,1]};game.screen='match';game.result();
- assert.deepEqual(game.save.inventory,stock.map((n,i)=>n+game.session.collected[i]));const saved=JSON.stringify(game.save);game.result();assert.equal(JSON.stringify(game.save),saved);
+ assert.deepEqual(game.save.inventory,stock.map((n,i)=>n+(game.session.collected[game.session.materialTypes.indexOf(i)]||0)));const saved=JSON.stringify(game.save);game.result();assert.equal(JSON.stringify(game.save),saved);
  game.dismiss();assert.equal(game.screen,'craft');assert.equal(game.session,null);assert.equal(JSON.stringify(game.save),saved);
  assert.deepEqual(rules.normalizeSave(JSON.parse(saved)).inventory,game.save.inventory);
 });
@@ -537,22 +537,22 @@ test('material taps add randomly when unselected and replace the selected slot w
  const game=new AtelierGame(),actions=new Map();game.node=new Node('AtelierGame');game.page=new Node('Page');game.overlay=new Node('Dialogs');game.notices=new Node('Notices');
  game.persist=()=>{};game.toast=()=>{};game.play=()=>{};
  game.accessibility={clear(){actions.clear();},text(){},button(name,action){actions.set(name,action);},showDialog(){},closeDialog(){}};
- game.save={...rules.freshSave(),reduced:true,inventory:[2,2,0,2,0,0]};game.screen='craft';game.render();
+ game.save={...rules.freshSave(),reduced:true,inventory:[2,2,0,2,0,0,...Array(42).fill(0)],gatheredStock:[2,2,0,2,0,0,...Array(42).fill(0)],materialUnlocked:Array(48).fill(true)};game.screen='craft';game.render();
  actions.get('第1槽：空槽')();assert.equal(game.save.draft.filter(n=>n!==null).length,0);
- for(const name of ['月光珍珠','蔷薇红晶','森绿玉珠','月光珍珠','蔷薇红晶','森绿玉珠']){
+ for(const name of ['珍珠','玛瑙','翡翠','珍珠','玛瑙','翡翠']){
   const before=game.save.draft.slice();game.slot=-1;actions.get('放入'+name)();
   const changed=game.save.draft.map((n,i)=>n!==before[i]?i:-1).filter(i=>i>=0);assert.equal(changed.length,1);assert.equal(before[changed[0]],null);
  }
- const stock=game.save.inventory.slice(),draft=game.save.draft.slice();actions.get('放入月光珍珠')();assert.deepEqual(game.save.draft,draft);actions.get('放入雾蓝水晶')();assert.deepEqual(game.save.draft,draft);
+ const stock=game.save.inventory.slice(),draft=game.save.draft.slice();actions.get('放入珍珠')();assert.deepEqual(game.save.draft,draft);actions.get('放入蓝晶石')();assert.deepEqual(game.save.draft,draft);
  actions.get('撤销')();assert.equal(game.save.draft.filter(n=>n!==null).length,5);assert.deepEqual(game.save.inventory,stock);
- game.save.inventory=Array(6).fill(20);game.save.draft=Array(12).fill(0);game.render();const full=game.save.draft.slice();actions.get('放入森绿玉珠')();assert.deepEqual(game.save.draft,full);
- actions.get('第1槽：月光珍珠')();actions.get('放入森绿玉珠')();assert.equal(game.save.draft[0],3);assert.equal(game.save.draft.filter(n=>n!==null).length,12);actions.get('撤销')();assert.deepEqual(Array.from(game.save.draft),full);
- actions.get('第1槽：月光珍珠')();const history=game.undo.length;actions.get('放入月光珍珠')();assert.equal(game.undo.length,history);assert.equal(game.slot,0);
- game.save.inventory[2]=0;actions.get('放入雾蓝水晶')();assert.deepEqual(Array.from(game.save.draft),full);assert.equal(game.slot,0);assert.equal(game.undo.length,history);
+ game.save.inventory=Array(48).fill(20);game.save.gatheredStock=Array(48).fill(20);game.save.draft=Array(12).fill(0);game.render();const full=game.save.draft.slice();actions.get('放入翡翠')();assert.deepEqual(game.save.draft,full);
+ actions.get('第1槽：珍珠')();actions.get('放入翡翠')();assert.equal(game.save.draft[0],3);assert.equal(game.save.draft.filter(n=>n!==null).length,12);actions.get('撤销')();assert.deepEqual(Array.from(game.save.draft),full);
+ actions.get('第1槽：珍珠')();const history=game.undo.length;actions.get('放入珍珠')();assert.equal(game.undo.length,history);assert.equal(game.slot,0);
+ game.save.inventory[2]=0;actions.get('放入蓝晶石')();assert.deepEqual(Array.from(game.save.draft),full);assert.equal(game.slot,0);assert.equal(game.undo.length,history);
  actions.get('替换')();assert.deepEqual(Array.from(game.save.draft),full);
- game.save.draft=Array(12).fill(null);game.save.draft[4]=0;game.slot=4;game.render();actions.get('放入森绿玉珠')();assert.equal(game.save.draft[4],3);assert.equal(game.save.draft.filter(n=>n!==null).length,1);
- game.slot=7;actions.get('放入蔷薇红晶')();assert.equal(game.save.draft[7],1);assert.equal(game.save.draft.filter(n=>n!==null).length,2);
- assert.deepEqual(game.save.inventory,[20,20,0,20,20,20]);
+ game.save.draft=Array(12).fill(null);game.save.draft[4]=0;game.slot=4;game.render();actions.get('放入翡翠')();assert.equal(game.save.draft[4],3);assert.equal(game.save.draft.filter(n=>n!==null).length,1);
+ game.slot=7;actions.get('放入玛瑙')();assert.equal(game.save.draft[7],1);assert.equal(game.save.draft.filter(n=>n!==null).length,2);
+ assert.deepEqual(game.save.inventory,[20,20,0,20,20,20,...Array(42).fill(20)]);
 });
 
 test('double taps remove one bead across native rerenders, while slow taps, other slots, dragging and cancellation do not',()=>{
