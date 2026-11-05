@@ -844,31 +844,54 @@ export class AtelierGame extends Component {
   }
   private bindCraftDrag(n: Node,index: number,hitNode=n) {
     let start: Vec3|null=null, original: Vec3|null=null, dragged=false;
+    let baseFacing='out',shownFacing='out';
+    const dragFacing=(p:Vec3)=>{
+      if(this.contestEntry||!MATERIALS[this.workingDraft[index]]?.id)return null;
+      const half=n.getComponent(UITransform)!.contentSize.width/2,rx=original.x+half-360,ry=original.y-half+410,dx=p.x-start.x,dy=p.y-start.y;
+      const radial=(dx*rx+dy*ry)/171,tangent=(-dx*ry+dy*rx)/171,change=Math.hypot(rx+dx,ry+dy)-171;
+      return Math.abs(change)>18&&Math.abs(radial)>Math.abs(tangent)?change<0?'in':'out':null;
+    };
+    const previewFacing=(facing:string)=>{
+      if(facing===shownFacing||!MATERIALS[this.workingDraft[index]]?.id)return;
+      const p=this.slotPos(index),angle=Math.atan2(p.y-410,p.x-360),type=this.workingDraft[index],before=materialPlacement(type,angle,shownFacing),after=materialPlacement(type,angle,facing),diameter=this.craftDiameter(index);
+      n.children.forEach(child=>{
+        if(child.name.startsWith('charm-'))child.angle=after.angle;
+        if(child.name==='Bead contact shadow'||child.name==='Selected groove')child.setPosition(child.position.x+(after.offsetX-before.offsetX)*diameter,child.position.y-(after.offsetY-before.offsetY)*diameter);
+      });shownFacing=facing;
+    };
     hitNode.on(Node.EventType.TOUCH_START,(e: EventTouch)=>{
       if(hitNode!==n)e.propagationStopped=true;
       if(this.modal)return;
       if(this.craftFlights.has(index)){this.clearCraftFlight(index);this.craftImage(this.workingDraft[index],n,index);}
       start=this.localPoint(e);original=n.position.clone();dragged=false;Tween.stopAllByTarget(n);n.setScale(1,1,1);
+      baseFacing=shownFacing=this.workingFacings[index];
     });
     hitNode.on(Node.EventType.TOUCH_MOVE,(e: EventTouch)=>{
       if(hitNode!==n)e.propagationStopped=true;
       if(!start||this.workingDraft[index]===null)return;
       const p=this.localPoint(e);if(Vec3.distance(start,p)>14){dragged=true;this.craftTap=null;}
-      if(dragged){n.setSiblingIndex(this.page.children.length-1);n.setPosition(original.x+p.x-start.x,original.y+p.y-start.y);}
+      if(dragged){const facing=dragFacing(p);previewFacing(facing||baseFacing);n.setSiblingIndex(this.page.children.length-1);if(facing)n.setPosition(original);else n.setPosition(original.x+p.x-start.x,original.y+p.y-start.y);}
     });
-    hitNode.on(Node.EventType.TOUCH_END,(e: EventTouch)=>{
+    const finishDrag=(e: EventTouch)=>{
       if(hitNode!==n)e.propagationStopped=true;
       if(!start||this.modal)return;
       if(dragged){const p=this.localPoint(e);
         // Match the illustrated tray rim; only a completed outward drop removes a piece.
         if(Math.hypot(p.x-360,p.y+410)>260){start=null;this.slot=index;this.removeCraftBead();return;}
+        const facing=dragFacing(p);
+        if(facing){if(facing!==baseFacing){this.remember();const facings=this.workingFacings;facings[index]=facing;this.workingFacings=facings;this.persist();}this.slot=index;start=null;this.render();return;}
       }
-      if(dragged){const half=n.getComponent(UITransform)?.contentSize.width/2||46,p={x:n.position.x+half,y:n.position.y-half};let target=-1,nearest=95;for(let i=0;i<this.slotNodes.length;i++){if(i===index)continue;const s=this.slotNodes[i].position,half=this.slotNodes[i].getComponent(UITransform)?.contentSize.width/2||46,d=Math.hypot(s.x+half-p.x,s.y-half-p.y);if(d<nearest){target=i;nearest=d;}}
+      if(dragged){const half=n.getComponent(UITransform)?.contentSize.width/2||46,p={x:n.position.x+half,y:n.position.y-half};let target=-1,nearest=Math.min(95,Math.hypot(original.x+half-p.x,original.y-half-p.y));for(let i=0;i<this.slotNodes.length;i++){if(i===index)continue;const s=this.slotNodes[i].position,half=this.slotNodes[i].getComponent(UITransform)?.contentSize.width/2||46,d=Math.hypot(s.x+half-p.x,s.y-half-p.y);if(d<nearest){target=i;nearest=d;}}
         if(target>=0&&target!==index){this.remember();const sizes=this.workingSizes,facings=this.workingFacings;[sizes[index],sizes[target]]=[sizes[target],sizes[index]];[facings[index],facings[target]]=[facings[target],facings[index]];[this.workingDraft[index],this.workingDraft[target]]=[this.workingDraft[target],this.workingDraft[index]];this.workingSizes=sizes;this.workingFacings=facings;this.slot=target;this.persist();this.play('land');}
       }else{start=null;this.selectCraftSlot(index);return;}
       start=null;this.render();
+    };
+    hitNode.on(Node.EventType.TOUCH_END,finishDrag);
+    hitNode.on(Node.EventType.TOUCH_CANCEL,(e?:EventTouch)=>{
+      // Creator renames an outside release to CANCEL; its original input code still identifies a real release.
+      if(e?.getEventCode?.()==='touch-end'){finishDrag(e);return;}
+      if(hitNode!==n&&e)e.propagationStopped=true;if(original)n.setPosition(original);previewFacing(baseFacing);start=null;dragged=false;this.craftTap=null;
     });
-    hitNode.on(Node.EventType.TOUCH_CANCEL,(e?:EventTouch)=>{if(hitNode!==n&&e)e.propagationStopped=true;if(original)n.setPosition(original);start=null;dragged=false;this.craftTap=null;});
   }
   private sample() {
     if(this.contestEntry){this.contestSample();return;}

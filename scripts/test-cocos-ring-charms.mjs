@@ -31,7 +31,7 @@ const initial={...freshSave(),started:true,reduced:true,sound:false,music:{enabl
 initial.inventory[leaf]=initial.gatheredStock[leaf]=3;initial.inventory[bell]=initial.gatheredStock[bell]=2;initial.inventory[36]=initial.gatheredStock[36]=0;initial.materialUnlocked[36]=false;
 const ui=await fixture(initial),{page,state,button,tap,ready}=ui;
 const select=async index=>{const s=await state();await tap(s.crafting.slots[index].x,s.crafting.slots[index].y);};
-const native=()=>page.evaluate(async()=>{const cc=await System.import('cc'),g=cc.director.getScene().getChildByName('AtelierGame').getComponent('AtelierGame');return {loose:g.page.children.filter(n=>n.name.startsWith('charm-')).map(n=>n.name),slots:g.slotNodes.map(n=>({art:n.children.filter(n=>/^(bead-|charm-)/.test(n.name)).map(n=>({name:n.name,width:n.getComponent(cc.UITransform).contentSize.width})),selected:n.children.some(n=>n.name==='Selected groove')}))};});
+const native=()=>page.evaluate(async()=>{const cc=await System.import('cc'),g=cc.director.getScene().getChildByName('AtelierGame').getComponent('AtelierGame');return {loose:g.page.children.filter(n=>n.name.startsWith('charm-')).map(n=>n.name),slots:g.slotNodes.map(n=>({art:n.children.filter(n=>/^(bead-|charm-)/.test(n.name)).map(n=>({name:n.name,width:n.getComponent(cc.UITransform).contentSize.width,angle:n.angle})),selected:n.children.some(n=>n.name==='Selected groove')}))};});
 const geometry=async target=>target.page.evaluate(async()=>{
  const cc=await System.import('cc'),g=cc.director.getScene().getChildByName('AtelierGame').getComponent('AtelierGame');
  return g.slotNodes.flatMap((slot,i)=>{const art=slot.children.find(n=>n.name.startsWith('charm-'));if(!art)return [];
@@ -41,10 +41,10 @@ const geometry=async target=>target.page.evaluate(async()=>{
  });
 });
 const checkGeometry=async target=>{const items=await geometry(target);assert.ok(items.length);for(const item of items){assert.ok(item.error<.01,'hole on wire at '+item.i);assert.ok(item.facing==='in'?item.dot<0:item.dot>0,'facing at '+item.i);}return items;};
-const drag=async(from,to,body=false,touch=false)=>{
+const drag=async(from,to,body=false,touch=false,held)=>{
  const s=await state(),box=await page.locator('#GameCanvas').boundingBox(),scale=Math.min(box.width/720,box.height/1280),xy=p=>({x:box.x+box.width/2+(p.x-360)*scale,y:box.y+box.height/2+(p.y-640)*scale}),a=xy(body?(await geometry(ui)).find(item=>item.i===from).body:s.crafting.slots[from]),b=xy(typeof to==='number'?s.crafting.slots[to]:to);
- if(touch){const cdp=await page.context().newCDPSession(page);try{await cdp.send('Input.dispatchTouchEvent',{type:'touchStart',touchPoints:[{...a,id:0}]});for(let i=1;i<=10;i++){await cdp.send('Input.dispatchTouchEvent',{type:'touchMove',touchPoints:[{x:a.x+(b.x-a.x)*i/10,y:a.y+(b.y-a.y)*i/10,id:0}]});await page.waitForTimeout(16);}await cdp.send('Input.dispatchTouchEvent',{type:'touchEnd',touchPoints:[]});}finally{await cdp.detach();}}
- else{await page.mouse.move(a.x,a.y);await page.mouse.down();await page.mouse.move(b.x,b.y,{steps:10});await page.mouse.up();}
+ if(touch){const cdp=await page.context().newCDPSession(page);try{await cdp.send('Input.dispatchTouchEvent',{type:'touchStart',touchPoints:[{...a,id:0}]});for(let i=1;i<=10;i++){await cdp.send('Input.dispatchTouchEvent',{type:'touchMove',touchPoints:[{x:a.x+(b.x-a.x)*i/10,y:a.y+(b.y-a.y)*i/10,id:0}]});await page.waitForTimeout(16);}await held?.();await cdp.send('Input.dispatchTouchEvent',{type:'touchEnd',touchPoints:[]});}finally{await cdp.detach();}}
+ else{await page.mouse.move(a.x,a.y);await page.mouse.down();await page.mouse.move(b.x,b.y,{steps:10});await held?.();await page.mouse.up();}
  await page.waitForTimeout(150);
 };
 try{
@@ -59,9 +59,17 @@ try{
    assert.equal(await page.evaluate(index=>JSON.parse(localStorage.getItem('pencil-bead-atelier-v1')).draft[index],index),null);await page.screenshot({path:dir+'/drag-out-'+index+'-'+width+'.png'});
    await button('撤销');s=await state();assert.deepEqual(s.save.draft,original.draft);assert.deepEqual(s.save.draftSizes,original.draftSizes);assert.deepEqual(s.save.draftFacings,original.draftFacings);
   }
+  for(const facing of ['in','out']){
+   const original=(await state()).save,p=(await state()).crafting.slots[12],body=(await geometry(ui)).find(item=>item.i===12).body,amount=facing==='in'?-55:50,angle=(await native()).slots[12].art[0].angle;
+   await drag(12,{x:body.x+(p.x-360)/171*amount,y:body.y+(p.y-410)/171*amount},true,width!==1440,async()=>{
+    assert.equal((await state()).save.draftFacings[12],original.draftFacings[12]);const item=(await geometry(ui)).find(item=>item.i===12);assert.ok(item.error<.01);assert.ok(facing==='in'?item.dot<0:item.dot>0);assert.ok(Math.abs(Math.abs((await native()).slots[12].art[0].angle-angle)-180)<.1);await page.screenshot({path:dir+'/drag-facing-'+facing+'-'+width+'.png'});
+   });
+   s=await state();assert.equal(s.save.draftFacings[12],facing);assert.deepEqual(s.save.draft,original.draft);assert.deepEqual(s.save.inventory,original.inventory);await checkGeometry(ui);
+   assert.equal(await page.evaluate(()=>JSON.parse(localStorage.getItem('pencil-bead-atelier-v1')).draftFacings[12]),facing);
+  }
  }
- await page.setViewportSize({width:390,height:844});await page.waitForTimeout(150);report.dragOutsideRemovesBeadsAndCharmBodies=true;report.dragRemovalUndoAndStockPreserved=true;report.nativeTouchAndMouseDrag=true;
- await select(12);await button('+');await button('+');s=await state();assert.equal(s.save.draftSizes[12],12);assert.ok(s.save.draftSizes.slice(0,12).every(n=>n===8));assert.equal((await native()).slots[12].selected,true);
+ await page.setViewportSize({width:390,height:844});await page.waitForTimeout(150);report.dragOutsideRemovesBeadsAndCharmBodies=true;report.dragRemovalUndoAndStockPreserved=true;report.nativeTouchAndMouseDrag=true;report.radialDragPreviewsAndSavesFacing=true;
+ if(!(await native()).slots[12].selected)await select(12);await button('+');await button('+');s=await state();assert.equal(s.save.draftSizes[12],12);assert.ok(s.save.draftSizes.slice(0,12).every(n=>n===8));assert.equal((await native()).slots[12].selected,true);
  await button('朝内');assert.equal((await state()).save.draftFacings[12],'in');await checkGeometry(ui);await page.screenshot({path:dir+'/selected-leaf-inward.png'});
  await button('朝外');assert.equal((await state()).save.draftFacings[12],'out');await checkGeometry(ui);await page.screenshot({path:dir+'/selected-leaf-outward.png'});
  await button('朝内');const body=(await checkGeometry(ui)).find(item=>item.i===12).body;await tap(body.x,body.y);assert.equal((await native()).slots[12].selected,false);await page.waitForTimeout(350);await tap(body.x,body.y);assert.equal((await native()).slots[12].selected,true);
