@@ -31,9 +31,10 @@ async function fixture(save,viewport={width:390,height:844}){
 const names=['珠宝','水晶','木质','饰品'];
 try{
  const initial={...freshSave(),started:true,sound:false,music:{enabled:false,track:'glimmer',volume:0}};
- for(const level of [1,5,6,14]){
+ for(const level of [1,3,5,6,18]){
   const ui=await fixture({...initial,level});await ui.button('消除采珠');const start=await ui.page.getByRole('button',{name:/^开始采珠 · /}).textContent();await ui.button(start);let s=await ui.state();
   assert.deepEqual([...new Set(s.session.board.map(t=>MATERIALS[s.session.materialTypes[t]].category))].sort(),[0,1,2,3]);
+  assert.deepEqual(s.session.materialTypes,materialPalette(level));assert.ok([0,7,8,6,9,10].includes(s.session.materialTypes[0]));assert.ok([19,16,15,18].includes(s.session.materialTypes[1]));const dark=new Set([1,14,17,20,21,22,25,27,28,29,31,32,34,35]);assert.ok(s.session.board.filter(slot=>dark.has(s.session.materialTypes[slot])).length<32);
   // Read the actual native sprites, rather than inferring appearance from model IDs.
   const artwork=await ui.page.evaluate(async()=>{const cc=await System.import('cc'),g=cc.director.getScene().getChildByName('AtelierGame').getComponent('AtelierGame');return g.boardNodes.map(n=>n.children.map(c=>c.getComponent(cc.Sprite)?.spriteFrame?.name).filter(Boolean));});
   s.session.board.forEach((t,i)=>{const type=s.session.materialTypes[t],m=MATERIALS[type],name=m.id?'charm-'+m.id:'bead-'+type;assert.ok(artwork[i].includes(name),name+' must be rendered on '+i);});
@@ -57,5 +58,5 @@ try{
   for(let c=0;c<4;c++){await ui.button(names[c]);const earned=expected.findIndex((n,i)=>n>0&&MATERIALS[i].category===c),tile=(await ui.state()).crafting.materials[earned];assert.equal(tile.unlocked,true);assert.equal(tile.stock,expected[earned]);await ui.tap(tile.x,tile.y);const after=await ui.state();assert.ok(after.save.draft.includes(earned));}
   await ui.page.reload({waitUntil:'networkidle'});await ui.ready();assert.deepEqual((await ui.state()).save.inventory,expected);await ui.context.close();
  }
- assert.deepEqual(errors,[]);fs.writeFileSync(dir+'/report.json',JSON.stringify({base,levels:[1,5,6,14],nativeSpritesAllCategories:true,actualEliminatedStock:true,allFourDiyCategories:true,reloadPreserved:true,errors},null,2));console.log('Mixed materials passed: four categories visibly present on every tested board, correct real rewards, all four DIY tabs usable after collection, and reload preserves stock.');
+ assert.deepEqual(errors,[]);fs.writeFileSync(dir+'/report.json',JSON.stringify({base,levels:[1,3,5,6,18],nativeSpritesAllCategories:true,paleMaterialsDominate:true,actualEliminatedStock:true,allFourDiyCategories:true,reloadPreserved:true,errors},null,2));console.log('Mixed materials passed: four categories visibly present on every tested board, correct real rewards, all four DIY tabs usable after collection, and reload preserves stock.');
 }finally{await browser.close();}

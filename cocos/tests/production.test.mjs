@@ -35,7 +35,12 @@ test('Creator production bundle preserves collection iteration and complete game
   assert.equal(daily.claimDaily(model.normalizeSave(signed),Date.parse('2026-11-04T03:00:00Z')),null);
   const content=load([...definitions.keys()].find(n=>n.endsWith('/content.ts')));
   const materials=load([...definitions.keys()].find(n=>n.endsWith('/materials.ts')));
-  assert.deepEqual(Array.from(materials.MATERIAL_DROPS),[0,0,0,1,2,2,2,3,4,5]);
+  assert.deepEqual(Array.from(materials.MATERIAL_DROPS),[0,0,0,0,0,0,0,0,1,1,1,2,2,2,2,3,4,4,5,5]);
+  for(let level=1;level<=12;level++){
+    const types=materials.materialPalette(level),dark=[1,14,17,20,21,22,25,27,28,29,31,32,34,35];
+    assert.ok([0,7,8,6,9,10].includes(types[0]));assert.ok([19,16,15,18].includes(types[1]));
+    assert.ok(Array.from(materials.MATERIAL_DROPS,slot=>types[slot]).filter(type=>dark.includes(type)).length<=4);
+  }
   for(const level of [1,5,6,12,13,100]){const session=model.newSession(19,level);assert.deepEqual(Array.from(session.materialTypes,t=>content.MATERIALS[t].category),[0,1,0,1,2,3]);assert.deepEqual(Array.from(session.dropPool),Array.from(materials.MATERIAL_DROPS));}
   const trade=load([...definitions.keys()].find(n=>n.endsWith('/commerce.ts')));
   const named=trade.finishWork({...model.freshSave(),draft:[0],inventory:Array(48).fill(2),gatheredStock:Array(48).fill(2),draftName:' 星河手作 '},1000);

@@ -8,9 +8,25 @@ import {craftChecks,finishWork} from '../assets/scripts/commerce.ts';
 test('all 48 supplied materials are reachable in weighted six-type match palettes',()=>{
  assert.equal(BEADS.length,36);assert.equal(MATERIALS.length,48);
  for(let c=0;c<4;c++)assert.equal(MATERIALS.filter(m=>m.category===c).length,12);
- assert.deepEqual(MATERIAL_DROPS,[0,0,0,1,2,2,2,3,4,5]);
+ assert.deepEqual(MATERIAL_DROPS,[0,0,0,0,0,0,0,0,1,1,1,2,2,2,2,3,4,4,5,5]);
  const all=new Set();for(let level=1;level<=12;level++){const types=materialPalette(level);assert.equal(new Set(types).size,6);assert.deepEqual(types.map(i=>MATERIALS[i].category),[0,1,0,1,2,3]);types.forEach(i=>all.add(i));assert.deepEqual(newSession(42,level).materialTypes,types);}
  assert.equal(all.size,48);assert.deepEqual(materialPalette(13),materialPalette(1));
+});
+
+test('every level favors pale materials, caps dark draw weight at 20%, and retains category weights',()=>{
+ const dark=new Set([1,14,17,20,21,22,25,27,28,29,31,32,34,35]);
+ const counts={light:0,dark:0};
+ for(let level=1;level<=24;level++){
+  const types=materialPalette(level),draws=MATERIAL_DROPS.map(slot=>types[slot]);
+  assert.ok([0,7,8,6,9,10].includes(types[0]));assert.ok([19,16,15,18].includes(types[1]));
+  assert.ok(draws.filter(type=>dark.has(type)).length<=4,'dark weight at level '+level);
+  assert.deepEqual([0,1,2,3].map(category=>draws.filter(type=>MATERIALS[type].category===category).length),[12,4,2,2]);
+  for(let seed=1;seed<=100;seed++){
+   const session=newSession(seed,level);session.board.forEach(slot=>counts[dark.has(types[slot])?'dark':'light']++);
+   assert.deepEqual(matches(session.board),[]);assert.ok(findMove(session.board));
+  }
+ }
+ assert.ok(counts.dark/(counts.light+counts.dark)<.15,JSON.stringify(counts));
 });
 test('only actual eliminated materials unlock, bank once and survive failure, exit and reload',()=>{
  let save=freshSave();for(let level=1;level<=8;level++){
