@@ -46,8 +46,8 @@ test('old central charm moves to a ring slot once without losing beads, sizes, s
  const original=plain(game.save);game.navigate('craft');assert.deepEqual(plain(game.save.draft),[...original.draft,leaf]);assert.deepEqual(plain(game.save.draftSizes),[...original.draftSizes,8]);assert.equal(game.save.charm,'none');
  const migrated=plain(game.save);game.navigate('home');game.navigate('craft');assert.deepEqual(plain(game.save),migrated);assert.deepEqual(plain(game.save.inventory),original.inventory);
  assert.deepEqual(plain(rules.normalizeSave(migrated).draft),migrated.draft);
- const partial=ringMaterials([0,null,1],[6,8,12],'leaf');assert.deepEqual(plain(partial),{beads:[0,leaf,1],sizes:[6,8,12]});
+ const partial=ringMaterials([0,null,1],[6,8,12],'leaf');assert.deepEqual(plain(partial),{beads:[0,leaf,1],sizes:[6,8,12],facings:['out','out','out']});
  const oldWork=trade.finishWork(original,1000),listed=trade.listWork(oldWork,1,trade.suggestedPrice(oldWork.commerce.works[0].beads),2000);assert.deepEqual(plain(rules.normalizeSave(plain(listed)).commerce),plain(listed.commerce));
- game.save=listed;game.freeWorkPreview(1);const icon=game.overlay.children.find(n=>n.name==='charm-leaf'),t=icon.getComponent(UITransform).contentSize;assert.ok(Math.abs(Math.hypot(icon.position.x+t.width/2-360,-icon.position.y+t.height/2-504)-150)<10);
+ game.save=listed;game.freeWorkPreview(1);const icon=game.overlay.children.find(n=>n.name==='charm-leaf');assert.ok(Math.abs(Math.hypot(icon.position.x-360,(-icon.position.y-504)/.95)-150)<.001);
  game.save.inventory[leaf]=game.save.gatheredStock[leaf]=0;actions.get('再做一条')();assert.equal(game.save.draft.at(-1),leaf);assert.equal(game.save.inventory[leaf],0);assert.equal(trade.craftChecks(game.save).stock,false);
 });

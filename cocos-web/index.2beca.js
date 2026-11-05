@@ -1,4 +1,4 @@
-System.register(["./application.59a27.js"], function (_export, _context) {
+System.register(["./application.c2e2a.js"], function (_export, _context) {
   "use strict";
 
   var Application, canvas, $p, bcr, application;
@@ -6,8 +6,8 @@ System.register(["./application.59a27.js"], function (_export, _context) {
     return System["import"](url);
   }
   return {
-    setters: [function (_application59a27Js) {
-      Application = _application59a27Js.Application;
+    setters: [function (_applicationC2e2aJs) {
+      Application = _applicationC2e2aJs.Application;
     }],
     execute: function () {
       canvas = document.getElementById('GameCanvas');
