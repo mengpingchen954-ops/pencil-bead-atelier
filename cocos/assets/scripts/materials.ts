@@ -10,3 +10,5 @@ export const materialPalette = (level:number) => {
 export const materialStock = (save:any,type:number) => Math.max(0,Math.min(save.inventory?.[type]||0,save.gatheredStock?.[type]||0));
 export const charmType = (charm:string) => MATERIALS.findIndex(m=>m.id===charm);
 export const validBead = (n:any) => Number.isInteger(n)&&n>=0&&n<BEADS.length;
+export const normalizeBeadSizes = (beads:any[],sizes:any,fallback=8) =>
+  Array.from(beads,(_,i)=>[6,8,10,12].includes(sizes?.[i])?sizes[i]:[6,8,10,12].includes(fallback)?fallback:8);

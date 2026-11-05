@@ -1,6 +1,6 @@
 import { BEADS, CHARMS } from './content.ts';
 
-import { materialStock, charmType, validBead } from './materials.ts';
+import { materialStock, charmType, validBead, normalizeBeadSizes } from './materials.ts';
 export const SALE_DELAY = 20000;
 const beadPrices = [12, 16, 18, 10, 14, 20];
 const buyers = ['林阿姨', '花店小满', '许老师', '隔壁邻居'];
@@ -19,7 +19,7 @@ export function normalizeCommerce(raw:any) {
       !validPrice(work.beads,work.price) || work.sellAt !== work.listedAt + saleDuration(work.beads,work.price))) continue;
     ids.add(work.id);
     works.push({id:work.id,name:typeof work.name==='string'?work.name.slice(0,24):'我的手作 · '+work.id,
-      beads:[...work.beads],beadSize:[6,8,10,12].includes(work.beadSize)?work.beadSize:8,charm:work.charm,status:work.status,createdAt:work.createdAt,
+      beads:[...work.beads],beadSize:[6,8,10,12].includes(work.beadSize)?work.beadSize:8,beadSizes:normalizeBeadSizes(work.beads,work.beadSizes,work.beadSize),charm:work.charm,status:work.status,createdAt:work.createdAt,
       ...(work.status!=='ready'?{price:work.price,listedAt:work.listedAt,sellAt:work.sellAt,
         ...(work.status==='sold'?{buyer:buyers[(work.id-1)%buyers.length]}:{})}: {})});
   }
@@ -51,8 +51,9 @@ export function finishWork(save:any, now=Date.now()) {
   const inventory=[...save.inventory],gatheredStock=[...save.gatheredStock],beads=save.draft.filter(type=>type!==null);
   const spend=(type:number)=>{inventory[type]--;gatheredStock[type]--;};beads.forEach(spend);
   if(save.charm!=='none')spend(charmType(save.charm));
-  const work={id,name:'我的手作 · '+id,beads,beadSize:[6,8,10,12].includes(save.beadSize)?save.beadSize:8,charm:save.charm,status:'ready',createdAt:now};
-  return {...save,inventory,gatheredStock,charm:'none',draft:Array(12).fill(null),commerce:{nextId:id+1,works:[...commerce.works,work]}};
+  const beadSizes=normalizeBeadSizes(save.draft,save.draftSizes,save.beadSize).filter((_,i)=>save.draft[i]!==null);
+  const work={id,name:'我的手作 · '+id,beads,beadSize:[6,8,10,12].includes(save.beadSize)?save.beadSize:8,beadSizes,charm:save.charm,status:'ready',createdAt:now};
+  return {...save,inventory,gatheredStock,charm:'none',draft:Array(12).fill(null),draftSizes:Array(12).fill(8),commerce:{nextId:id+1,works:[...commerce.works,work]}};
 }
 export function listWork(save:any, id:number, price:number, now=Date.now()) {
   const work=save.commerce.works.find((w:any)=>w.id===id);

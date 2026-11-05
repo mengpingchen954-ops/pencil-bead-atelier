@@ -42,6 +42,9 @@ test('Creator production bundle preserves collection iteration and complete game
   free=trade.listWork(free,1,price,2000);assert.equal(free.coins,80);
   free=trade.settleSales(model.normalizeSave(free),50000);assert.equal(free.coins,80+price);assert.equal(free.commerce.works[0].status,'sold');
   assert.equal(trade.settleSales(free,60000),free);assert.equal(free.completed.length,0);
+  const sized=trade.finishWork({...model.freshSave(),inventory:Array(48).fill(40),gatheredStock:Array(48).fill(40),draft:[0,null,0,1],draftSizes:[6,12,10,8]},1000);
+  assert.deepEqual(Array.from(sized.commerce.works[0].beadSizes),[6,10,8]);
+  assert.deepEqual(Array.from(model.normalizeSave(sized).commerce.works[0].beadSizes),[6,10,8]);
   assert.equal(typeof model.activateSpecial,'function');
   const staged=model.newSession(971,15,content.ORDERS[1]);
   assert.equal(model.goalProgress(staged).length,4);assert.ok(staged.obstacles.some(Boolean));

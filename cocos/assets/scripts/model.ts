@@ -8,7 +8,7 @@ import { freshSeaHeart, normalizeSeaHeart } from "./heart.ts";
 import { freshCompetitions, normalizeCompetitions } from "./competition.ts";
 import { normalizeMusic } from "./music-settings.ts";
 import { freshCommerce, normalizeCommerce, salesProgress } from "./commerce.ts";
-import { materialPalette, materialStock, validBead } from './materials.ts';
+import { materialPalette, materialStock, validBead, normalizeBeadSizes } from './materials.ts';
 import { freshDaily, normalizeDaily } from './daily.ts';
 export const SAVE_KEY = "pencil-bead-atelier-v1";
 export function rng(seed = 1) {
@@ -369,6 +369,7 @@ export function freshSave() {
     gatheredStock: Array(MATERIALS.length).fill(0),
     materialUnlocked: Array(MATERIALS.length).fill(false),
     beadSize: 8,
+    draftSizes: Array(12).fill(8),
     starterKit: true,
     firstSteps: {},
     completed: [],
@@ -454,6 +455,7 @@ export function normalizeSave(input) {
       ? input.draft[i]
       : null,
   );
+  s.draftSizes = normalizeBeadSizes(s.draft,input.draftSizes,s.beadSize);
   s.charm = Object.prototype.hasOwnProperty.call(CHARMS,input.charm)
     ? input.charm
     : "none";

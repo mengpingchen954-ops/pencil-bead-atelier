@@ -1,5 +1,6 @@
 import { salesProgress } from "./commerce.ts";
 import { BEADS, CHARMS } from './content.ts';
+import { normalizeBeadSizes } from './materials.ts';
 export const COMPETITIONS = [
   { id:'spring', title:'街角花园灵感赛', theme:'把春天留在手腕上', description:'用绿玉与花珠，做一条像街角小花园的手串。', unlock:1, main:3, accent:5, charm:'daisy', reward:60 },
   { id:'sea', title:'海风配色交流赛', theme:'天刚亮时的海', description:'用蓝晶与珍珠，留住海面初亮时的一点宁静。', unlock:3, main:2, accent:0, charm:'moon', reward:80 },
@@ -26,11 +27,11 @@ export function normalizeCompetitions(raw:any, completed:string[]) {
   for(const event of COMPETITIONS) {
     const entry=Array.isArray(raw?.entries)?raw.entries.find((x:any)=>x?.id===event.id):null;
     const result=entry&&completed.length>=event.unlock?evaluateCompetition(event.id,entry.beads,entry.charm):null;
-    if(result)entries.push({id:event.id,beads:entry.beads.slice(),charm:entry.charm,...result});
+    if(result)entries.push({id:event.id,beads:entry.beads.slice(),beadSizes:normalizeBeadSizes(entry.beads,entry.beadSizes),charm:entry.charm,...result});
   }
   const event=COMPETITIONS.find(e=>e.id===raw?.draft?.id);
   const draft=event&&completed.length>=event.unlock&&!entries.some(e=>e.id===event.id)&&validBeads(raw.draft.beads,true)&&CONTEST_CHARMS.includes(raw.draft.charm)
-    ?{id:event.id,beads:raw.draft.beads.slice(),charm:raw.draft.charm}:null;
+    ?{id:event.id,beads:raw.draft.beads.slice(),beadSizes:normalizeBeadSizes(raw.draft.beads,raw.draft.beadSizes),charm:raw.draft.charm}:null;
   return {draft,entries};
 }
 export function beginCompetition(save:any,id:string,replace=false) {
@@ -39,7 +40,7 @@ export function beginCompetition(save:any,id:string,replace=false) {
   const draft=save.competitions.draft;
   if(draft?.id===id)return save;
   if(draft&&!replace)return null;
-  return {...save,competitions:{...save.competitions,draft:{id,beads:Array(12).fill(null),charm:'daisy'}}};
+  return {...save,competitions:{...save.competitions,draft:{id,beads:Array(12).fill(null),beadSizes:Array(12).fill(8),charm:'daisy'}}};
 }
 export function submitCompetition(save:any) {
   const draft=save.competitions.draft,event=COMPETITIONS.find(e=>e.id===draft?.id);
@@ -47,7 +48,7 @@ export function submitCompetition(save:any) {
   const result=evaluateCompetition(event.id,draft.beads,draft.charm);
   if(!result)return null;
   return {...save,coins:save.coins+result.reward,competitions:{draft:null,
-    entries:[...save.competitions.entries,{id:event.id,beads:draft.beads.slice(),charm:draft.charm,...result}]}};
+    entries:[...save.competitions.entries,{id:event.id,beads:draft.beads.slice(),beadSizes:normalizeBeadSizes(draft.beads,draft.beadSizes),charm:draft.charm,...result}]}};
 }
 export function competitionPalette(id:string) {
   const event=COMPETITIONS.find(e=>e.id===id);

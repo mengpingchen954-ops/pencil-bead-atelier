@@ -35,8 +35,8 @@ test('gathered charms are optional, locked charms are rejected and a saved charm
 
 test('chosen bead size is preserved in saved work and restored across reload',()=>{
  let save=bankEarlyCollection(freshSave(),{...newSession(4,1),collected:[12,0,0,0,0,0]}).save;
- save.draft=Array(12).fill(0);save.beadSize=10;const done=finishWork(save,100);
- assert.equal(done.commerce.works[0].beadSize,10);assert.equal(normalizeSave(done).commerce.works[0].beadSize,10);
+ save.draft=Array(12).fill(0);save.beadSize=10;delete save.draftSizes;const done=finishWork(save,100);
+ assert.equal(done.commerce.works[0].beadSize,10);assert.deepEqual(done.commerce.works[0].beadSizes,Array(12).fill(10));assert.deepEqual(normalizeSave(done).commerce.works[0].beadSizes,Array(12).fill(10));
 });
 
 test('wood-era and later levels always contain all four categories and bank their actual IDs',()=>{
