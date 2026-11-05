@@ -1,11 +1,11 @@
-import { BEADS, CHARMS } from './content.ts';
+import { MATERIALS, CHARMS } from './content.ts';
 
-import { materialStock, charmType, validBead, normalizeBeadSizes } from './materials.ts';
+import { materialStock, charmType, validMaterial, normalizeBeadSizes } from './materials.ts';
 export const SALE_DELAY = 20000;
 const beadPrices = [12, 16, 18, 10, 14, 20];
 const buyers = ['林阿姨', '花店小满', '许老师', '隔壁邻居'];
 const validBeads = (beads:any) => Array.isArray(beads) && beads.length > 0 &&
-  Array.from(beads).every(n => Number.isInteger(n) && n >= 0 && n < BEADS.length);
+  Array.from(beads).every(validMaterial);
 const validTime = (n:any) => Number.isSafeInteger(n) && n >= 0;
 
 export function freshCommerce() { return { nextId:1, works:[] }; }
@@ -39,10 +39,10 @@ export function saleDuration(beads:number[],price:number) {
   return Math.round(SALE_DELAY*Math.pow(price/suggestedPrice(beads),2));
 }
 export function craftChecks(save:any) {
-  const counts = Array(BEADS.length).fill(0);
-  for (const type of save.draft || []) if (Number.isInteger(type) && type >= 0 && type < BEADS.length) counts[type]++;
+  const counts = Array(MATERIALS.length).fill(0);
+  for (const type of save.draft || []) if (validMaterial(type)) counts[type]++;
   const draft=save.draft;
-  return {full:Array.isArray(draft)&&Array.from(draft).every(type=>type===null||validBead(type))&&validBeads(draft.filter(type=>type!==null)),charm:save.charm==='none'||charmType(save.charm)>=0&&materialStock(save,charmType(save.charm))>=1,
+  return {full:Array.isArray(draft)&&Array.from(draft).every(type=>type===null||validMaterial(type))&&validBeads(draft.filter(type=>type!==null)),charm:save.charm==='none'||charmType(save.charm)>=0&&materialStock(save,charmType(save.charm))>=(counts[charmType(save.charm)]||0)+1,
     stock:counts.every((n,i)=>n<=materialStock(save,i))};
 }
 export function finishWork(save:any, now=Date.now()) {

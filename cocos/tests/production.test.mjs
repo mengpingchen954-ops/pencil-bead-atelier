@@ -36,6 +36,10 @@ test('Creator production bundle preserves collection iteration and complete game
   const content=load([...definitions.keys()].find(n=>n.endsWith('/content.ts')));
   for(const level of [1,5,6,13,100]){const session=model.newSession(19,level);assert.deepEqual(Array.from(new Set(Array.from(session.materialTypes,t=>content.MATERIALS[t].category))).sort(),[0,1,2,3]);}
   const trade=load([...definitions.keys()].find(n=>n.endsWith('/commerce.ts')));
+  const ringDraft={...model.freshSave(),inventory:Array(48).fill(2),gatheredStock:Array(48).fill(2),draft:[0,43,43,47],draftSizes:[6,10,12,8]};
+  assert.equal(model.canPlace(ringDraft,43,4),false);
+  const ringWork=trade.finishWork(ringDraft,1000);assert.ok(ringWork);assert.equal(ringWork.inventory[43],0);assert.equal(ringWork.gatheredStock[43],0);assert.equal(ringWork.inventory[47],1);
+  assert.deepEqual(Array.from(model.normalizeSave(ringWork).commerce.works[0].beads),[0,43,43,47]);assert.deepEqual(Array.from(ringWork.commerce.works[0].beadSizes),[6,10,12,8]);
   let free=trade.finishWork({...model.freshSave(),inventory:Array(48).fill(40),gatheredStock:Array(48).fill(40),materialUnlocked:Array(48).fill(true),draft:Array(12).fill(5),charm:'heart'},1000);
   assert.ok(free);assert.equal(free.coins,80);assert.equal(free.inventory[5],28);
   const price=trade.suggestedPrice(free.commerce.works[0].beads);

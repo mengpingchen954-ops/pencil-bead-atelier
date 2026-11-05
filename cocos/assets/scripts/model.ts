@@ -8,7 +8,7 @@ import { freshSeaHeart, normalizeSeaHeart } from "./heart.ts";
 import { freshCompetitions, normalizeCompetitions } from "./competition.ts";
 import { normalizeMusic } from "./music-settings.ts";
 import { freshCommerce, normalizeCommerce, salesProgress } from "./commerce.ts";
-import { materialPalette, materialStock, validBead, normalizeBeadSizes } from './materials.ts';
+import { materialPalette, materialStock, validMaterial, normalizeBeadSizes } from './materials.ts';
 import { freshDaily, normalizeDaily } from './daily.ts';
 export const SAVE_KEY = "pencil-bead-atelier-v1";
 export function rng(seed = 1) {
@@ -451,7 +451,7 @@ export function normalizeSave(input) {
   s.draft = Array.from({ length: Math.max(12,Array.isArray(input.draft)?input.draft.length:0) }, (_, i) =>
     Number.isInteger(input.draft?.[i]) &&
     input.draft[i] >= 0 &&
-    input.draft[i] < BEADS.length
+    input.draft[i] < MATERIALS.length
       ? input.draft[i]
       : null,
   );
@@ -485,15 +485,15 @@ export function normalizeSave(input) {
   return s;
 }
 export function draftCounts(draft) {
-  const a = Array(Math.max(6,...draft.filter(validBead).map(n=>n+1))).fill(0);
-  for (const n of draft) if (validBead(n)) a[n]++;
+  const a = Array(Math.max(6,...draft.filter(validMaterial).map(n=>n+1))).fill(0);
+  for (const n of draft) if (validMaterial(n)) a[n]++;
   return a;
 }
 export function canPlace(save, type, index) {
   if (
     !Number.isInteger(type) ||
     type < 0 ||
-    type >= BEADS.length ||
+    type >= MATERIALS.length ||
     !Number.isInteger(index) ||
     index < 0 ||
     index > Math.max(12,save.draft.length)
