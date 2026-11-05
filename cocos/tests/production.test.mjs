@@ -38,6 +38,10 @@ test('Creator production bundle preserves collection iteration and complete game
   assert.deepEqual(Array.from(materials.MATERIAL_DROPS),[0,0,0,1,2,2,2,3,4,5]);
   for(const level of [1,5,6,12,13,100]){const session=model.newSession(19,level);assert.deepEqual(Array.from(session.materialTypes,t=>content.MATERIALS[t].category),[0,1,0,1,2,3]);assert.deepEqual(Array.from(session.dropPool),Array.from(materials.MATERIAL_DROPS));}
   const trade=load([...definitions.keys()].find(n=>n.endsWith('/commerce.ts')));
+  const named=trade.finishWork({...model.freshSave(),draft:[0],inventory:Array(48).fill(2),gatheredStock:Array(48).fill(2),draftName:' 星河手作 '},1000);
+  assert.equal(named.commerce.works[0].name,'星河手作');assert.equal(named.draftName,'');
+  assert.equal(model.normalizeSave(trade.renameWork(named,1,'月光小梦')).commerce.works[0].name,'月光小梦');
+  assert.notEqual(trade.randomWorkName('春日花信'),'春日花信');
   const ringDraft={...model.freshSave(),inventory:Array(48).fill(2),gatheredStock:Array(48).fill(2),draft:[0,43,43,47],draftSizes:[6,10,12,8],draftFacings:['out','in','out','in']};
   assert.equal(model.canPlace(ringDraft,43,4),false);
   const ringWork=trade.finishWork(ringDraft,1000);assert.ok(ringWork);assert.equal(ringWork.inventory[43],0);assert.equal(ringWork.gatheredStock[43],0);assert.equal(ringWork.inventory[47],1);

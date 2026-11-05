@@ -9,6 +9,19 @@ const validBeads = (beads:any) => Array.isArray(beads) && beads.length > 0 &&
 const validTime = (n:any) => Number.isSafeInteger(n) && n >= 0;
 
 export function freshCommerce() { return { nextId:1, works:[] }; }
+export function workName(value:any, fallback='') {
+  return (typeof value==='string'?Array.from(value.replace(/[\u0000-\u001f\u007f]/g,' ').trim()).slice(0,24).join(''):'') || fallback;
+}
+const workNames=['春日花信','月光入怀','星河微澜','海盐晴空','蔷薇小梦','林间晨露','琉璃拾光','云边来信','落日余温','花间漫步','清风有约','一串欢喜'];
+export function randomWorkName(current='') {
+  const choices=workNames.filter(name=>name!==current);
+  return choices[Math.floor(Math.random()*choices.length)];
+}
+export function renameWork(save:any,id:number,name:string) {
+  const value=workName(name);
+  if(!value || !save.commerce?.works.some((work:any)=>work.id===id))return null;
+  return {...save,commerce:{...save.commerce,works:save.commerce.works.map((work:any)=>work.id===id?{...work,name:value}:work)}};
+}
 export function normalizeCommerce(raw:any) {
   const works:any[] = [], ids = new Set();
   for (const work of Array.isArray(raw?.works) ? raw.works : []) {
@@ -18,7 +31,7 @@ export function normalizeCommerce(raw:any) {
     if (work.status !== 'ready' && (!validTime(work.listedAt) || !validTime(work.sellAt) ||
       !validPrice(work.beads,work.price) || work.sellAt !== work.listedAt + saleDuration(work.beads,work.price))) continue;
     ids.add(work.id);
-    works.push({id:work.id,name:typeof work.name==='string'?work.name.slice(0,24):'我的手作 · '+work.id,
+    works.push({id:work.id,name:workName(work.name,'我的手作 · '+work.id),
       beads:[...work.beads],beadSize:[6,8,10,12].includes(work.beadSize)?work.beadSize:8,beadSizes:normalizeBeadSizes(work.beads,work.beadSizes,work.beadSize),beadFacings:normalizeBeadFacings(work.beads,work.beadFacings),charm:work.charm,status:work.status,createdAt:work.createdAt,
       ...(work.status!=='ready'?{price:work.price,listedAt:work.listedAt,sellAt:work.sellAt,
         ...(work.status==='sold'?{buyer:buyers[(work.id-1)%buyers.length]}:{})}: {})});
@@ -53,8 +66,8 @@ export function finishWork(save:any, now=Date.now()) {
   if(save.charm!=='none')spend(charmType(save.charm));
   const beadSizes=normalizeBeadSizes(save.draft,save.draftSizes,save.beadSize).filter((_,i)=>save.draft[i]!==null);
   const beadFacings=normalizeBeadFacings(save.draft,save.draftFacings).filter((_,i)=>save.draft[i]!==null);
-  const work={id,name:'我的手作 · '+id,beads,beadSize:[6,8,10,12].includes(save.beadSize)?save.beadSize:8,beadSizes,beadFacings,charm:save.charm,status:'ready',createdAt:now};
-  return {...save,inventory,gatheredStock,charm:'none',draft:Array(12).fill(null),draftSizes:Array(12).fill(8),draftFacings:Array(12).fill('out'),commerce:{nextId:id+1,works:[...commerce.works,work]}};
+  const work={id,name:workName(save.draftName,'我的手作 · '+id),beads,beadSize:[6,8,10,12].includes(save.beadSize)?save.beadSize:8,beadSizes,beadFacings,charm:save.charm,status:'ready',createdAt:now};
+  return {...save,inventory,gatheredStock,charm:'none',draftName:'',draft:Array(12).fill(null),draftSizes:Array(12).fill(8),draftFacings:Array(12).fill('out'),commerce:{nextId:id+1,works:[...commerce.works,work]}};
 }
 export function listWork(save:any, id:number, price:number, now=Date.now()) {
   const work=save.commerce.works.find((w:any)=>w.id===id);

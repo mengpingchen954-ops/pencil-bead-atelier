@@ -9,7 +9,7 @@ import { BEADS, MATERIALS, ORDERS, RETURN_ORDERS, CHAPTERS, STORIES, JOURNEY, FU
 import * as rules from './model';
 import { DAILY_REWARDS, ENERGY_EXCHANGE, dailyStatus, claimDaily } from './daily';
 import { materialStock, charmType, normalizeBeadSizes, normalizeBeadFacings, ringMaterials, materialPlacement } from './materials';
-import { craftChecks, finishWork, listWork, withdrawWork, settleSales, suggestedPrice, priceBounds, saleDuration, salesProgress } from './commerce';
+import { craftChecks, finishWork, listWork, withdrawWork, settleSales, suggestedPrice, priceBounds, saleDuration, salesProgress, randomWorkName, renameWork } from './commerce';
 import { pendingStory, storyUnlocked, finishStory, STORY_STOPS, storyRoute } from './story';
 import { BrowserAccessibility } from './BrowserAccessibility';
 import { AtelierLayout } from './AtelierLayout';
@@ -560,7 +560,8 @@ export class AtelierGame extends Component {
       if(work.status==='ready')this.button('上架橱窗 · '+work.id,255,y+146,257,43,()=>this.listingDialog(work.id),this.page,true);
       if(work.status==='listing')this.button('下架作品 · '+work.id,255,y+146,257,43,()=>{this.tickSales();const next=withdrawWork(this.save,work.id);if(!next){this.render();return;}this.save=next;this.salesTab='ready';this.ordersPage=0;this.persist();this.render();},this.page);
       this.hitButton('欣赏作品 · '+work.id,52,y+18,176,173,()=>this.freeWorkPreview(work.id));
-      if(work.status==='sold')this.text('谢谢你，让手作继续发光。',249,y+151,360,35,20,MUTED);
+      this.button('改名 · '+work.id,531,y+146,127,43,()=>this.renameWorkDialog(work.id),this.page);
+      if(work.status==='sold')this.text('谢谢你，让手作继续发光。',249,y+151,270,35,20,MUTED);
     });
     if(works.length){
       this.button('← 前页',58,1045,154,56,()=>{this.ordersPage--;this.render();},this.page,false,this.ordersPage>0);
@@ -586,11 +587,35 @@ export class AtelierGame extends Component {
     this.dialog('free-work',work.name);this.bracelet(work.beads,360,504,150,this.overlay,work.beadSize,work.beadSizes,work.charm,work.beadFacings);
     const materials=rules.draftCounts(ringMaterials(work.beads,work.beadSizes,work.charm).beads).flatMap((n,i)=>n?[MATERIALS[i].name+' ×'+n]:[]).join(' · ');
     this.text(materials+'\n'+(work.status==='sold'?'已售给'+work.buyer:work.status==='listing'?'橱窗在售':'待上架'),105,754,510,115,24,INK,this.overlay,true);
+    this.button('编辑名称',220,674,280,55,()=>this.renameWorkDialog(id),this.overlay);
     this.button('再做一条',130,925,460,64,()=>{this.remember();this.workingDraft=[...work.beads];this.workingSizes=normalizeBeadSizes(work.beads,work.beadSizes,work.beadSize);this.workingFacings=normalizeBeadFacings(work.beads,work.beadFacings);this.save.charm=work.charm;this.persist();this.navigate('craft');},this.overlay,true);
     this.text('沿用配色作为草稿，仍需准备实际珠材。',105,1004,510,39,20,MUTED,this.overlay,true);
   }
 
   private orderArrival() { this.craft(); }
+
+  private nameField(value:string,y:number,parent:Node,onChange:(value:string)=>void) {
+    const field=this.rect('Work name',100,y,360,62,'#fffaf2',parent,12,'#b6977e');
+    field.active=false;const edit=field.addComponent(EditBox);
+    edit.textLabel=this.text('',14,4,332,54,26,INK,field);
+    edit.placeholderLabel=this.text('为作品取个名字',14,4,332,54,24,MUTED,field);
+    edit.inputMode=EditBox.InputMode.SINGLE_LINE;edit.maxLength=24;edit.placeholder='为作品取个名字';edit.string=value;field.active=true;
+    const accessible=this.accessibility?.workName?.(value,value=>{edit.string=value;onChange(value);},parent===this.overlay);
+    field.on(EditBox.EventType.TEXT_CHANGED,()=>{if(accessible)accessible.value=edit.string;onChange(edit.string);});
+    this.button('随机名称',480,y,140,62,()=>{edit.string=randomWorkName(edit.string);if(accessible)accessible.value=edit.string;onChange(edit.string);},parent);
+  }
+  private renameWorkDialog(id:number) {
+    const work=this.save.commerce.works.find(w=>w.id===id);if(!work)return;
+    let name=work.name;this.dialog('work-name','给作品起个名字');
+    this.bracelet(work.beads,360,433,80,this.overlay,work.beadSize,work.beadSizes,work.charm,work.beadFacings);
+    this.nameField(name,580,this.overlay,value=>{name=value;});
+    this.text('最多 24 个字，也可以试试随机名称。',100,675,520,56,24,MUTED,this.overlay,true);
+    this.button('取消改名',130,807,460,62,()=>this.freeWorkPreview(id),this.overlay);
+    this.button('保存名称',130,913,460,66,()=>{
+      const next=renameWork(this.save,id,name);if(!next)return this.toast('请先输入作品名称，或点随机名称。');
+      this.save=next;this.persist();this.render();this.freeWorkPreview(id);this.toast('作品名称已保存。');
+    },this.overlay,true);
+  }
 
   private get contestEntry() { return this.screen==='contestCraft'?this.save.competitions.draft:null; }
   private get workingDraft() { return this.contestEntry?.beads || this.save?.draft || Array(12).fill(null); }
@@ -981,9 +1006,11 @@ export class AtelierGame extends Component {
     this.text('配色、珠序和吊坠，都由你决定',85,123,470,40,24,SAGE,this.page,true);
     this.image('pencil-packing-box',40,190,640,540);
     this.bracelet(this.save.draft.filter(t=>t!==null),360,496,119,this.page,8,normalizeBeadSizes(this.save.draft,this.save.draftSizes,this.save.beadSize).filter((_,i)=>this.save.draft[i]!==null),this.save.charm,normalizeBeadFacings(this.save.draft,this.save.draftFacings).filter((_,i)=>this.save.draft[i]!==null));
-    this.text('这是你的原创作品',140,778,440,55,34,INK,this.page,true);
-    this.text(this.save.draft.filter(t=>t!==null).length+' 件串珠与饰品\n建议售价 '+price+' 金币',100,855,520,98,27,SAGE,this.page,true);
-    this.text('保存时扣除实际用料，作品会收进图鉴。\n上架后，售出时才会获得金币与口碑。',100,978,520,89,24,MUTED,this.page,true);
+    this.text('给这份手作起个名字',140,750,440,55,32,INK,this.page,true);
+    this.nameField(this.save.draftName||'',824,this.page,value=>{this.save.draftName=value;this.persist();});
+    this.text('手动输入或随机取名 · 最多 24 个字\n留空将使用默认名称，保存后仍可改名',100,903,520,70,22,MUTED,this.page,true);
+    this.text(this.save.draft.filter(t=>t!==null).length+' 件串珠与饰品 · 建议 '+price+' 金币',100,988,520,40,25,SAGE,this.page,true);
+    this.text('保存扣除实际用料，售出后获得金币与口碑。',80,1046,560,42,22,MUTED,this.page,true);
     this.button('保存作品',62,1130,284,82,()=>this.completePacking(),this.page);
     this.button('保存并上架',374,1130,284,82,()=>this.completePacking(true),this.page,true);
   }
