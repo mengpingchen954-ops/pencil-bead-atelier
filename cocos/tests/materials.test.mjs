@@ -7,7 +7,7 @@ import {craftChecks,finishWork} from '../assets/scripts/commerce.ts';
 test('all 48 supplied materials are reachable in six-type match palettes with equal-size categories',()=>{
  assert.equal(BEADS.length,36);assert.equal(MATERIALS.length,48);
  for(let c=0;c<4;c++)assert.equal(MATERIALS.filter(m=>m.category===c).length,12);
- const all=new Set();for(let level=1;level<=8;level++){const types=materialPalette(level);assert.equal(new Set(types).size,6);types.forEach(i=>all.add(i));assert.deepEqual(newSession(42,level).materialTypes,types);}
+ const all=new Set();for(let level=1;level<=8;level++){const types=materialPalette(level);assert.equal(new Set(types).size,6);assert.deepEqual([...new Set(types.map(i=>MATERIALS[i].category))].sort(),[0,1,2,3]);types.forEach(i=>all.add(i));assert.deepEqual(newSession(42,level).materialTypes,types);}
  assert.equal(all.size,48);assert.deepEqual(materialPalette(9),materialPalette(1));
 });
 test('only actual eliminated materials unlock, bank once and survive failure, exit and reload',()=>{
@@ -37,4 +37,13 @@ test('chosen bead size is preserved in saved work and restored across reload',()
  let save=bankEarlyCollection(freshSave(),{...newSession(4,1),collected:[12,0,0,0,0,0]}).save;
  save.draft=Array(12).fill(0);save.beadSize=10;const done=finishWork(save,100);
  assert.equal(done.commerce.works[0].beadSize,10);assert.equal(normalizeSave(done).commerce.works[0].beadSize,10);
+});
+
+test('wood-era and later levels always contain all four categories and bank their actual IDs',()=>{
+ for(const level of [1,5,6,13,14,29,30,100,100000]){
+  const session=newSession(19,level);assert.deepEqual([...new Set(session.board.map(t=>MATERIALS[session.materialTypes[t]].category))].sort(),[0,1,2,3]);
+  const collected=[3,4,5,6,7,8],bank=bankEarlyCollection(freshSave(),{...session,collected}).save;
+  session.materialTypes.forEach((type,i)=>{assert.equal(bank.inventory[type],collected[i]);assert.equal(bank.gatheredStock[type],collected[i]);assert.equal(bank.materialUnlocked[type],true);});
+  assert.equal(bank.inventory.reduce((n,m)=>n+m,0),33);
+ }
 });

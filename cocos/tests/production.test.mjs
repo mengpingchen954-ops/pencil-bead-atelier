@@ -34,6 +34,7 @@ test('Creator production bundle preserves collection iteration and complete game
   assert.equal(signed.coins,120);assert.equal(signed.energy,10);assert.equal(signed.daily.streak,1);
   assert.equal(daily.claimDaily(model.normalizeSave(signed),Date.parse('2026-11-04T03:00:00Z')),null);
   const content=load([...definitions.keys()].find(n=>n.endsWith('/content.ts')));
+  for(const level of [1,5,6,13,100]){const session=model.newSession(19,level);assert.deepEqual(Array.from(new Set(Array.from(session.materialTypes,t=>content.MATERIALS[t].category))).sort(),[0,1,2,3]);}
   const trade=load([...definitions.keys()].find(n=>n.endsWith('/commerce.ts')));
   let free=trade.finishWork({...model.freshSave(),inventory:Array(48).fill(40),gatheredStock:Array(48).fill(40),materialUnlocked:Array(48).fill(true),draft:Array(12).fill(5),charm:'heart'},1000);
   assert.ok(free);assert.equal(free.coins,80);assert.equal(free.inventory[5],28);

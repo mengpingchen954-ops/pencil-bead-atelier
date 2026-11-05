@@ -31,7 +31,7 @@ async function gather(ui,minimum=20){
  const label=await page.getByRole('button',{name:/^开始采珠 · /}).textContent();await button(label);
  assert.equal((await state()).session.freeGather,true);assert.equal((await state()).session.rewardOrder,null);
  for(let turn=0;turn<16;turn++){
-  const s=await state();if(total(s.session.collected)>=minimum||s.modal==='result')break;
+  const s=await state();if(s.session.collected.reduce((n,m,i)=>n+(s.session.materialTypes[i]<36?m:0),0)>=minimum||s.modal==='result')break;
   const pair=findMove(s.session.board,s.session.specials,s.session.obstacles);assert.ok(pair);
   for(const index of pair)await tap(48+index%8*78+36,340+Math.floor(index/8)*78+36);
   await page.waitForFunction(()=>!JSON.parse(window.render_game_to_text()).busy,{},{timeout:12000});
@@ -48,7 +48,7 @@ try{
  if((await state()).screen!=='home')await action('小店');
  await button('自由 DIY');let s=await state();assert.equal(s.screen,'craft');
  const recipe=[];for(let i=0;i<36;i++)for(let j=0;j<gathered[i]&&recipe.length<12;j++)recipe.push(i);
- for(const type of recipe){const m=(await state()).crafting.materials[type];await tap(m.x,m.y);}
+ for(const type of recipe){const m=(await state()).crafting.materials[type];if((await state()).crafting.category!==m.category)await button(['珠宝','水晶','木质','饰品'][m.category]);await tap(m.x,m.y);}
  await page.waitForTimeout(1100);s=await state();assert.equal(s.save.charm,'none');assert.equal(s.save.draft.includes(null),false);
  const crafted=[...s.save.draft],coins=s.save.coins;await page.screenshot({path:dir+'/free-diy.png'});
  await button('完成制作');assert.equal((await state()).screen,'packing');await page.screenshot({path:dir+'/finished.png'});

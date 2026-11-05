@@ -33,7 +33,7 @@ async function startGather(ui){
 }
 async function gatherMoves(ui,minimum=16){
  for(let turn=0;turn<20;turn++){
-  const s=await ui.state();if(total(s.session.collected)>=minimum||s.modal==='result')break;
+  const s=await ui.state();if(s.session.collected.reduce((n,m,i)=>n+(s.session.materialTypes[i]<36?m:0),0)>=minimum||s.modal==='result')break;
   const pair=findMove(s.session.board,s.session.specials,s.session.obstacles);assert.ok(pair);
   for(const index of pair)await ui.tap(48+index%8*78+36,340+Math.floor(index/8)*78+36);
   await ui.page.waitForFunction(()=>!JSON.parse(window.render_game_to_text()).busy,{},{timeout:12000});
@@ -57,7 +57,7 @@ try{
  const gathered=await gatherMoves(ui,18);report.realGathering=true;
  const recipe=[];for(let i=0;i<36;i++)for(let j=0;j<gathered[i]&&recipe.length<12;j++)recipe.push(i);
  assert.equal(recipe.length,12);
- for(const type of recipe){s=await state();const m=s.crafting.materials[type];assert.equal(m.category,0);await tap(m.x,m.y);}
+ for(const type of recipe){s=await state();const m=s.crafting.materials[type];if(s.crafting.category!==m.category)await button(['珠宝','水晶','木质','饰品'][m.category]);await tap(m.x,m.y);}
  await page.waitForTimeout(1100);s=await state();assert.equal(s.save.draft.includes(null),false);const draft=s.save.draft.slice(),stock=s.save.inventory.slice();
  await page.screenshot({path:dir+'/crafted-from-gathered.png'});
  // Native drag swaps slots and undo restores them, without changing stock.
