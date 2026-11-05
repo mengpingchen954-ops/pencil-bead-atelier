@@ -1,5 +1,7 @@
 # 珠光小店物语 · Cocos Creator 版
 
+DIY界面已按简洁版参考更新：保留圆盘、四类材质、单颗尺寸和完成制作；撤销、移除、替换、预览、参考配色、采珠收进「工具」。玩法、材料来源、库存、独立尺寸和保存售卖流程不变。
+
 [直接试玩](https://mengpingchen954-ops.github.io/pencil-bead-atelier/)
 
 当前公开版使用 **Cocos Creator 3.8.2** 原生节点、Graphics、Sprite、Label、音频与触控事件实现。完整工程在 [cocos/](cocos/)，用 Dashboard 打开后运行 assets/scenes/Atelier.scene。

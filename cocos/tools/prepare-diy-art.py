@@ -1,6 +1,6 @@
 from PIL import Image, ImageDraw, ImageFilter
 from pathlib import Path
-import json, uuid
+import json, uuid, sys
 root=Path('cocos/assets/resources'); src=Path('E:/Game/手串/UI/游戏全界面截图-20261104/02-订单与手串制作')
 files=['011-制作台-空手串.png','011-制作台-空手串2.png','011-制作台-空手串3.png','011-制作台-空手串4.png']
 images=[Image.open(src/f).convert('RGB').resize((720,1280),Image.Resampling.LANCZOS) for f in files]
@@ -17,14 +17,17 @@ def save(im,folder,name):
     mp.write_text(json.dumps(m,ensure_ascii=False,indent=2)+'\n',encoding='utf-8')
 # Retain the illustrated flowers, tools and real empty tray. Clear all baked labels and controls.
 stage=images[0].copy();paper=images[0].crop((225,99,480,108))
-for box,fill in [((64,24,177,64),'#f9eade'),((595,24,680,64),'#fbe5dc'),((255,25,459,77),'#faf8f5'),((151,103,565,135),'#faf8f5')]:
+for box,fill in [((64,24,177,64),'#f9eade'),((560,24,680,64),'#fbe5dc'),((255,25,459,77),'#faf8f5'),((151,103,565,135),'#faf8f5')]:
     stage.paste(Image.new('RGB',(box[2]-box[0],box[3]-box[1]),fill),box[:2])
 # Reference lower area becomes a clean native material grid; retain the outer flowers.
 blank=Image.new('RGB',(584,338),'#f8f4f0');stage.paste(blank,(68,768))
 # Clear tabs, size, finish and helper sample text while preserving floral edges.
-for box in [(112,714,610,769),(83,1047,640,1100),(222,1111,497,1170),(211,1175,516,1203)]:
+for box in [(110,689,610,769),(83,1047,640,1100),(211,1100,512,1182),(201,1175,534,1203)]:
     tile=Image.new('RGB',(box[2]-box[0],box[3]-box[1]),'#f8f5f0');stage.paste(tile,box[:2])
 save(stage,'art','pencil-diy-stage.jpg')
+if '--stage-only' in sys.argv:
+    print('Prepared simplified DIY stage; existing materials retained')
+    sys.exit(0)
 content=(Path('cocos/assets/scripts/content.ts').read_text(encoding='utf-8')); beads=json.loads(content.split('export const BEADS = ')[1].split(';')[0]);
 # Extract each supplied round bead at its actual edge; feather the alpha by half a pixel.
 for i,b in enumerate(beads):

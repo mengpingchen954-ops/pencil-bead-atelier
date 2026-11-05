@@ -347,9 +347,19 @@ test('returning collection uses recent actual works and retains exact bracelets 
 
 test('old commission entry points now open free DIY, and gathering is available with any stock',()=>{
  const {game,actions}=pausedGame('home'),before=JSON.stringify(game.save);game.navigate('orderArrival');assert.equal(game.screen,'craft');
- const labels=game.page.getComponentsInChildren(Label).map(l=>l.string);assert.ok(labels.includes('采珠获得材料后解锁'));
+ const labels=game.page.getComponentsInChildren(Label).map(l=>l.string);assert.ok(labels.includes('未解锁'));assert.equal(labels.includes('采珠获得材料后解锁'),false);
  assert.equal(JSON.stringify(game.save),before);actions.get('采珠')();assert.equal(game.modal,'intro');assert.ok([...actions.keys()].some(k=>k.startsWith('开始采珠 · ')));
  assert.equal(JSON.stringify(game.save),before);
+});
+
+test('DIY tools expand without changing progress and retain undo, preview and gathering',()=>{
+ const {game,actions}=pausedGame('home');game.navigate('craft');
+ const before=JSON.stringify(game.save),tools=['撤销','移除','替换','预览','参考配色','采珠'];
+ const native=()=>game.page.children.filter(n=>n.name.startsWith('Button: ')).map(n=>n.name.slice(8));
+ assert.ok(tools.every(name=>!native().includes(name)&&actions.has(name)));
+ actions.get('工具')();assert.ok(tools.every(name=>native().includes(name)));assert.equal(JSON.stringify(game.save),before);
+ actions.get('收起工具')();assert.ok(tools.every(name=>!native().includes(name)));assert.equal(JSON.stringify(game.save),before);
+ actions.get('工具')();actions.get('采珠')();assert.equal(game.modal,'intro');assert.equal(game.craftToolsOpen,false);assert.equal(JSON.stringify(game.save),before);
 });
 
 test('native goal HUD supports four objectives and claiming a win grants the displayed order supply exactly once', () => {

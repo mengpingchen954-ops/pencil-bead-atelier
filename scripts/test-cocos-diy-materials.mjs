@@ -17,6 +17,7 @@ async function fixture(save,viewport={width:390,height:844}){
  const ready=async()=>{await page.waitForFunction(()=>typeof window.render_game_to_text==='function');await page.waitForTimeout(200);};
  const tap=async(x,y)=>{const b=await page.locator('#GameCanvas').boundingBox(),scale=Math.min(b.width/720,b.height/1280);await page.touchscreen.tap(b.x+b.width/2+(x-360)*scale,b.y+b.height/2+(y-640)*scale);await page.waitForTimeout(90);};
  const button=async(name)=>{
+   if(['撤销','移除','替换','预览','参考配色','采珠','评分规则'].includes(name)&&await page.getByRole('button',{name:'工具',exact:true}).count())await button('工具');
    const p=await page.evaluate(async name=>{const cc=await System.import('cc'),g=cc.director.getScene().getChildByName('AtelierGame').getComponent('AtelierGame');
     const find=n=>{if(!n.active)return null;if(n.name==='Button: '+name)return n;for(const child of n.children){const result=find(child);if(result)return result;}return null;};
     const n=find(g.modal?g.overlay:g.page);if(!n)throw Error('No native button '+name+' on '+g.screen+'/'+g.modal);
@@ -49,6 +50,7 @@ try{
  const ui=await fixture(initial),{state,page,tap,button,action}=ui;
  await button('自由 DIY');let s=await state();assert.equal(s.screen,'craft');assert.ok(s.save.materialUnlocked.every(n=>!n));
  const untouched=JSON.stringify(s.save);
+ await page.screenshot({path:dir+'/simple-empty.png'});await button('工具');await page.screenshot({path:dir+'/simple-tools.png'});await button('收起工具');assert.equal(JSON.stringify((await state()).save),untouched);report.collapsibleToolsPreserveProgress=true;
  for(const [c,name]of ['珠宝','水晶','木质','饰品'].entries()){
   await button(name);assert.equal((await state()).crafting.category,c);await tap(146,805);assert.equal(JSON.stringify((await state()).save),untouched);
   await page.screenshot({path:dir+'/locked-category-'+c+'.png'});

@@ -49,6 +49,7 @@ export class AtelierGame extends Component {
   private slot = -1;
   private craftMaterial = 0;
   private craftCategory = 0;
+  private craftToolsOpen = false;
   private inventoryCategory = 0;
   private craftTap: {index:number;at:number} | null = null;
   private craftMotion: Node;
@@ -378,7 +379,7 @@ export class AtelierGame extends Component {
     if (this.busy) return;
     if (page === 'match') { this.matchIntro(); return; }
     if (page === 'orderArrival') page='craft';
-    this.clearCraftFlights();
+    this.clearCraftFlights();this.craftToolsOpen=false;
     if (page === 'orderArrival') this.orderGuide = true;
     if (page === 'orders') {this.ordersPage=0;this.tickSales();}
     if(this.save.firstSteps?.craft&&this.save.completed.length===1&&['craft','orderArrival'].includes(page)){this.save=rules.recordFirstStep(this.save,'secondOrder');this.persist();}
@@ -642,14 +643,14 @@ export class AtelierGame extends Component {
     this.text(event?'返回比赛':'返回售珠',66,25,115,42,24,'#80543e',this.page,true);
     this.hitButton(event?'返回比赛':'返回售珠',20,14,178,64,()=>this.navigate(event?'contest':'orders'));
     this.text('手串工坊',243,21,235,56,43,'#8e7972',this.page,true);
+    this.rect('Pause first stroke',564,34,4,24,'#a85d52',this.page,2);
     this.rect('Pause second stroke',574,34,4,24,'#a85d52',this.page,2);
     this.text('暂停',604,24,85,44,24,'#995548',this.page,true);
     this.hitButton('暂停',558,13,139,65,()=>this.pauseMatch());
     const labels=['珠宝','水晶','木质','饰品'];
     const placed=this.workingDraft.filter(t=>t!==null).length;
-    this.text(event?event.theme:labels.map((label,c)=>label+' '+(c===3?(this.workingCharm==='none'?0:1):this.workingDraft.filter(t=>t!==null&&BEADS[t].category===c).length)).join(' · '),145,108,430,35,21,'#7c8d82',this.page,true);
-    this.text(placed+(event?' / 12 颗':' 颗 · 自由搭配'),273,384,174,40,28,'#9e8777',this.page,true);
-    this.text(event?'赛事练习珠材':this.slot>=0?'点材料替换选中珠子':'采珠获得材料后解锁',242,428,236,30,18,'#a49184',this.page,true);
+    if(event)this.text(event.theme,145,108,430,35,21,'#7c8d82',this.page,true);
+    if(event)this.text(placed+' / 12 颗 · 赛事练习珠材',191,155,338,30,19,'#a49184',this.page,true);
     if(this.workingCharm!=='none')this.image('charm-'+this.workingCharm,339,467,42,42);
     this.workingDraft.forEach((type:number|null,i:number)=>{
       const p=this.slotPos(i),size=this.craftSlotSize(),n=this.box('Slot '+i,p.x-size/2,p.y-size/2,size,size),active=this.slot===i;
@@ -661,7 +662,11 @@ export class AtelierGame extends Component {
     });
     this.hitButton('前一材料分类',57,714,48,51,()=>{this.craftCategory=(this.craftCategory+3)%4;this.render();});
     this.hitButton('后一材料分类',613,714,48,51,()=>{this.craftCategory=(this.craftCategory+1)%4;this.render();});
-    labels.forEach((name,i)=>this.button(name,116+i*124,716,118,53,()=>{this.craftCategory=i;this.render();},this.page,this.craftCategory===i));
+    labels.forEach((name,i)=>{
+      const active=this.craftCategory===i,n=this.rect('Material category '+i,111+i*125,716,121,53,active?'#f8f5f0':'#eee4da',this.page,12,active?'#9aaa9f':'#d8c5b7');
+      this.text(name,0,0,121,53,25,active?'#4b544b':'#937967',n,true);
+      this.hitButton(name,111+i*125,716,121,53,()=>{this.craftCategory=i;this.render();});
+    });
     const panel=this.rect('Material tray',70,769,580,283,'#f8f5f0',this.page,16,'#d6bfb1');
     MATERIALS.forEach((m,i)=>{
       if(m.category!==this.craftCategory)return;
@@ -689,13 +694,18 @@ export class AtelierGame extends Component {
     this.ellipse('Size handle',205+289*(size-6)/6,1077,12,12,'#faf7f2',this.page,'#99a89e');
     this.button('+',509,1057,42,39,()=>resize(2));this.text(this.slot>=0&&this.workingDraft[this.slot]!=null?size+' mm':'选珠',566,1059,73,34,22,INK,this.page,true);
     const undo=()=>{this.craftTap=null;const state=this.workingUndo.pop();if(!state)return this.toast('还没有可撤销的操作。');this.clearCraftFlights();this.workingDraft=state.draft;this.workingSizes=normalizeBeadSizes(state.draft,state.sizes,this.save.beadSize);this.workingCharm=state.charm;this.slot=-1;this.persist();this.render();};
-    [['撤销',undo],['移除',()=>this.removeCraftBead()],['替换',()=>this.slot<0?this.toast('先点选要替换的珠子。'):this.place(this.craftMaterial)],['预览',()=>this.previewCraft()],['参考配色',()=>this.sample()],[event?'评分规则':'采珠',()=>event?this.contestRules():this.matchIntro()]].forEach(([name,action],i)=>this.button(name as string,77+i*95,1104,90,38,action as ()=>void));
+    const tools=[['撤销',undo],['移除',()=>this.removeCraftBead()],['替换',()=>this.slot<0?this.toast('先点选要替换的珠子。'):this.place(this.craftMaterial)],['预览',()=>this.previewCraft()],['参考配色',()=>this.sample()],[event?'评分规则':'采珠',()=>event?this.contestRules():this.matchIntro()]];
+    tools.forEach(([name,action],i)=>{
+      const run=()=>{this.craftToolsOpen=false;this.render();(action as ()=>void)();};
+      if(this.craftToolsOpen)this.button(name as string,77+i*95,1104,90,38,run);
+      else this.accessibleButton(name as string,run);
+    });
+    this.button(this.craftToolsOpen?'收起工具':'工具',554,1160,100,42,()=>{this.craftToolsOpen=!this.craftToolsOpen;this.render();});
     this.button(event?'提交参赛作品':'完成制作',224,1150,272,63,()=>{
       if(event){if(this.workingDraft.includes(null))return this.toast('先串满十二颗珠子，再提交作品。');this.contestConfirm();return;}
       if(!Object.values(craftChecks(this.save)).every(Boolean))return this.toast(!checks.full?'先放入喜欢的珠子，再完成制作。':'材料需通过三消获得，且库存足够；可移除已用尽的饰品。');
       this.confirmDelivery();
     },this.page,ready);
-    this.text('点选一颗珠子可单独调尺寸、替换或取下。',114,1220,492,28,19,'#69574b',this.page,true);
   }
   private selectCraftSlot(index:number) {
     if(this.modal)return;
