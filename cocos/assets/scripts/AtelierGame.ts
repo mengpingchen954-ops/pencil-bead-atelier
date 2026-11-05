@@ -859,6 +859,10 @@ export class AtelierGame extends Component {
     hitNode.on(Node.EventType.TOUCH_END,(e: EventTouch)=>{
       if(hitNode!==n)e.propagationStopped=true;
       if(!start||this.modal)return;
+      if(dragged){const p=this.localPoint(e);
+        // Match the illustrated tray rim; only a completed outward drop removes a piece.
+        if(Math.hypot(p.x-360,p.y+410)>260){start=null;this.slot=index;this.removeCraftBead();return;}
+      }
       if(dragged){const half=n.getComponent(UITransform)?.contentSize.width/2||46,p={x:n.position.x+half,y:n.position.y-half};let target=-1,nearest=95;for(let i=0;i<this.slotNodes.length;i++){if(i===index)continue;const s=this.slotNodes[i].position,half=this.slotNodes[i].getComponent(UITransform)?.contentSize.width/2||46,d=Math.hypot(s.x+half-p.x,s.y-half-p.y);if(d<nearest){target=i;nearest=d;}}
         if(target>=0&&target!==index){this.remember();const sizes=this.workingSizes,facings=this.workingFacings;[sizes[index],sizes[target]]=[sizes[target],sizes[index]];[facings[index],facings[target]]=[facings[target],facings[index]];[this.workingDraft[index],this.workingDraft[target]]=[this.workingDraft[target],this.workingDraft[index]];this.workingSizes=sizes;this.workingFacings=facings;this.slot=target;this.persist();this.play('land');}
       }else{start=null;this.selectCraftSlot(index);return;}

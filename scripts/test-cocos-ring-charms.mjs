@@ -41,12 +41,26 @@ const geometry=async target=>target.page.evaluate(async()=>{
  });
 });
 const checkGeometry=async target=>{const items=await geometry(target);assert.ok(items.length);for(const item of items){assert.ok(item.error<.01,'hole on wire at '+item.i);assert.ok(item.facing==='in'?item.dot<0:item.dot>0,'facing at '+item.i);}return items;};
-const drag=async(from,to)=>{const s=await state(),box=await page.locator('#GameCanvas').boundingBox(),scale=Math.min(box.width/720,box.height/1280),xy=p=>({x:box.x+box.width/2+(p.x-360)*scale,y:box.y+box.height/2+(p.y-640)*scale}),a=xy(s.crafting.slots[from]),b=xy(s.crafting.slots[to]);await page.mouse.move(a.x,a.y);await page.mouse.down();await page.mouse.move(b.x,b.y,{steps:10});await page.mouse.up();await page.waitForTimeout(150);};
+const drag=async(from,to,body=false,touch=false)=>{
+ const s=await state(),box=await page.locator('#GameCanvas').boundingBox(),scale=Math.min(box.width/720,box.height/1280),xy=p=>({x:box.x+box.width/2+(p.x-360)*scale,y:box.y+box.height/2+(p.y-640)*scale}),a=xy(body?(await geometry(ui)).find(item=>item.i===from).body:s.crafting.slots[from]),b=xy(typeof to==='number'?s.crafting.slots[to]:to);
+ if(touch){const cdp=await page.context().newCDPSession(page);try{await cdp.send('Input.dispatchTouchEvent',{type:'touchStart',touchPoints:[{...a,id:0}]});for(let i=1;i<=10;i++){await cdp.send('Input.dispatchTouchEvent',{type:'touchMove',touchPoints:[{x:a.x+(b.x-a.x)*i/10,y:a.y+(b.y-a.y)*i/10,id:0}]});await page.waitForTimeout(16);}await cdp.send('Input.dispatchTouchEvent',{type:'touchEnd',touchPoints:[]});}finally{await cdp.detach();}}
+ else{await page.mouse.move(a.x,a.y);await page.mouse.down();await page.mouse.move(b.x,b.y,{steps:10});await page.mouse.up();}
+ await page.waitForTimeout(150);
+};
 try{
  await button('自由 DIY');let s=await state();assert.deepEqual(s.save.draft,[...initial.draft,leaf]);assert.equal(s.save.charm,'none');assert.deepEqual(s.save.inventory,initial.inventory);assert.deepEqual((await native()).loose,[]);assert.equal((await native()).slots[12].art[0].name,'charm-leaf');
  await button('饰品');await page.screenshot({path:dir+'/legacy-leaf-on-ring.png'});const migrated=s.save.draft.slice();
  await page.reload({waitUntil:'networkidle'});await ready();await button('自由 DIY');assert.deepEqual((await state()).save.draft,migrated);await button('饰品');
  const before=JSON.stringify((await state()).save),locked=(await state()).crafting.materials[36];await tap(locked.x,locked.y);assert.equal(JSON.stringify((await state()).save),before);await page.waitForTimeout(2850);
+ for(const width of [360,390,1440]){
+  await page.setViewportSize({width,height:width===1440?900:844});await page.waitForTimeout(150);
+  for(const index of [9,12]){
+   const original=(await state()).save;await drag(index,{x:index===9?25:695,y:410},index===12,width!==1440);s=await state();assert.equal(s.save.draft[index],null);assert.deepEqual(s.save.inventory,original.inventory);assert.deepEqual(s.save.gatheredStock,original.gatheredStock);
+   assert.equal(await page.evaluate(index=>JSON.parse(localStorage.getItem('pencil-bead-atelier-v1')).draft[index],index),null);await page.screenshot({path:dir+'/drag-out-'+index+'-'+width+'.png'});
+   await button('撤销');s=await state();assert.deepEqual(s.save.draft,original.draft);assert.deepEqual(s.save.draftSizes,original.draftSizes);assert.deepEqual(s.save.draftFacings,original.draftFacings);
+  }
+ }
+ await page.setViewportSize({width:390,height:844});await page.waitForTimeout(150);report.dragOutsideRemovesBeadsAndCharmBodies=true;report.dragRemovalUndoAndStockPreserved=true;report.nativeTouchAndMouseDrag=true;
  await select(12);await button('+');await button('+');s=await state();assert.equal(s.save.draftSizes[12],12);assert.ok(s.save.draftSizes.slice(0,12).every(n=>n===8));assert.equal((await native()).slots[12].selected,true);
  await button('朝内');assert.equal((await state()).save.draftFacings[12],'in');await checkGeometry(ui);await page.screenshot({path:dir+'/selected-leaf-inward.png'});
  await button('朝外');assert.equal((await state()).save.draftFacings[12],'out');await checkGeometry(ui);await page.screenshot({path:dir+'/selected-leaf-outward.png'});
