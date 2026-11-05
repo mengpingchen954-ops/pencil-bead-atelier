@@ -729,7 +729,7 @@ export class AtelierGame extends Component {
       this.text(m.name,1,57,126,22,16,unlocked?'#59463c':'#93867b',n,true);
       this.text(event?'练习':!unlocked?'未解锁':available>0?'×'+available:'已用尽',79,3,47,22,14,unlocked&&available>0?'#627968':'#95887c',n,true);
       const choose=()=>{if(!unlocked)return this.toast('未解锁：通过三消获得'+m.name+'后可使用。');if(event&&m.id)this.chooseCharm(m.id);else{this.craftMaterial=i;this.place(i);}};
-      n.on(Node.EventType.TOUCH_END,choose);this.accessibleButton((m.id?'选择':'放入')+m.name,choose);
+      this.bindMaterialDrag(n,i,unlocked,choose);this.accessibleButton((m.id?'选择':'放入')+m.name,choose);
     });
     this.rect('Size paper',83,1057,554,39,'#f7f2ec',this.page,12,'#e0d2c7');
     this.text('单珠',94,1060,61,33,22,INK);
@@ -810,16 +810,49 @@ export class AtelierGame extends Component {
     this.button('继续制作',130,875,460,64,()=>this.closeModal(),this.overlay,true);
     this.button('参考配色',130,962,460,56,()=>this.sample(),this.overlay);
   }
-  private place(type: number) {
+  private bindMaterialDrag(n:Node,type:number,unlocked:boolean,choose:()=>void) {
+    let start:Vec3|null=null,dragged=false,ghost:Node|null=null;
+    const clear=()=>{if(ghost?.parent){ghost.removeFromParent();ghost.destroy();}ghost=null;start=null;dragged=false;};
+    n.on(Node.EventType.TOUCH_START,(e:EventTouch)=>{
+      e.propagationStopped=true;clear();if(this.modal||this.busy)return;start=this.localPoint(e);
+    });
+    n.on(Node.EventType.TOUCH_MOVE,(e:EventTouch)=>{
+      e.propagationStopped=true;if(!start||this.modal||this.busy)return;
+      const p=this.localPoint(e);if(Vec3.distance(start,p)>14)dragged=true;
+      if(!dragged||!unlocked||!this.contestEntry&&!rules.canPlace(this.save,type,this.workingDraft.length))return;
+      if(!ghost){ghost=this.image(this.materialArt(type),p.x-41,-p.y-41,82,82);ghost.name='Dragged material';ghost.addComponent(UIOpacity).opacity=220;}
+      ghost.setPosition(p.x-41,p.y+41);
+    });
+    const finish=(e:EventTouch)=>{
+      e.propagationStopped=true;if(!start)return;
+      const p=this.localPoint(e),wasDragged=dragged;clear();if(this.modal||this.busy)return;
+      if(!wasDragged){choose();return;}
+      if(Math.hypot(p.x-360,p.y+410)>260)return;
+      if(!unlocked){this.toast('未解锁：通过三消获得'+MATERIALS[type].name+'后可使用。');return;}
+      if(this.contestEntry&&MATERIALS[type].id){choose();return;}
+      let target=-1,nearest=Infinity;
+      this.workingDraft.forEach((value,i)=>{if(value!==null)return;const s=this.slotPos(i),distance=Math.hypot(p.x-s.x,p.y+s.y);if(distance<nearest){nearest=distance;target=i;}});
+      if(target<0&&!this.contestEntry)target=this.workingDraft.length;
+      if(target<0){this.toast('手串已满，可拖动换位，或点选一颗后替换。');return;}
+      this.craftMaterial=type;this.place(type,target);
+    };
+    n.on(Node.EventType.TOUCH_END,finish);
+    n.on(Node.EventType.TOUCH_CANCEL,(e?:EventTouch)=>{
+      // Creator reports a release outside the material tile as CANCEL.
+      if(e?.getEventCode?.()==='touch-end'){finish(e);return;}
+      if(e)e.propagationStopped=true;clear();
+    });
+  }
+  private place(type: number, dropTarget?:number) {
     if(this.modal||!Number.isInteger(type)||type<0||type>=(this.contestEntry?BEADS.length:MATERIALS.length))return;
     this.craftTap=null;
-    const index=rules.craftTarget(this.workingDraft,this.slot,Math.random,!this.contestEntry);
+    const index=dropTarget===undefined?rules.craftTarget(this.workingDraft,this.slot,Math.random,!this.contestEntry):dropTarget;
     if(index<0){this.render();return this.toast('手串已满，可拖动换位，或点选一颗后替换。');}
     if(this.workingDraft[index]===type){this.render();return;}
     if(!this.contestEntry&&!rules.canPlace(this.save,type,index)){this.render();return this.toast(MATERIALS[type].name+'不足，点工具栏「采珠」获取。');}
     if(index===this.workingDraft.length)this.clearCraftFlights();else this.clearCraftFlight(index);
     this.remember();const sizes=this.workingSizes,facings=this.workingFacings;if(this.workingDraft[index]==null){sizes[index]=8;facings[index]='out';}this.workingDraft[index]=type;this.workingSizes=sizes;this.workingFacings=facings;this.slot=-1;this.persist();
-    if(!this.save.reduced)this.launchCraftBead(index,type);
+    if(dropTarget===undefined&&!this.save.reduced)this.launchCraftBead(index,type);
     this.render();this.play();
   }
   private clearCraftFlight(index:number) {
