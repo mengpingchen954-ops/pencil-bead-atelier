@@ -630,6 +630,13 @@ export class AtelierGame extends Component {
     const diameter=this.craftDiameter(index);
     this.ellipse('Bead contact shadow',size/2+2,size/2+diameter*.23,diameter*.4,diameter*.15,'#82634230',parent);
   }
+  private drawCraftSlot(n:Node,index:number) {
+    this.clear(n);
+    const size=n.getComponent(UITransform)!.contentSize.width,type=this.workingDraft[index];
+    if(this.slot===index){const r=Math.max(size*.48,type===null?0:this.craftDiameter(index)/2+5);this.ellipse('Selected groove',size/2,size/2,r,r,'#dfe8cf55',n,'#627351');}
+    if(type!==null&&!this.craftFlights.has(index)){this.craftShadow(n,index);this.craftImage(type,n,index);}
+    else if(type===null)this.text('·',0,0,size,size,Math.min(22,size/2),'#bca28d',n,true);
+  }
   private chooseCharm(id:string) {
     const type=charmType(id);
     if(this.workingCharm!==id&&!this.contestEntry&&materialStock(this.save,type)<1)return this.toast('先通过三消获得'+CHARMS[id]+'，才能使用。');
@@ -653,10 +660,8 @@ export class AtelierGame extends Component {
     if(event)this.text(placed+' / 12 颗 · 赛事练习珠材',191,155,338,30,19,'#a49184',this.page,true);
     if(this.workingCharm!=='none')this.image('charm-'+this.workingCharm,339,467,42,42);
     this.workingDraft.forEach((type:number|null,i:number)=>{
-      const p=this.slotPos(i),size=this.craftSlotSize(),n=this.box('Slot '+i,p.x-size/2,p.y-size/2,size,size),active=this.slot===i;
-      if(active)this.ellipse('Selected groove',size/2,size/2,size*.48,size*.48,'#f2d38b20',n,'#9e8873');
-      if(type!==null&&!this.craftFlights.has(i)){this.craftShadow(n,i);this.craftImage(type,n,i);}
-      else if(type===null)this.text('·',0,0,size,size,Math.min(22,size/2),'#bca28d',n,true);
+      const p=this.slotPos(i),size=this.craftSlotSize(),n=this.box('Slot '+i,p.x-size/2,p.y-size/2,size,size);
+      this.drawCraftSlot(n,i);
       this.slotNodes.push(n);this.bindCraftDrag(n,i);
       this.accessibleButton('第'+(i+1)+'槽：'+(type===null?'空槽':BEADS[type].name),()=>this.selectCraftSlot(i));
     });
@@ -683,16 +688,43 @@ export class AtelierGame extends Component {
     });
     this.rect('Size paper',83,1057,554,39,'#f7f2ec',this.page,12,'#e0d2c7');
     this.text('单珠',94,1060,61,33,22,INK);
-    const resize=(delta:number)=>{
+    const resize=(value:number)=>{
       if(this.slot<0||this.workingDraft[this.slot]==null)return this.toast('先点选要调整尺寸的那颗珠子。');
-      const sizes=this.workingSizes,next=Math.max(6,Math.min(12,sizes[this.slot]+delta));if(next===sizes[this.slot])return;
+      const sizes=this.workingSizes,next=Math.max(6,Math.min(12,value));if(next===sizes[this.slot])return;
       this.clearCraftFlights();this.remember();sizes[this.slot]=next;this.workingSizes=sizes;this.persist();this.render();
     };
-    this.button('−',151,1057,42,39,()=>resize(-2));
-    this.rect('Size rail',205,1074,289,6,'#e6dad0',this.page,3);
-    const size=this.slot>=0&&this.workingDraft[this.slot]!=null?this.workingSizes[this.slot]:8;this.rect('Size value',205,1074,289*(size-6)/6,6,'#99a89e',this.page,3);
-    this.ellipse('Size handle',205+289*(size-6)/6,1077,12,12,'#faf7f2',this.page,'#99a89e');
-    this.button('+',509,1057,42,39,()=>resize(2));this.text(this.slot>=0&&this.workingDraft[this.slot]!=null?size+' mm':'选珠',566,1059,73,34,22,INK,this.page,true);
+    this.button('−',151,1057,42,39,()=>resize(this.workingSizes[this.slot]-2));
+    const selected=this.slot>=0&&this.workingDraft[this.slot]!=null,size=selected?this.workingSizes[this.slot]:8;
+    const meter=this.box('Single bead size slider',193,1055,313,44),readout=this.text(selected?size+' mm':'选珠',566,1059,73,34,22,INK,this.page,true);
+    const drawSize=(value:number)=>{
+      this.clear(meter);
+      this.rect('Size rail',12,19,289,6,'#e6dad0',meter,3);
+      this.rect('Size value',12,19,289*(value-6)/6,6,'#99a89e',meter,3);
+      this.ellipse('Size handle',12+289*(value-6)/6,22,12,12,'#faf7f2',meter,'#99a89e');
+    };
+    drawSize(size);
+    let before:number[]|null=null,target=-1;
+    const slide=(e:EventTouch)=>{
+      if(!before)return;
+      const value=6+2*Math.max(0,Math.min(3,Math.round((this.localPoint(e).x-meter.position.x-12)/289*3))),sizes=this.workingSizes;
+      if(sizes[target]===value)return;
+      sizes[target]=value;this.workingSizes=sizes;this.drawCraftSlot(this.slotNodes[target],target);drawSize(value);readout.string=value+' mm';
+    };
+    meter.on(Node.EventType.TOUCH_START,(e:EventTouch)=>{
+      if(this.modal)return;
+      if(!selected)return this.toast('先点选要调整尺寸的那颗珠子。');
+      this.clearCraftFlights();this.slotNodes.forEach((n,i)=>this.drawCraftSlot(n,i));this.craftTap=null;target=this.slot;before=this.workingSizes;slide(e);
+    });
+    meter.on(Node.EventType.TOUCH_MOVE,slide);
+    meter.on(Node.EventType.TOUCH_END,(e:EventTouch)=>{
+      if(!before)return;slide(e);
+      const original=before,after=this.workingSizes;before=null;
+      if(original[target]!==after[target]){this.workingSizes=original;this.remember();this.workingSizes=after;this.persist();}
+      this.render();
+    });
+    meter.on(Node.EventType.TOUCH_CANCEL,()=>{if(!before)return;this.workingSizes=before;before=null;this.render();});
+    [6,8,10,12].forEach(value=>this.accessibleButton('选中珠子设为'+value+'毫米',()=>resize(value),this.page,selected));
+    this.button('+',509,1057,42,39,()=>resize(this.workingSizes[this.slot]+2));
     const undo=()=>{this.craftTap=null;const state=this.workingUndo.pop();if(!state)return this.toast('还没有可撤销的操作。');this.clearCraftFlights();this.workingDraft=state.draft;this.workingSizes=normalizeBeadSizes(state.draft,state.sizes,this.save.beadSize);this.workingCharm=state.charm;this.slot=-1;this.persist();this.render();};
     const tools=[['撤销',undo],['移除',()=>this.removeCraftBead()],['替换',()=>this.slot<0?this.toast('先点选要替换的珠子。'):this.place(this.craftMaterial)],['预览',()=>this.previewCraft()],['参考配色',()=>this.sample()],[event?'评分规则':'采珠',()=>event?this.contestRules():this.matchIntro()]];
     tools.forEach(([name,action],i)=>{

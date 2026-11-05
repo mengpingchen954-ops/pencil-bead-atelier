@@ -17,6 +17,28 @@ function fixture(){
 }
 const widths=game=>game.slotNodes.slice(0,3).map(n=>n.children.find(n=>n.name.startsWith('bead-')).getComponent(UITransform).contentSize.width);
 
+test('native ring selection and slider resize only that bead live, with one undo per gesture',()=>{
+ const {game,actions}=fixture(),stock=plain(game.save.inventory),before=widths(game);let writes=0;game.persist=()=>writes++;
+ const touch=(x,y=1077)=>({getUILocation:()=>({x,y:1280-y})});
+ const meter=()=>game.page.children.find(n=>n.name==='Single bead size slider');
+ meter().events.start(touch(494));meter().events.end(touch(494));assert.deepEqual(widths(game),before);assert.equal(game.undo.length,0);
+ const p=game.slotPos(1),bead=game.slotNodes[1];bead.events.start(touch(p.x,p.y));bead.events.end(touch(p.x,p.y));assert.equal(game.slot,1);
+ assert.ok(game.slotNodes[1].children.some(n=>n.name==='Selected groove'));
+ const slider=meter();slider.events.start(touch(205));slider.events.move(touch(398));
+ assert.deepEqual(plain(game.workingSizes.slice(0,3)),[8,10,8]);assert.ok(widths(game)[1]>before[1]);assert.equal(writes,0);
+ slider.events.move(touch(720));slider.events.end(touch(720));assert.deepEqual(plain(game.workingSizes.slice(0,3)),[8,12,8]);
+ assert.deepEqual([widths(game)[0],widths(game)[2]],[before[0],before[2]]);assert.equal(writes,1);assert.equal(game.undo.length,1);
+ actions.get('撤销')();assert.deepEqual(plain(game.workingSizes.slice(0,3)),[8,8,8]);assert.deepEqual(plain(game.save.inventory),stock);
+});
+
+test('cancelled size drag restores the bead and unchanged slider taps do not add history',()=>{
+ const {game,actions}=fixture();actions.get('第1槽：珍珠')();const before=widths(game),touch=x=>({getUILocation:()=>({x,y:203})});
+ let slider=game.page.children.find(n=>n.name==='Single bead size slider');slider.events.start(touch(494));assert.equal(game.workingSizes[0],12);slider.events.cancel();
+ assert.deepEqual(widths(game),before);assert.equal(game.undo.length,0);assert.equal(game.slot,0);
+ slider=game.page.children.find(n=>n.name==='Single bead size slider');slider.events.start(touch(301));slider.events.end(touch(301));assert.equal(game.undo.length,0);
+ actions.get('选中珠子设为6毫米')();assert.deepEqual(plain(game.workingSizes.slice(0,3)),[6,8,8]);
+});
+
 test('size controls affect only the selected instance, including equal materials, and undo restores it',()=>{
  const {game,actions}=fixture(),before=widths(game),stock=plain(game.save.inventory);
  actions.get('+')();assert.deepEqual(widths(game),before);assert.equal(game.undo.length,0);

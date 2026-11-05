@@ -33,9 +33,26 @@ const ui=await fixture(initial),{page,state,button,tap,ready}=ui;
 const widths=()=>page.evaluate(async()=>{const cc=await System.import('cc'),g=cc.director.getScene().getChildByName('AtelierGame').getComponent('AtelierGame');return g.slotNodes.map(n=>{const bead=n.children.find(c=>/^bead-/.test(c.name));return bead?.getComponent(cc.UITransform).contentSize.width||0;});});
 const select=async i=>{const s=await state();await tap(s.crafting.slots[i].x,s.crafting.slots[i].y);};
 const drag=async(a,b)=>{const s=await state(),box=await page.locator('#GameCanvas').boundingBox(),scale=Math.min(box.width/720,box.height/1280),xy=p=>({x:box.x+box.width/2+(p.x-360)*scale,y:box.y+box.height/2+(p.y-640)*scale}),from=xy(s.crafting.slots[a]),to=xy(s.crafting.slots[b]);await page.mouse.move(from.x,from.y);await page.mouse.down();await page.mouse.move(to.x,to.y,{steps:10});await page.mouse.up();await page.waitForTimeout(150);};
+const slideSize=async(cancel=false)=>{
+ const box=await page.locator('#GameCanvas').boundingBox(),scale=Math.min(box.width/720,box.height/1280),point=x=>({x:box.x+box.width/2+(x-360)*scale,y:box.y+box.height/2+(1077-640)*scale}),cdp=await page.context().newCDPSession(page);
+ try{await cdp.send('Input.dispatchTouchEvent',{type:'touchStart',touchPoints:[point(301)]});
+  for(const x of [330,365,400,445,494])await cdp.send('Input.dispatchTouchEvent',{type:'touchMove',touchPoints:[point(x)]});
+  assert.equal((await state()).save.draftSizes[1],12);const w=await widths();assert.ok(w[1]>w[0]);
+  const errorStart=errors.length;
+  await cdp.send('Input.dispatchTouchEvent',{type:cancel?'touchCancel':'touchEnd',touchPoints:[]});await page.waitForTimeout(150);
+  if(cancel){
+   // Creator 3.8.2 calls preventDefault on Chromium's noncancelable synthetic touchcancel.
+   const diagnostics=errors.splice(errorStart);assert.ok(diagnostics.every(message=>message==='Ignored attempt to cancel a touchcancel event with cancelable=false, for example because scrolling is in progress and cannot be interrupted.'));report.expectedTouchCancelDiagnostics=diagnostics;
+  }
+ }finally{await cdp.detach();}
+};
 try {
  await button('自由 DIY');let s=await state();assert.equal(s.screen,'craft');assert.equal(s.save.draft.length,13);
  const before=await widths();await button('+');assert.deepEqual(await widths(),before);await page.waitForTimeout(2800);
+ await select(0);await tap(494,1077);assert.deepEqual((await state()).save.draftSizes.slice(0,3),[12,8,8]);await button('撤销');assert.deepEqual((await state()).save.draftSizes.slice(0,3),[8,8,8]);
+ await select(1);await slideSize(true);assert.deepEqual((await state()).save.draftSizes.slice(0,3),[8,8,8]);
+ await slideSize();assert.deepEqual((await state()).save.draftSizes.slice(0,3),[8,12,8]);await page.screenshot({path:dir+'/native-size-slider.png'});
+ await button('撤销');assert.deepEqual((await state()).save.draftSizes.slice(0,3),[8,8,8]);assert.deepEqual((await state()).save.inventory,initial.inventory);report.nativeSizeSlider=true;report.cancelAndSingleUndo=true;
  await select(0);await button('+');await button('+');s=await state();assert.equal(s.save.draftSizes[0],12);assert.ok(s.save.draftSizes.slice(1).every(n=>n===8));
  const after=await widths();assert.ok(after[0]>before[0]);assert.deepEqual(after.slice(1),before.slice(1));
  await select(1);await button('−');await select(2);await button('+');s=await state();assert.deepEqual(s.save.draftSizes.slice(0,3),[12,6,10]);assert.equal(s.save.beadSize,8);assert.deepEqual(s.save.inventory,initial.inventory);
