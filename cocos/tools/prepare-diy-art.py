@@ -30,8 +30,15 @@ if '--stage-only' in sys.argv:
     sys.exit(0)
 content=(Path('cocos/assets/scripts/content.ts').read_text(encoding='utf-8')); beads=json.loads(content.split('export const BEADS = ')[1].split(';')[0]);
 # Extract each supplied round bead at its actual edge; feather the alpha by half a pixel.
+bead_grids=[
+    ([141,284,424,568],[781,873,966],[819,911,1005]),
+    ([146,286,425,565],[803,889,976],[840,924,1009]),
+    ([146,286,425,565],[805,896,988],[840,930,1024]),
+]
 for i,b in enumerate(beads):
-    im=images[b['category']];cx=[146,286,425,565][b['cell']%4];cy=[805,896,988][b['cell']//4];r=31
+    # Each reference has different spacing; a shared grid captures printed names.
+    xs,ys,label_tops=bead_grids[b['category']];row=b['cell']//4;im=images[b['category']];cx=xs[b['cell']%4];cy=ys[row];r=31
+    assert cy+r+1<=label_tops[row], f'Bead {i} crop overlaps its printed label'
     tile=im.crop((cx-r-1,cy-r-1,cx+r+1,cy+r+1)).convert('RGBA');mask=Image.new('L',tile.size);ImageDraw.Draw(mask).ellipse((1,1,63,63),fill=255);tile.putalpha(mask.filter(ImageFilter.GaussianBlur(.35)));save(tile.resize((192,192),Image.Resampling.LANCZOS),'beads',f'bead-{i}.png')
 # Flood only the connected pale card backdrop; retain white pearls inside the gold outlines.
 from collections import deque
