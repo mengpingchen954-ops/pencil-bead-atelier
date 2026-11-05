@@ -35,7 +35,7 @@ test('Creator production bundle preserves collection iteration and complete game
   assert.equal(daily.claimDaily(model.normalizeSave(signed),Date.parse('2026-11-04T03:00:00Z')),null);
   const content=load([...definitions.keys()].find(n=>n.endsWith('/content.ts')));
   const materials=load([...definitions.keys()].find(n=>n.endsWith('/materials.ts')));
-  assert.deepEqual(Array.from(materials.MATERIAL_DROPS),[0,0,1,1,2,2,3,3,4,5]);
+  assert.deepEqual(Array.from(materials.MATERIAL_DROPS),[0,0,0,1,2,2,2,3,4,5]);
   for(const level of [1,5,6,12,13,100]){const session=model.newSession(19,level);assert.deepEqual(Array.from(session.materialTypes,t=>content.MATERIALS[t].category),[0,1,0,1,2,3]);assert.deepEqual(Array.from(session.dropPool),Array.from(materials.MATERIAL_DROPS));}
   const trade=load([...definitions.keys()].find(n=>n.endsWith('/commerce.ts')));
   const ringDraft={...model.freshSave(),inventory:Array(48).fill(2),gatheredStock:Array(48).fill(2),draft:[0,43,43,47],draftSizes:[6,10,12,8],draftFacings:['out','in','out','in']};

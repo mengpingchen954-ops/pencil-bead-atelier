@@ -8,7 +8,7 @@ import {craftChecks,finishWork} from '../assets/scripts/commerce.ts';
 test('all 48 supplied materials are reachable in weighted six-type match palettes',()=>{
  assert.equal(BEADS.length,36);assert.equal(MATERIALS.length,48);
  for(let c=0;c<4;c++)assert.equal(MATERIALS.filter(m=>m.category===c).length,12);
- assert.deepEqual(MATERIAL_DROPS,[0,0,1,1,2,2,3,3,4,5]);
+ assert.deepEqual(MATERIAL_DROPS,[0,0,0,1,2,2,2,3,4,5]);
  const all=new Set();for(let level=1;level<=12;level++){const types=materialPalette(level);assert.equal(new Set(types).size,6);assert.deepEqual(types.map(i=>MATERIALS[i].category),[0,1,0,1,2,3]);types.forEach(i=>all.add(i));assert.deepEqual(newSession(42,level).materialTypes,types);}
  assert.equal(all.size,48);assert.deepEqual(materialPalette(13),materialPalette(1));
 });
@@ -51,7 +51,7 @@ test('weighted match boards and refills favor jewelry and crystal while retainin
    types.forEach(type=>routes[route][MATERIALS[session.materialTypes[type]].category]++);
   }
  }
- const check=(values,name)=>{const total=values.reduce((a,b)=>a+b,0);assert.ok(total>1000,name);values.forEach((count,category)=>assert.ok(Math.abs(count/total-(category<2?.4:.1))<.05,name+': '+values));};
+ const check=(values,name)=>{const total=values.reduce((a,b)=>a+b,0);assert.ok(total>1000,name);values.forEach((count,category)=>assert.ok(Math.abs(count/total-[.6,.2,.1,.1][category])<.05,name+': '+values));};
  check(counts,'opening');for(const [route,values] of Object.entries(routes))check(values,route);
 });
 
