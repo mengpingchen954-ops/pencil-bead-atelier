@@ -31,13 +31,20 @@ async function fixture(save,viewport={width:390,height:844}){
 const names=['珠宝','水晶','木质','饰品'];
 try{
  const initial={...freshSave(),started:true,sound:false,music:{enabled:false,track:'glimmer',volume:0}};
- for(const level of [1,5,6,13]){
+ for(const level of [1,5,6,14]){
   const ui=await fixture({...initial,level});await ui.button('消除采珠');const start=await ui.page.getByRole('button',{name:/^开始采珠 · /}).textContent();await ui.button(start);let s=await ui.state();
   assert.deepEqual([...new Set(s.session.board.map(t=>MATERIALS[s.session.materialTypes[t]].category))].sort(),[0,1,2,3]);
   // Read the actual native sprites, rather than inferring appearance from model IDs.
   const artwork=await ui.page.evaluate(async()=>{const cc=await System.import('cc'),g=cc.director.getScene().getChildByName('AtelierGame').getComponent('AtelierGame');return g.boardNodes.map(n=>n.children.map(c=>c.getComponent(cc.Sprite)?.spriteFrame?.name).filter(Boolean));});
   s.session.board.forEach((t,i)=>{const type=s.session.materialTypes[t],m=MATERIALS[type],name=m.id?'charm-'+m.id:'bead-'+type;assert.ok(artwork[i].includes(name),name+' must be rendered on '+i);});
   await ui.page.screenshot({path:dir+'/mixed-level-'+level+'.png'});
+  // Collect the rarer materials through real limited tools, then ordinary swaps for the main categories.
+  for(const category of [2,3]){
+   s=await ui.state();if(s.session.collected.some((n,i)=>n>0&&MATERIALS[s.session.materialTypes[i]].category===category))continue;
+   const i=s.session.board.findIndex(t=>MATERIALS[s.session.materialTypes[t]].category===category);assert.ok(i>=0);
+   await ui.button('小木槌 '+s.session.tools.hammer);await ui.tap(48+i%8*78+36,340+Math.floor(i/8)*78+36);
+   await ui.page.waitForFunction(()=>!JSON.parse(window.render_game_to_text()).busy,{},{timeout:12000});
+  }
   for(let turn=0;turn<18;turn++){
    s=await ui.state();const cats=new Set(s.session.collected.flatMap((n,i)=>n?[MATERIALS[s.session.materialTypes[i]].category]:[]));if(cats.size===4||s.modal==='result')break;
    const pair=findMove(s.session.board,s.session.specials,s.session.obstacles);assert.ok(pair);for(const i of pair)await ui.tap(48+i%8*78+36,340+Math.floor(i/8)*78+36);
@@ -50,5 +57,5 @@ try{
   for(let c=0;c<4;c++){await ui.button(names[c]);const earned=expected.findIndex((n,i)=>n>0&&MATERIALS[i].category===c),tile=(await ui.state()).crafting.materials[earned];assert.equal(tile.unlocked,true);assert.equal(tile.stock,expected[earned]);await ui.tap(tile.x,tile.y);const after=await ui.state();assert.ok(after.save.draft.includes(earned));}
   await ui.page.reload({waitUntil:'networkidle'});await ui.ready();assert.deepEqual((await ui.state()).save.inventory,expected);await ui.context.close();
  }
- assert.deepEqual(errors,[]);fs.writeFileSync(dir+'/report.json',JSON.stringify({base,levels:[1,5,6,13],nativeSpritesAllCategories:true,actualEliminatedStock:true,allFourDiyCategories:true,reloadPreserved:true,errors},null,2));console.log('Mixed materials passed: four categories visibly present on every tested board, correct real rewards, all four DIY tabs usable after collection, and reload preserves stock.');
+ assert.deepEqual(errors,[]);fs.writeFileSync(dir+'/report.json',JSON.stringify({base,levels:[1,5,6,14],nativeSpritesAllCategories:true,actualEliminatedStock:true,allFourDiyCategories:true,reloadPreserved:true,errors},null,2));console.log('Mixed materials passed: four categories visibly present on every tested board, correct real rewards, all four DIY tabs usable after collection, and reload preserves stock.');
 }finally{await browser.close();}

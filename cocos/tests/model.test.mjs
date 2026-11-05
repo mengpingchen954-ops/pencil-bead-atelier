@@ -78,13 +78,12 @@ test("square-only move is offered by hints, spends one move and settles all casc
 
 test("100 seeded boards start stable with a legal move and settle after swaps", () => {
   for (let seed = 1; seed <= 100; seed++) {
-    const board = createBoard(seed);
+    const before = newSession(seed), board = [...before.board];
     assert.equal(board.length, 64);
     assert.equal(matches(board).length, 0);
     const pair = findMove(board);
     assert.ok(pair);
-    const before = newSession(seed),
-      result = move(before, ...pair);
+    const result = move(before, ...pair);
     assert.equal(result.valid, true);
     assert.equal(result.session.moves, 15);
     assert.ok(total(result.session.collected) >= 3);

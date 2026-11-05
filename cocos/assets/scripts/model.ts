@@ -8,7 +8,7 @@ import { freshSeaHeart, normalizeSeaHeart } from "./heart.ts";
 import { freshCompetitions, normalizeCompetitions } from "./competition.ts";
 import { normalizeMusic } from "./music-settings.ts";
 import { freshCommerce, normalizeCommerce, salesProgress } from "./commerce.ts";
-import { materialPalette, materialStock, validMaterial, normalizeBeadSizes } from './materials.ts';
+import { materialPalette, MATERIAL_DROPS, materialStock, validMaterial, normalizeBeadSizes } from './materials.ts';
 import { freshDaily, normalizeDaily } from './daily.ts';
 export const SAVE_KEY = "pencil-bead-atelier-v1";
 export function rng(seed = 1) {
@@ -69,14 +69,17 @@ export function findMove(board, specials = [], obstacles = []) {
     }
   return null;
 }
-export function createBoard(seed = 1) {
+function drawMaterial(random,dropPool) {
+  return dropPool?dropPool[Math.floor(random()*dropPool.length)]:Math.floor(random()*6);
+}
+export function createBoard(seed = 1,dropPool=null) {
   const random = rng(seed);
   for (let attempt = 0; attempt < 100; attempt++) {
     const board = [];
     for (let i = 0; i < 64; i++) {
       let t;
       do {
-        t = Math.floor(random() * 6);
+        t = drawMaterial(random,dropPool);
       } while (
         (i % 8 >= 2 && board[i - 1] === t && board[i - 2] === t) ||
         (i >= 16 && board[i - 8] === t && board[i - 16] === t) ||
@@ -85,7 +88,7 @@ export function createBoard(seed = 1) {
       );
       board.push(t);
     }
-    if (findMove(board)) return board;
+    if (findMove(board)&&(!dropPool||new Set(board).size===6)) return board;
   }
   throw new Error("Unable to create a playable board");
 }
@@ -93,7 +96,8 @@ export const targetForLevel = (level) => levelConfig(level).target;
 export function newSession(seed = 1, level = 1, order = null, save = null) {
   const config = levelConfig(level, order);
   const supply = save && order ? supplyGoals(save, order) : [];
-  let board = createBoard(seed);
+  const dropPool=order?null:[...MATERIAL_DROPS];
+  let board = createBoard(seed,dropPool);
   if (supply.length) {
     for (let attempt=0;attempt<64&&!findSupplyMove(board,supply);attempt++) board=createBoard(seed+attempt+1);
   }
@@ -102,6 +106,7 @@ export function newSession(seed = 1, level = 1, order = null, save = null) {
     board,
     freeGather: !order,
     materialTypes: order ? [0,1,2,3,4,5] : materialPalette(level),
+    dropPool,
     seed,
     moves: config.moves,
     target: config.target,
@@ -200,12 +205,12 @@ function specialCreations(board, naturalHit, specials, preferred = []) {
   }
   return created;
 }
-function reshape(board, specials, seed) {
+function reshape(board, specials, seed,dropPool=null) {
   // Refill a dead board without silently losing any earned specials or fixed obstacles.
-  const next = createBoard(seed);
+  const next = createBoard(seed,dropPool);
   return { board: next, specials: [...specials] };
 }
-function resolve(board, first, seed, initialSpecials = [], initialObstacles = [], preferred = [], create = true) {
+function resolve(board, first, seed, initialSpecials = [], initialObstacles = [], preferred = [], create = true,dropPool=null) {
   const random = rng(seed);
   const collected = [0, 0, 0, 0, 0, 0],
     frames = [];
@@ -250,7 +255,7 @@ function resolve(board, first, seed, initialSpecials = [], initialObstacles = []
       const missing = 8 - col.length;
       for (let y = 7; y >= 0; y--) {
         const retained = col[7 - y];
-        const type = retained?.type ?? Math.floor(random() * 6);
+        const type = retained?.type ?? drawMaterial(random,dropPool);
         board[y * 8 + x] = type;
         specials[y * 8 + x] = retained?.special || '';
         falls.push({
@@ -268,7 +273,7 @@ function resolve(board, first, seed, initialSpecials = [], initialObstacles = []
   }
   let reshuffled = false;
   if (matches(board).length || !findMove(board, specials)) {
-    const shuffled = reshape(board, specials, seed + 17); board = shuffled.board; specials = shuffled.specials; reshuffled = true;
+    const shuffled = reshape(board, specials, seed + 17,dropPool); board = shuffled.board; specials = shuffled.specials; reshuffled = true;
   }
   return { board, specials, obstacles, cleared, collected, frames, reshuffled };
 }
@@ -292,13 +297,13 @@ export function move(session, a, b) {
   if (specials[a]) hit.push(a);
   if (specials[b]) hit.push(b);
   if (!hit.length) return { valid: false, session };
-  const result = resolve(board, Array.from(new Set(hit)), session.seed + session.moves * 997, specials, session.obstacles, [b, a]);
+  const result = resolve(board, Array.from(new Set(hit)), session.seed + session.moves * 997, specials, session.obstacles, [b, a],true,session.dropPool);
   return finishMove(session, result, session.moves - 1);
 }
 export function activateSpecial(session, index) {
   if (session.status !== 'playing' || session.moves <= 0 || !Number.isInteger(index) || index < 0 || index >= 64 || !session.specials?.[index])
     return { valid: false, session };
-  const result = resolve([...session.board], [index], session.seed + session.moves * 997, session.specials, session.obstacles, [], false);
+  const result = resolve([...session.board], [index], session.seed + session.moves * 997, session.specials, session.obstacles, [], false,session.dropPool);
   return finishMove(session, result, session.moves - 1);
 }
 export function useTool(session, tool, index = 0) {
@@ -312,7 +317,7 @@ export function useTool(session, tool, index = 0) {
     return { valid: false, session };
   const tools = { ...session.tools, [tool]: session.tools[tool] - 1 };
   if (tool === "shuffle") {
-    const shuffled = reshape(session.board, session.specials || Array(64).fill(''), session.seed + session.score + session.tools.shuffle * 31);
+    const shuffled = reshape(session.board, session.specials || Array(64).fill(''), session.seed + session.score + session.tools.shuffle * 31,session.dropPool);
     return {
       valid: true,
       session: {
@@ -339,6 +344,7 @@ export function useTool(session, tool, index = 0) {
     session.obstacles,
     [],
     false,
+    session.dropPool,
   );
   return finishMove(session, result, session.moves, tools);
 }

@@ -1,12 +1,14 @@
 import { BEADS, MATERIALS } from './content.ts';
 export const materialPalette = (level:number) => {
-  const start=((Math.max(1,level)-1)%8)*6;
-  // Interleave all four categories in every six-type board; eight levels cover the catalog.
-  return Array.from({length:6},(_,i)=>{
-    const position=start+i,category=position%4,cell=Math.floor(position/4);
+  const step=(Math.max(1,level)-1)%12;
+  // Two jewelry, two crystal, one wood and one charm; twelve levels cover all materials.
+  return [0,1,0,1,2,3].map((category,i)=>{
+    const cell=category<2?(step*2+Math.floor(i/2))%12:step;
     return MATERIALS.findIndex(m=>m.category===category&&m.cell===cell);
   });
 };
+// 40% jewelry, 40% crystal, 10% wood and 10% charms before avoiding opening matches.
+export const MATERIAL_DROPS = [0,0,1,1,2,2,3,3,4,5];
 export const materialStock = (save:any,type:number) => Math.max(0,Math.min(save.inventory?.[type]||0,save.gatheredStock?.[type]||0));
 export const charmType = (charm:string) => MATERIALS.findIndex(m=>m.id===charm);
 export const validBead = (n:any) => Number.isInteger(n)&&n>=0&&n<BEADS.length;

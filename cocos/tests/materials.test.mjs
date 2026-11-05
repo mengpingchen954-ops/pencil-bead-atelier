@@ -1,14 +1,16 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import {MATERIALS,BEADS} from '../assets/scripts/content.ts';
-import {materialPalette,materialStock,charmType} from '../assets/scripts/materials.ts';
-import {freshSave,normalizeSave,newSession,bankEarlyCollection,canPlace} from '../assets/scripts/model.ts';
+import {materialPalette,materialStock,charmType,MATERIAL_DROPS} from '../assets/scripts/materials.ts';
+import {freshSave,normalizeSave,newSession,bankEarlyCollection,canPlace,findMove,move,useTool,activateSpecial,createBoard,matches} from '../assets/scripts/model.ts';
+import {ORDERS} from '../assets/scripts/content.ts';
 import {craftChecks,finishWork} from '../assets/scripts/commerce.ts';
-test('all 48 supplied materials are reachable in six-type match palettes with equal-size categories',()=>{
+test('all 48 supplied materials are reachable in weighted six-type match palettes',()=>{
  assert.equal(BEADS.length,36);assert.equal(MATERIALS.length,48);
  for(let c=0;c<4;c++)assert.equal(MATERIALS.filter(m=>m.category===c).length,12);
- const all=new Set();for(let level=1;level<=8;level++){const types=materialPalette(level);assert.equal(new Set(types).size,6);assert.deepEqual([...new Set(types.map(i=>MATERIALS[i].category))].sort(),[0,1,2,3]);types.forEach(i=>all.add(i));assert.deepEqual(newSession(42,level).materialTypes,types);}
- assert.equal(all.size,48);assert.deepEqual(materialPalette(9),materialPalette(1));
+ assert.deepEqual(MATERIAL_DROPS,[0,0,1,1,2,2,3,3,4,5]);
+ const all=new Set();for(let level=1;level<=12;level++){const types=materialPalette(level);assert.equal(new Set(types).size,6);assert.deepEqual(types.map(i=>MATERIALS[i].category),[0,1,0,1,2,3]);types.forEach(i=>all.add(i));assert.deepEqual(newSession(42,level).materialTypes,types);}
+ assert.equal(all.size,48);assert.deepEqual(materialPalette(13),materialPalette(1));
 });
 test('only actual eliminated materials unlock, bank once and survive failure, exit and reload',()=>{
  let save=freshSave();for(let level=1;level<=8;level++){
@@ -29,8 +31,32 @@ test('gifted and legacy inventory cannot bypass matching provenance in placement
 test('gathered charms are optional, locked charms are rejected and a saved charm is consumed exactly once',()=>{
  let save=bankEarlyCollection(freshSave(),{...newSession(4,1),collected:[12,0,0,0,0,0]}).save;save.draft=Array(12).fill(0);save.charm='heart';
  assert.equal(finishWork(save,100),null);
- const type=charmType('heart'),session=newSession(4,8),slot=session.materialTypes.indexOf(type);assert.ok(slot>=0);session.collected[slot]=1;save=bankEarlyCollection(save,session).save;
+ const type=charmType('heart'),session=newSession(4,12),slot=session.materialTypes.indexOf(type);assert.ok(slot>=0);session.collected[slot]=1;save=bankEarlyCollection(save,session).save;
  const done=finishWork(save,100);assert.ok(done);assert.equal(done.gatheredStock[type],0);assert.equal(done.inventory[type],0);assert.equal(done.commerce.works[0].charm,'heart');assert.equal(done.charm,'none');assert.equal(finishWork(done,100),null);
+});
+
+test('weighted match boards and refills favor jewelry and crystal while retaining every category',()=>{
+ const counts=[0,0,0,0],routes=Object.fromEntries(['move','special','hammer','bloom','shuffle'].map(name=>[name,[0,0,0,0]]));
+ for(let seed=1;seed<=800;seed++){
+  const session=newSession(seed,1),categories=session.board.map(type=>MATERIALS[session.materialTypes[type]].category);
+  categories.forEach(category=>counts[category]++);
+  assert.deepEqual([...new Set(categories)].sort(),[0,1,2,3]);
+  assert.deepEqual(matches(session.board),[]);
+  const pair=findMove(session.board);assert.ok(pair);
+  const special={...session,specials:[...session.specials]};special.specials[27]='row';
+  const results={move:move(session,...pair),special:activateSpecial(special,27),hammer:useTool(session,'hammer',27),bloom:useTool(session,'bloom',27),shuffle:useTool(session,'shuffle')};
+  for(const [route,result] of Object.entries(results)){
+   assert.equal(result.valid,true);assert.deepEqual(matches(result.session.board),[]);assert.ok(findMove(result.session.board,result.session.specials));
+   const types=route==='shuffle'?result.session.board:result.frames.flatMap(frame=>frame.falls.filter(f=>f.from===null).map(f=>f.type));
+   types.forEach(type=>routes[route][MATERIALS[session.materialTypes[type]].category]++);
+  }
+ }
+ const check=(values,name)=>{const total=values.reduce((a,b)=>a+b,0);assert.ok(total>1000,name);values.forEach((count,category)=>assert.ok(Math.abs(count/total-(category<2?.4:.1))<.05,name+': '+values));};
+ check(counts,'opening');for(const [route,values] of Object.entries(routes))check(values,route);
+});
+
+test('legacy order boards retain their original uniform generation',()=>{
+ for(const seed of [1,42,971])assert.deepEqual(newSession(seed,1,ORDERS[0]).board,createBoard(seed));
 });
 
 test('chosen bead size is preserved in saved work and restored across reload',()=>{
