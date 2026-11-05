@@ -70,7 +70,7 @@ try{
  await button('完成制作');assert.equal((await state()).screen,'packing');await button('保存并上架');s=await state();assert.equal(s.modal,'listing');assert.equal(s.save.commerce.works.length,1);assert.equal(s.save.coins,initial.coins);assert.equal(s.save.commerce.works[0].charm,'none');
  const expected=stock.map((n,i)=>n-(draftCounts(draft)[i]||0));assert.deepEqual(s.save.inventory,expected);assert.deepEqual(s.save.gatheredStock,expected);
  await button('确认上架');const listed=(await state()).save.commerce.works[0];await page.waitForFunction(()=>JSON.parse(window.render_game_to_text()).save.commerce.works[0].status==='sold',{},{timeout:30000});
- assert.equal((await state()).save.coins,initial.coins+listed.price);await page.reload({waitUntil:'networkidle'});await ui.ready();assert.equal((await state()).save.coins,initial.coins+listed.price);report.saveSaleReload=true;
+ assert.equal((await state()).save.coins,initial.coins);await button('已售 1');await button('收钱 · 1');assert.equal((await state()).save.coins,initial.coins+listed.price);await page.reload({waitUntil:'networkidle'});await ui.ready();assert.equal((await state()).save.coins,initial.coins+listed.price);report.saveSaleReload=true;
  await button('自由 DIY');for(const width of [360,390,540,1440]){await page.setViewportSize({width,height:width===1440?900:844});await page.waitForTimeout(200);await page.screenshot({path:dir+'/workshop-'+width+'.png'});assert.equal((await state()).screen,'craft');}
  await ui.context.close();
  // Each later category uses the same six actual materials on the board and in earned inventory.

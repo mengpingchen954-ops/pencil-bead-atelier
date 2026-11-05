@@ -34,7 +34,7 @@ export function normalizeCommerce(raw:any) {
     works.push({id:work.id,name:workName(work.name,'我的手作 · '+work.id),
       beads:[...work.beads],beadSize:[6,7,8,9,10,11,12].includes(work.beadSize)?work.beadSize:8,beadSizes:normalizeBeadSizes(work.beads,work.beadSizes,work.beadSize),beadFacings:normalizeBeadFacings(work.beads,work.beadFacings),charm:work.charm,status:work.status,createdAt:work.createdAt,
       ...(work.status!=='ready'?{price:work.price,listedAt:work.listedAt,sellAt:work.sellAt,
-        ...(work.status==='sold'?{buyer:buyers[(work.id-1)%buyers.length]}:{})}: {})});
+        ...(work.status==='sold'?{buyer:buyers[(work.id-1)%buyers.length],claimed:work.claimed!==false}:{})}: {})});
   }
   return {nextId:Math.max(1,...works.map(w=>w.id+1)),works};
 }
@@ -86,9 +86,15 @@ export function withdrawWork(save:any,id:number,now=Date.now()) {
 export function settleSales(save:any,now=Date.now()) {
   const due=save.commerce?.works.filter((w:any)=>w.status==='listing'&&now>=w.sellAt)||[];
   if(!due.length)return save;
-  return {...save,coins:save.coins+due.reduce((sum,w)=>sum+w.price,0),rep:save.rep+due.length*10,
+  return {...save,rep:save.rep+due.length*10,
     commerce:{...save.commerce,works:save.commerce.works.map((w:any)=>due.includes(w)?
-      {...w,status:'sold',buyer:buyers[(w.id-1)%buyers.length]}:w)}};
+      {...w,status:'sold',claimed:false,buyer:buyers[(w.id-1)%buyers.length]}:w)}};
+}
+export function collectSale(save:any,id:number) {
+  const work=save.commerce?.works.find((w:any)=>w.id===id);
+  if(!work||work.status!=='sold'||work.claimed!==false)return null;
+  return {...save,coins:save.coins+work.price,commerce:{...save.commerce,
+    works:save.commerce.works.map((w:any)=>w.id===id?{...w,claimed:true}:w)}};
 }
 export function salesProgress(save:any) {
   return (save.completed?.length||0)+(save.commerce?.works.filter((w:any)=>w.status==='sold').length||0);

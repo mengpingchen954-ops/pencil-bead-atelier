@@ -1,7 +1,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import {freshSave,normalizeSave,newSession,bankEarlyCollection,sessionRewards,move,findMove} from '../assets/scripts/model.ts';
-import {finishWork,listWork,withdrawWork,settleSales,suggestedPrice,priceBounds,saleDuration,salesProgress} from '../assets/scripts/commerce.ts';
+import {finishWork,listWork,withdrawWork,settleSales,collectSale,suggestedPrice,priceBounds,saleDuration,salesProgress} from '../assets/scripts/commerce.ts';
 import {storyUnlocked,storyRoute} from '../assets/scripts/story.ts';
 import {STORIES} from '../assets/scripts/content.ts';
 import {beginCompetition} from '../assets/scripts/competition.ts';
@@ -28,7 +28,7 @@ test('listing, withdrawal and repeated settlement cannot duplicate materials, wo
   let save=finishWork(prepared(),1000),price=suggestedPrice(save.commerce.works[0].beads);const stock=[...save.inventory],coins=save.coins;
   save=listWork(save,1,price,2000);assert.equal(save.coins,coins);assert.deepEqual(save.inventory,stock);assert.equal(listWork(save,1,price,2000),null);
   assert.equal(settleSales(save,21999),save);const withdrawn=withdrawWork(save,1,21999);assert.equal(withdrawn.commerce.works[0].status,'ready');assert.deepEqual(withdrawn.inventory,stock);
-  assert.equal(withdrawWork(save,1,22000),null);save=settleSales(save,22000);assert.equal(save.coins,coins+price);assert.equal(save.rep,10);assert.equal(save.commerce.works[0].status,'sold');
+  assert.equal(withdrawWork(save,1,22000),null);save=settleSales(save,22000);assert.equal(save.coins,coins);assert.equal(save.commerce.works[0].claimed,false);save=collectSale(save,1);assert.equal(save.coins,coins+price);assert.equal(collectSale(save,1),null);assert.equal(save.rep,10);assert.equal(save.commerce.works[0].status,'sold');
   assert.equal(settleSales(save,50000),save);assert.equal(withdrawWork(save,1,50000),null);assert.equal(listWork(save,1,price,50000),null);assert.deepEqual(save.inventory,stock);
 });
 test('prices are bounded by materials and higher prices take longer to sell',()=>{
@@ -41,7 +41,7 @@ test('offline listings resume and settle exactly once across save normalization 
   const ready=finishWork(prepared(),1000),listed=listWork(ready,1,suggestedPrice(ready.commerce.works[0].beads),2000);
   const restored=normalizeSave(JSON.parse(JSON.stringify(listed)));assert.deepEqual(restored,listed);
   const sold=settleSales(restored,50000),again=settleSales(normalizeSave(JSON.parse(JSON.stringify(sold))),60000);
-  assert.deepEqual(again,sold);assert.equal(sold.coins,listed.coins+listed.commerce.works[0].price);
+  assert.deepEqual(again,sold);assert.equal(sold.coins,listed.coins);const paid=collectSale(again,1);assert.equal(paid.coins,listed.coins+listed.commerce.works[0].price);assert.equal(collectSale(normalizeSave(paid),1),null);
 });
 test('old saves retain progress and corrupt or duplicate commerce records never create extra sale income',()=>{
   const old=prepared();delete old.commerce;old.completed=['daisy'];old.orderId='sea';old.coins=1342;old.upgrades.chair=1;

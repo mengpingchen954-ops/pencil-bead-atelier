@@ -51,7 +51,7 @@ test('Creator production bundle preserves collection iteration and complete game
   assert.ok(free);assert.equal(free.coins,80);assert.equal(free.inventory[5],28);
   const price=trade.suggestedPrice(free.commerce.works[0].beads);
   free=trade.listWork(free,1,price,2000);assert.equal(free.coins,80);
-  free=trade.settleSales(model.normalizeSave(free),50000);assert.equal(free.coins,80+price);assert.equal(free.commerce.works[0].status,'sold');
+  free=trade.settleSales(model.normalizeSave(free),50000);assert.equal(free.coins,80);assert.equal(free.commerce.works[0].claimed,false);free=trade.collectSale(model.normalizeSave(free),1);assert.equal(free.coins,80+price);assert.equal(trade.collectSale(free,1),null);assert.equal(free.commerce.works[0].status,'sold');
   assert.equal(trade.settleSales(free,60000),free);assert.equal(free.completed.length,0);
   const sized=trade.finishWork({...model.freshSave(),inventory:Array(48).fill(40),gatheredStock:Array(48).fill(40),draft:[0,null,0,1],draftSizes:[6,12,10,8]},1000);
   assert.deepEqual(Array.from(sized.commerce.works[0].beadSizes),[6,10,8]);

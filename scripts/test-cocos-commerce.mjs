@@ -62,7 +62,7 @@ try{
  await button('上架橱窗 · 1');const {min}=priceBounds(crafted);for(let price=suggestedPrice(crafted);price>min;price-=10)await button('降价 10');
  await button('确认上架');const listed=(await state()).save.commerce.works[0];
  await page.waitForFunction(()=>JSON.parse(window.render_game_to_text()).save.commerce.works[0].status==='sold',{},{timeout:30000});
- s=await state();assert.equal(s.save.coins,coins+listed.price);assert.equal(s.save.rep,10);assert.deepEqual(s.save.inventory,stock);assert.deepEqual(s.save.completed,[]);
+ s=await state();assert.equal(s.save.coins,coins);assert.equal(s.save.commerce.works[0].claimed,false);await button('已售 1');await button('收钱 · 1');s=await state();assert.equal(s.save.coins,coins+listed.price);assert.equal(s.save.rep,10);assert.deepEqual(s.save.inventory,stock);assert.deepEqual(s.save.completed,[]);
  await button('已售 1');await page.screenshot({path:dir+'/sold.png'});const paid=s.save.coins;
  await page.reload({waitUntil:'networkidle'});await ready();assert.equal((await state()).save.coins,paid);
  await action('图鉴');assert.equal((await state()).album.items.length,1);await page.screenshot({path:dir+'/collection.png'});
@@ -97,7 +97,7 @@ try{
 
  // Opening after a sale's deadline settles without requiring another page or an authenticated connection.
  let offline=finishWork({...initial,inventory:Array(48).fill(20),gatheredStock:Array(48).fill(20),materialUnlocked:Array(48).fill(true),draft:Array(12).fill(0)},1000);offline=listWork(offline,1,suggestedPrice(offline.commerce.works[0].beads),1000);
- const reopened=await fixture(offline);assert.equal((await reopened.state()).save.commerce.works[0].status,'sold');const offlineCoins=(await reopened.state()).save.coins;
+ const reopened=await fixture(offline);assert.equal((await reopened.state()).save.commerce.works[0].status,'sold');assert.equal((await reopened.state()).save.coins,offline.coins);await reopened.action('售珠');await reopened.button('已售 1');await reopened.button('收钱 · 1');const offlineCoins=(await reopened.state()).save.coins;assert.equal(offlineCoins,offline.coins+offline.commerce.works[0].price);
  await reopened.page.reload({waitUntil:'networkidle'});await reopened.ready();assert.equal((await reopened.state()).save.coins,offlineCoins);await reopened.context.close();report.offlineSettlement=true;
  assert.deepEqual(errors,[]);report.errors=errors;fs.writeFileSync(dir+'/report.json',JSON.stringify(report,null,2));console.log('Commerce passed: real native match → inventory → free DIY → save → price → list/withdraw → sale → reload/gallery, later-level gathering, legacy saves, offline settlement and four widths without errors.');
 }finally{await browser.close();}

@@ -9,7 +9,7 @@ import { BEADS, MATERIALS, ORDERS, RETURN_ORDERS, CHAPTERS, STORIES, JOURNEY, FU
 import * as rules from './model';
 import { DAILY_REWARDS, ENERGY_EXCHANGE, dailyStatus, claimDaily } from './daily';
 import { materialStock, charmType, normalizeBeadSizes, normalizeBeadFacings, ringMaterials, materialPlacement } from './materials';
-import { craftChecks, finishWork, listWork, withdrawWork, settleSales, suggestedPrice, priceBounds, saleDuration, salesProgress, randomWorkName, renameWork } from './commerce';
+import { craftChecks, finishWork, listWork, withdrawWork, settleSales, collectSale, suggestedPrice, priceBounds, saleDuration, salesProgress, randomWorkName, renameWork } from './commerce';
 import { pendingStory, storyUnlocked, finishStory, STORY_STOPS, storyRoute } from './story';
 import { BrowserAccessibility } from './BrowserAccessibility';
 import { AtelierLayout } from './AtelierLayout';
@@ -53,6 +53,7 @@ export class AtelierGame extends Component {
   private inventoryCategory = 0;
   private craftTap: {index:number;at:number} | null = null;
   private craftMotion: Node;
+  private coinEffects: Node;
   private craftFlights = new Map<number,{node:Node;type:number}>();
   private craftRipples = new WeakSet<Node>();
   private tool = '';
@@ -143,6 +144,7 @@ export class AtelierGame extends Component {
     this.craftMotion = this.container('Rolling beads', root);
     this.overlay = this.container('Dialogs', root);
     this.notices = this.container('Notices', root);
+    this.coinEffects = this.container('Coin receipts', root);
     this.accessibility = new BrowserAccessibility();
     this.sound = this.node.addComponent(AudioSource);
     this.rect('Paper', 0, 0, 720, 1280, PAPER);
@@ -180,6 +182,7 @@ export class AtelierGame extends Component {
   onDestroy() {
     this.cancelMusicTap();
     this.clearCraftFlights();
+    if(this.coinEffects)this.clear(this.coinEffects);
     this.releaseInputs(this.node);
     input.off(Input.EventType.KEY_DOWN, this.onKey, this);
     game.off(Game.EVENT_HIDE, this.onHide, this);
@@ -222,7 +225,7 @@ export class AtelierGame extends Component {
     const count=next.commerce.works.filter(w=>w.status==='sold').length-this.save.commerce.works.filter(w=>w.status==='sold').length;
     this.save=next;this.persist();
     if(!this.busy&&!this.modal&&['home','orders','album','contest'].includes(this.screen))this.render();
-    this.toast(count+' 件作品已售出，金币已入账。');
+    this.toast(count+' 件作品已售出，去「售珠 → 已售」点击收钱。');
   }
   private fitCamera() {
     const size=view.getFrameSize();
@@ -380,7 +383,7 @@ export class AtelierGame extends Component {
     if (page === 'match') { this.matchIntro(); return; }
     if (page === 'orderArrival') page='craft';
     if(page==='craft'&&this.migrateDraftCharm())this.persist();
-    this.clearCraftFlights();this.craftToolsOpen=false;
+    this.clearCraftFlights();if(this.coinEffects)this.clear(this.coinEffects);this.craftToolsOpen=false;
     if (page === 'orderArrival') this.orderGuide = true;
     if (page === 'orders') {this.ordersPage=0;this.tickSales();}
     if(this.save.firstSteps?.craft&&this.save.completed.length===1&&['craft','orderArrival'].includes(page)){this.save=rules.recordFirstStep(this.save,'secondOrder');this.persist();}
@@ -547,7 +550,7 @@ export class AtelierGame extends Component {
     if(!works.length){
       this.image('pencil-album-flower',290,421,140,140);
       this.text(this.salesTab==='ready'?'先做一条，属于你的手串':this.salesTab==='listing'?'橱窗正等着你的作品':'第一位顾客，也许就在下一刻',75,620,570,65,31,INK,this.page,true);
-      this.text(this.salesTab==='ready'?'采到什么，就搭配什么。\n种类和颗数自由决定，保存后就能上架。':this.salesTab==='listing'?'在「待上架」选择作品，设好售价放入橱窗。':'上架后顾客会来选购，售出金币自动入账。',90,711,540,93,25,MUTED,this.page,true);
+      this.text(this.salesTab==='ready'?'采到什么，就搭配什么。\n种类和颗数自由决定，保存后就能上架。':this.salesTab==='listing'?'在「待上架」选择作品，设好售价放入橱窗。':'上架后顾客会来选购，售出后在这里点击收钱。',90,711,540,93,25,MUTED,this.page,true);
       this.button('去自由 DIY',150,869,420,70,()=>this.navigate('craft'),this.page,true);
       this.button('去三消采珠',150,962,420,56,()=>this.matchIntro(),this.page);
     }
@@ -556,17 +559,37 @@ export class AtelierGame extends Component {
       this.bracelet(work.beads,100,89,62,n,work.beadSize,work.beadSizes,work.charm,work.beadFacings);
       this.text(work.name,207,17,400,43,29,INK,n);
       this.text((work.beads.length+(charmType(work.charm)>=0?1:0))+' 件串珠与饰品',207,64,400,30,21,MUTED,n);
-      this.text(work.status==='ready'?'建议售价 '+suggestedPrice(work.beads)+' 金':work.status==='listing'?'售价 '+work.price+' 金 · 顾客选购中':work.buyer+' 已购 · +'+work.price+' 金已入账',207,101,403,33,22,SAGE,n);
+      this.text(work.status==='ready'?'建议售价 '+suggestedPrice(work.beads)+' 金':work.status==='listing'?'售价 '+work.price+' 金 · 顾客选购中':work.buyer+' 已购 · '+work.price+(work.claimed===false?' 金待收款':' 金已收款'),207,101,403,33,22,SAGE,n);
       if(work.status==='ready')this.button('上架橱窗 · '+work.id,255,y+146,257,43,()=>this.listingDialog(work.id),this.page,true);
       if(work.status==='listing')this.button('下架作品 · '+work.id,255,y+146,257,43,()=>{this.tickSales();const next=withdrawWork(this.save,work.id);if(!next){this.render();return;}this.save=next;this.salesTab='ready';this.ordersPage=0;this.persist();this.render();},this.page);
       this.hitButton('欣赏作品 · '+work.id,52,y+18,176,173,()=>this.freeWorkPreview(work.id));
       this.button('改名 · '+work.id,531,y+146,127,43,()=>this.renameWorkDialog(work.id),this.page);
-      if(work.status==='sold')this.text('谢谢你，让手作继续发光。',249,y+151,270,35,20,MUTED);
+      if(work.status==='sold'&&work.claimed===false)this.button('收钱 · '+work.id,255,y+146,257,43,()=>this.collectReceipt(work.id,383,y+167),this.page,true);
+      if(work.status==='sold'&&work.claimed!==false)this.text('已收款 · 谢谢你的喜欢',249,y+151,270,35,20,MUTED);
     });
     if(works.length){
       this.button('← 前页',58,1045,154,56,()=>{this.ordersPage--;this.render();},this.page,false,this.ordersPage>0);
       this.text((this.ordersPage+1)+' / '+pages,236,1053,248,40,23,MUTED,this.page,true);
       this.button('后页 →',508,1045,154,56,()=>{this.ordersPage++;this.render();},this.page,false,this.ordersPage<pages-1);
+    }
+  }
+  private collectReceipt(id:number,x:number,y:number) {
+    const before=this.save,next=collectSale(before,id);if(!next)return;
+    this.save=next;this.persist();
+    if(this.storageFailed){this.save=before;this.render();return this.toast('未能保存收款记录，请检查存储空间后重试。');}
+    this.render();this.flySaleCoins(x,y);this.play('success');this.toast('收款成功 · +'+(next.coins-before.coins)+' 金币');
+  }
+  private flySaleCoins(x:number,y:number) {
+    if(this.save.reduced)return;
+    if(!this.coinEffects)this.coinEffects=this.container('Coin receipts',this.page.parent||this.node);
+    for(let i=0;i<7;i++){
+      const n=this.box('Sale coin '+i,x-14,y-14,28,28,this.coinEffects);
+      this.ellipse('Coin rim',14,14,12,12,'#d6a044',n,'#99702f');
+      this.ellipse('Coin center',14,14,9,9,'#f9dc8a',n,'#edbf5a');
+      this.rect('Coin glint',10,7,3,8,'#fff0b6',n,1);
+      tween(n).delay(i*.045).to(.16,{position:new Vec3(x-14+(i-3)*13,40-y,0)},{easing:'quadOut'})
+        .to(.48,{position:new Vec3(386,-29,0),scale:new Vec3(.55,.55,1)},{easing:'quadIn'})
+        .call(()=>{n.removeFromParent();n.destroy();}).start();
     }
   }
   private listingDialog(id:number,price?:number) {
@@ -579,7 +602,7 @@ export class AtelierGame extends Component {
     this.button('加价 10',506,734,108,52,()=>this.listingDialog(id,price!+10),this.overlay,false,price<bounds.max);
     this.text('建议 '+suggestedPrice(work.beads)+' 金 · 可定价 '+bounds.min+'–'+bounds.max+' 金\n预计 '+Math.ceil(saleDuration(work.beads,price)/1000)+' 秒售出，定价越高等候越久。\n离开页面或刷新仍会继续售卖。',105,813,510,120,23,MUTED,this.overlay,true);
     this.button('确认上架',130,962,460,66,()=>{
-      const next=listWork(this.save,id,price!);if(!next)return;this.save=next;this.persist();this.salesTab='listing';this.ordersPage=0;this.navigate('orders');this.toast('作品已上架，售出后金币自动入账。');
+      const next=listWork(this.save,id,price!);if(!next)return;this.save=next;this.persist();this.salesTab='listing';this.ordersPage=0;this.navigate('orders');this.toast('作品已上架，售出后到「已售」点击收钱。');
     },this.overlay,true);
   }
   private freeWorkPreview(id:number) {
@@ -1043,7 +1066,7 @@ export class AtelierGame extends Component {
     this.nameField(this.save.draftName||'',824,this.page,value=>{this.save.draftName=value;this.persist();});
     this.text('手动输入或随机取名 · 最多 24 个字\n留空将使用默认名称，保存后仍可改名',100,903,520,70,22,MUTED,this.page,true);
     this.text(this.save.draft.filter(t=>t!==null).length+' 件串珠与饰品 · 建议 '+price+' 金币',100,988,520,40,25,SAGE,this.page,true);
-    this.text('保存扣除实际用料，售出后获得金币与口碑。',80,1046,560,42,22,MUTED,this.page,true);
+    this.text('保存扣除用料，售出后到「已售」点击收钱。',80,1046,560,42,22,MUTED,this.page,true);
     this.button('保存作品',62,1130,284,82,()=>this.completePacking(),this.page);
     this.button('保存并上架',374,1130,284,82,()=>this.completePacking(true),this.page,true);
   }
@@ -2022,7 +2045,7 @@ export class AtelierGame extends Component {
     this.button('操作音效  '+(this.save.sound?'开启':'关闭'),110,425,500,64,()=>{this.save.sound=!this.save.sound;this.persist();this.settings();},this.overlay);
     this.button('减少动态效果  '+(this.save.reduced?'开启':'关闭'),110,505,500,64,()=>{this.save.reduced=!this.save.reduced;this.persist();this.settings();},this.overlay);
     this.button('导出 / 导入存档',110,585,500,64,()=>this.saveDialog(),this.overlay);
-    this.button('玩法说明',110,665,500,64,()=>this.info('小店的日常','采珠：交换相邻珠子，三连或 2×2 同色方块可消，所有采到的材料立即保存。\n手作：珠子种类和数量自由搭配，保存时按实际用料扣除。\n售珠：作品上架橱窗，定价越高等候越久，售出金币自动入账。\n音乐：设置中点选切歌，拖动音量条调节。\n装修：先免费打扫，再用金币修屋与添置家具。\n故事：累计售出作品推进主线，家具解锁支线。\n电脑：Esc 返回，F 全屏；方向键、空格操作棋盘。'),this.overlay);
+    this.button('玩法说明',110,665,500,64,()=>this.info('小店的日常','采珠：交换相邻珠子，三连或 2×2 同色方块可消，所有采到的材料立即保存。\n手作：珠子种类和数量自由搭配，保存时按实际用料扣除。\n售珠：作品上架橱窗，定价越高等候越久，售出后到「已售」点击收钱。\n音乐：设置中点选切歌，拖动音量条调节。\n装修：先免费打扫，再用金币修屋与添置家具。\n故事：累计售出作品推进主线，家具解锁支线。\n电脑：Esc 返回，F 全屏；方向键、空格操作棋盘。'),this.overlay);
     this.button('我们的故事',110,745,500,64,()=>this.navigate('journal'),this.overlay);
     this.button('重新开始',110,871,500,60,()=>this.resetDialog(),this.overlay);
     this.text('Cocos 原生版 · 本地自动存档\n原网页存档可通过 JSON 导入继续',110,952,500,66,20,MUTED,this.overlay,true);

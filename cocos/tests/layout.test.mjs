@@ -307,7 +307,7 @@ test('old completed saves retain their archive and can freely make, list and sel
  assert.equal(game.save.coins,coins);assert.equal(game.save.commerce.works[0].status,'ready');actions.get('确认上架')();
  assert.equal(game.save.commerce.works[0].status,'listing');assert.equal(game.screen,'orders');
  const trade=load(root+'/assets/scripts/commerce.ts');game.save=trade.settleSales(game.save,game.save.commerce.works[0].sellAt);
- assert.equal(game.save.coins,coins+game.save.commerce.works[0].price);assert.equal(JSON.stringify(game.save.collection),archive);
+ assert.equal(game.save.coins,coins);game.salesTab='sold';game.render();actions.get('收钱 · 1')();assert.equal(game.save.coins,coins+game.save.commerce.works[0].price);assert.equal(JSON.stringify(game.save.collection),archive);
  assert.equal(game.save.completed.length,6);assert.equal(game.save.repeatOrders,0);
 });
 
