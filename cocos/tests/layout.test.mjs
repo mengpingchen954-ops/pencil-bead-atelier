@@ -198,7 +198,7 @@ test('commission workshop previews its real draft and validates before entering 
   actions.get('完成制作')();assert.equal(game.screen,'craft');
   actions.get('放入珍珠')();assert.equal(game.workingDraft.filter(n=>n!==null).length,1);
   const partial=JSON.stringify(game.save);actions.get('预览')();
-  assert.equal(game.modal,'craft-preview');assert.deepEqual(rendered.at(-1),Array.from(game.save.draft));assert.equal(JSON.stringify(game.save),partial);
+  assert.equal(game.modal,'craft-preview');assert.deepEqual(rendered.at(-1),[0]);assert.equal(JSON.stringify(game.save),partial);
   actions.get('继续制作')();assert.equal(game.modal,'');
   const index=game.save.draft.findIndex(n=>n!==null);actions.get(`第${index+1}槽：珍珠`)();actions.get('移除')();
   assert.ok(game.save.draft.every(n=>n===null));actions.get('撤销')();assert.equal(game.save.draft[index],0);
@@ -545,11 +545,11 @@ test('material taps add randomly when unselected and replace the selected slot w
  }
  const stock=game.save.inventory.slice(),draft=game.save.draft.slice();actions.get('放入珍珠')();assert.deepEqual(game.save.draft,draft);actions.get('放入蓝晶石')();assert.deepEqual(game.save.draft,draft);
  actions.get('撤销')();assert.equal(game.save.draft.filter(n=>n!==null).length,5);assert.deepEqual(game.save.inventory,stock);
- game.save.inventory=Array(48).fill(20);game.save.gatheredStock=Array(48).fill(20);game.save.draft=Array(12).fill(0);game.render();const full=game.save.draft.slice();actions.get('放入翡翠')();assert.deepEqual(game.save.draft,full);
- actions.get('第1槽：珍珠')();actions.get('放入翡翠')();assert.equal(game.save.draft[0],3);assert.equal(game.save.draft.filter(n=>n!==null).length,12);actions.get('撤销')();assert.deepEqual(Array.from(game.save.draft),full);
+ game.save.inventory=Array(48).fill(20);game.save.gatheredStock=Array(48).fill(20);game.save.draft=Array(12).fill(0);game.render();const full=game.save.draft.slice();actions.get('放入翡翠')();assert.deepEqual(game.save.draft,[...full,3]);
+ actions.get('第1槽：珍珠')();actions.get('放入翡翠')();assert.equal(game.save.draft[0],3);assert.equal(game.save.draft.filter(n=>n!==null).length,13);actions.get('撤销')();assert.deepEqual(Array.from(game.save.draft),[...full,3]);
  actions.get('第1槽：珍珠')();const history=game.undo.length;actions.get('放入珍珠')();assert.equal(game.undo.length,history);assert.equal(game.slot,0);
- game.save.inventory[2]=0;actions.get('放入蓝晶石')();assert.deepEqual(Array.from(game.save.draft),full);assert.equal(game.slot,0);assert.equal(game.undo.length,history);
- actions.get('替换')();assert.deepEqual(Array.from(game.save.draft),full);
+ game.save.inventory[2]=0;actions.get('放入蓝晶石')();assert.deepEqual(Array.from(game.save.draft),[...full,3]);assert.equal(game.slot,0);assert.equal(game.undo.length,history);
+ actions.get('替换')();assert.deepEqual(Array.from(game.save.draft),[...full,3]);
  game.save.draft=Array(12).fill(null);game.save.draft[4]=0;game.slot=4;game.render();actions.get('放入翡翠')();assert.equal(game.save.draft[4],3);assert.equal(game.save.draft.filter(n=>n!==null).length,1);
  game.slot=7;actions.get('放入玛瑙')();assert.equal(game.save.draft[7],1);assert.equal(game.save.draft.filter(n=>n!==null).length,2);
  assert.deepEqual(game.save.inventory,[20,20,0,20,20,20,...Array(42).fill(20)]);

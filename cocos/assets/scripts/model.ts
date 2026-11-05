@@ -447,7 +447,7 @@ export function normalizeSave(input) {
       .filter((id) => CLEAN_SPOTS.some((spot) => spot.id === id))));
   for (const item of REPAIRS)
     s.renovation.repairs[item.id] = isShopClean(s) && input.renovation?.repairs?.[item.id] === true;
-  s.draft = Array.from({ length: 12 }, (_, i) =>
+  s.draft = Array.from({ length: Math.max(12,Array.isArray(input.draft)?input.draft.length:0) }, (_, i) =>
     Number.isInteger(input.draft?.[i]) &&
     input.draft[i] >= 0 &&
     input.draft[i] < BEADS.length
@@ -494,18 +494,18 @@ export function canPlace(save, type, index) {
     type >= BEADS.length ||
     !Number.isInteger(index) ||
     index < 0 ||
-    index >= 12
+    index > Math.max(12,save.draft.length)
   )
     return false;
   const counts = draftCounts(save.draft);
   if (save.draft[index] === type) counts[type]--;
   return (counts[type]||0) < materialStock(save,type);
 }
-export function craftTarget(draft, selected = -1, random = Math.random) {
-  if (Number.isInteger(selected) && selected >= 0 && selected < 12)
+export function craftTarget(draft, selected = -1, random = Math.random, unlimited = false) {
+  if (Number.isInteger(selected) && selected >= 0 && selected < draft.length)
     return selected;
-  const empty = Array.from({ length: 12 }, (_, i) => i).filter((i) => draft[i] === null);
-  return empty.length ? empty[Math.min(empty.length - 1, Math.max(0, Math.floor(random() * empty.length)))] : -1;
+  const empty = Array.from({ length: draft.length }, (_, i) => i).filter((i) => draft[i] === null);
+  return empty.length ? empty[Math.min(empty.length - 1, Math.max(0, Math.floor(random() * empty.length)))] : unlimited?draft.length:-1;
 }
 export function checkOrder(
   save,
