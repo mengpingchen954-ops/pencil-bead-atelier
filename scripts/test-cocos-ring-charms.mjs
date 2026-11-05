@@ -69,7 +69,7 @@ try{
   }
  }
  await page.setViewportSize({width:390,height:844});await page.waitForTimeout(150);report.dragOutsideRemovesBeadsAndCharmBodies=true;report.dragRemovalUndoAndStockPreserved=true;report.nativeTouchAndMouseDrag=true;report.radialDragPreviewsAndSavesFacing=true;
- if(!(await native()).slots[12].selected)await select(12);await button('+');await button('+');s=await state();assert.equal(s.save.draftSizes[12],12);assert.ok(s.save.draftSizes.slice(0,12).every(n=>n===8));assert.equal((await native()).slots[12].selected,true);
+ if(!(await native()).slots[12].selected)await select(12);for(let step=0;step<4;step++)await button('+');s=await state();assert.equal(s.save.draftSizes[12],12);assert.ok(s.save.draftSizes.slice(0,12).every(n=>n===8));assert.equal((await native()).slots[12].selected,true);
  await button('朝内');assert.equal((await state()).save.draftFacings[12],'in');await checkGeometry(ui);await page.screenshot({path:dir+'/selected-leaf-inward.png'});
  await button('朝外');assert.equal((await state()).save.draftFacings[12],'out');await checkGeometry(ui);await page.screenshot({path:dir+'/selected-leaf-outward.png'});
  await button('朝内');const body=(await checkGeometry(ui)).find(item=>item.i===12).body;await tap(body.x,body.y);assert.equal((await native()).slots[12].selected,false);await page.waitForTimeout(350);await tap(body.x,body.y);assert.equal((await native()).slots[12].selected,true);

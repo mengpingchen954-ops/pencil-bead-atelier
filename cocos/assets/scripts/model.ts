@@ -437,7 +437,7 @@ export function normalizeSave(input) {
   );
   s.gatheredStock = s.inventory.map((n,i)=>Math.min(n,bounded(input.gatheredStock?.[i])));
   s.materialUnlocked = s.inventory.map((_,i)=>input.materialUnlocked?.[i]===true||s.gatheredStock[i]>0);
-  s.beadSize = [6,8,10,12].includes(input.beadSize)?input.beadSize:8;
+  s.beadSize = [6,7,8,9,10,11,12].includes(input.beadSize)?input.beadSize:8;
   s.completed = Array.from(
     new Set(
       (Array.isArray(input.completed) ? input.completed : []).filter((id) =>

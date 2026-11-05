@@ -19,11 +19,11 @@ test('charms use ordinary ring slots, size, drag, replacement, removal and undo 
  const {game,actions}=fixture(),stock=plain(game.save.inventory);game.slot=0;game.render();actions.get('饰品')();actions.get('选择叶子挂饰')();
  assert.equal(game.save.draft[0],leaf);assert.equal(game.save.charm,'none');assert.ok(game.slotNodes[0].children.some(n=>n.name==='charm-leaf'));
  assert.equal(game.page.children.some(n=>n.name==='charm-leaf'),false);
- actions.get('第1槽：叶子挂饰')();actions.get('+')();assert.equal(game.save.draftSizes[0],10);
+ actions.get('第1槽：叶子挂饰')();actions.get('+')();assert.equal(game.save.draftSizes[0],9);
  const node=game.slotNodes[0],touch=i=>{const p=game.slotPos(i);return {getUILocation:()=>({x:p.x,y:1280-p.y})};};
- node.events.start(touch(0));node.events.move(touch(3));node.events.end(touch(3));assert.equal(game.save.draft[3],leaf);assert.equal(game.save.draftSizes[3],10);
- actions.get('选择风铃')();assert.equal(game.save.draft[3],bell);assert.equal(game.save.draftSizes[3],10);
- actions.get('撤销')();assert.equal(game.save.draft[3],leaf);assert.equal(game.save.draftSizes[3],10);
+ node.events.start(touch(0));node.events.move(touch(3));node.events.end(touch(3));assert.equal(game.save.draft[3],leaf);assert.equal(game.save.draftSizes[3],9);
+ actions.get('选择风铃')();assert.equal(game.save.draft[3],bell);assert.equal(game.save.draftSizes[3],9);
+ actions.get('撤销')();assert.equal(game.save.draft[3],leaf);assert.equal(game.save.draftSizes[3],9);
  actions.get('第4槽：叶子挂饰')();actions.get('移除')();assert.equal(game.save.draft[3],null);actions.get('撤销')();assert.equal(game.save.draft[3],leaf);
  assert.deepEqual(plain(game.save.inventory),stock);assert.deepEqual(plain(game.save.gatheredStock),stock);
 });

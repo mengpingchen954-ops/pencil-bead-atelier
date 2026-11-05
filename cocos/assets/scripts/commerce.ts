@@ -32,7 +32,7 @@ export function normalizeCommerce(raw:any) {
       !validPrice(work.beads,work.price) || work.sellAt !== work.listedAt + saleDuration(work.beads,work.price))) continue;
     ids.add(work.id);
     works.push({id:work.id,name:workName(work.name,'我的手作 · '+work.id),
-      beads:[...work.beads],beadSize:[6,8,10,12].includes(work.beadSize)?work.beadSize:8,beadSizes:normalizeBeadSizes(work.beads,work.beadSizes,work.beadSize),beadFacings:normalizeBeadFacings(work.beads,work.beadFacings),charm:work.charm,status:work.status,createdAt:work.createdAt,
+      beads:[...work.beads],beadSize:[6,7,8,9,10,11,12].includes(work.beadSize)?work.beadSize:8,beadSizes:normalizeBeadSizes(work.beads,work.beadSizes,work.beadSize),beadFacings:normalizeBeadFacings(work.beads,work.beadFacings),charm:work.charm,status:work.status,createdAt:work.createdAt,
       ...(work.status!=='ready'?{price:work.price,listedAt:work.listedAt,sellAt:work.sellAt,
         ...(work.status==='sold'?{buyer:buyers[(work.id-1)%buyers.length]}:{})}: {})});
   }
@@ -66,7 +66,7 @@ export function finishWork(save:any, now=Date.now()) {
   if(save.charm!=='none')spend(charmType(save.charm));
   const beadSizes=normalizeBeadSizes(save.draft,save.draftSizes,save.beadSize).filter((_,i)=>save.draft[i]!==null);
   const beadFacings=normalizeBeadFacings(save.draft,save.draftFacings).filter((_,i)=>save.draft[i]!==null);
-  const work={id,name:workName(save.draftName,'我的手作 · '+id),beads,beadSize:[6,8,10,12].includes(save.beadSize)?save.beadSize:8,beadSizes,beadFacings,charm:save.charm,status:'ready',createdAt:now};
+  const work={id,name:workName(save.draftName,'我的手作 · '+id),beads,beadSize:[6,7,8,9,10,11,12].includes(save.beadSize)?save.beadSize:8,beadSizes,beadFacings,charm:save.charm,status:'ready',createdAt:now};
   return {...save,inventory,gatheredStock,charm:'none',draftName:'',draft:Array(12).fill(null),draftSizes:Array(12).fill(8),draftFacings:Array(12).fill('out'),commerce:{nextId:id+1,works:[...commerce.works,work]}};
 }
 export function listWork(save:any, id:number, price:number, now=Date.now()) {

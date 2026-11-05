@@ -53,16 +53,16 @@ try {
  await select(1);await slideSize(true);assert.deepEqual((await state()).save.draftSizes.slice(0,3),[8,8,8]);
  await slideSize();assert.deepEqual((await state()).save.draftSizes.slice(0,3),[8,12,8]);await page.screenshot({path:dir+'/native-size-slider.png'});
  await button('撤销');assert.deepEqual((await state()).save.draftSizes.slice(0,3),[8,8,8]);assert.deepEqual((await state()).save.inventory,initial.inventory);report.nativeSizeSlider=true;report.cancelAndSingleUndo=true;
- await select(0);await button('+');await button('+');s=await state();assert.equal(s.save.draftSizes[0],12);assert.ok(s.save.draftSizes.slice(1).every(n=>n===8));
+ await select(0);for(const size of [6,7,8,9,10,11,12]){await tap(205+289*(size-6)/6,1077);assert.equal((await state()).save.draftSizes[0],size);assert.ok((await state()).save.draftSizes.slice(1).every(n=>n===8));}await tap(301,1077);report.oneMillimeterSlider=true;for(const size of [9,10,11,12]){await button('+');assert.equal((await state()).save.draftSizes[0],size);}s=await state();assert.equal(s.save.draftSizes[0],12);assert.ok(s.save.draftSizes.slice(1).every(n=>n===8));
  const after=await widths();assert.ok(after[0]>before[0]);assert.deepEqual(after.slice(1),before.slice(1));
- await select(1);await button('−');await select(2);await button('+');s=await state();assert.deepEqual(s.save.draftSizes.slice(0,3),[12,6,10]);assert.equal(s.save.beadSize,8);assert.deepEqual(s.save.inventory,initial.inventory);
+ await select(1);await button('−');await select(2);await button('+');s=await state();assert.deepEqual(s.save.draftSizes.slice(0,3),[12,7,9]);assert.equal(s.save.beadSize,8);assert.deepEqual(s.save.inventory,initial.inventory);
  for(const width of [360,390,1440]){await page.setViewportSize({width,height:width===1440?900:844});await page.waitForTimeout(150);await page.screenshot({path:dir+'/single-beads-'+width+'.png'});const w=await widths();assert.ok(w[0]>w[2]&&w[2]>w[1]);}
- await page.setViewportSize({width:390,height:844});await page.reload({waitUntil:'networkidle'});await ready();await button('自由 DIY');assert.deepEqual((await state()).save.draftSizes.slice(0,3),[12,6,10]);
- await drag(0,2);assert.deepEqual((await state()).save.draftSizes.slice(0,3),[10,6,12]);await button('撤销');assert.deepEqual((await state()).save.draftSizes.slice(0,3),[12,6,10]);
- await select(1);const tile=(await state()).crafting.materials[3];await tap(tile.x,tile.y);assert.equal((await state()).save.draft[1],3);assert.equal((await state()).save.draftSizes[1],6);
- await select(1);await button('移除');await button('撤销');assert.equal((await state()).save.draftSizes[1],6);
- await button('预览');await page.screenshot({path:dir+'/preview.png'});await button('继续制作');await button('完成制作');s=await state();assert.equal(s.screen,'packing');assert.deepEqual(s.packing.beadSizes.slice(0,3),[12,6,10]);await page.screenshot({path:dir+'/packing.png'});
- await button('保存作品');s=await state();const work=s.save.commerce.works[0];assert.deepEqual(work.beadSizes.slice(0,3),[12,6,10]);const stock=s.save.inventory.slice();
+ await page.setViewportSize({width:390,height:844});await page.reload({waitUntil:'networkidle'});await ready();await button('自由 DIY');assert.deepEqual((await state()).save.draftSizes.slice(0,3),[12,7,9]);
+ await drag(0,2);assert.deepEqual((await state()).save.draftSizes.slice(0,3),[9,7,12]);await button('撤销');assert.deepEqual((await state()).save.draftSizes.slice(0,3),[12,7,9]);
+ await select(1);const tile=(await state()).crafting.materials[3];await tap(tile.x,tile.y);assert.equal((await state()).save.draft[1],3);assert.equal((await state()).save.draftSizes[1],7);
+ await select(1);await button('移除');await button('撤销');assert.equal((await state()).save.draftSizes[1],7);
+ await button('预览');await page.screenshot({path:dir+'/preview.png'});await button('继续制作');await button('完成制作');s=await state();assert.equal(s.screen,'packing');assert.deepEqual(s.packing.beadSizes.slice(0,3),[12,7,9]);await page.screenshot({path:dir+'/packing.png'});
+ await button('保存作品');s=await state();const work=s.save.commerce.works[0];assert.deepEqual(work.beadSizes.slice(0,3),[12,7,9]);const stock=s.save.inventory.slice();
  await button('上架橱窗 · 1');await button('确认上架');await page.reload({waitUntil:'networkidle'});await ready();assert.deepEqual((await state()).save.commerce.works[0].beadSizes,work.beadSizes);
  await ui.action('图鉴');await tap(207,409);assert.equal((await state()).modal,'free-work');await page.screenshot({path:dir+'/saved-work.png'});await button('再做一条');assert.deepEqual((await state()).save.draftSizes,work.beadSizes);assert.deepEqual((await state()).save.inventory,stock);
  await page.waitForFunction(()=>JSON.parse(window.render_game_to_text()).save.commerce.works[0].status==='sold',{},{timeout:30000});s=await state();assert.equal(s.save.coins,initial.coins+s.save.commerce.works[0].price);assert.deepEqual(s.save.commerce.works[0].beadSizes,work.beadSizes);

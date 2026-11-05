@@ -43,10 +43,10 @@ test('size controls affect only the selected instance, including equal materials
  const {game,actions}=fixture(),before=widths(game),stock=plain(game.save.inventory);
  actions.get('+')();assert.deepEqual(widths(game),before);assert.equal(game.undo.length,0);
  actions.get('第1槽：珍珠')();actions.get('+')();
- assert.deepEqual(plain(game.workingSizes.slice(0,3)),[10,8,8]);
+ assert.deepEqual(plain(game.workingSizes.slice(0,3)),[9,8,8]);
  const after=widths(game);assert.ok(after[0]>before[0]);assert.deepEqual(after.slice(1),before.slice(1));
- actions.get('+')();assert.equal(game.workingSizes[0],12);const history=game.undo.length;actions.get('+')();assert.equal(game.undo.length,history);
- actions.get('第2槽：珍珠')();actions.get('−')();assert.deepEqual(plain(game.workingSizes.slice(0,3)),[12,6,8]);
+ for(const expected of [10,11,12]){actions.get('+')();assert.equal(game.workingSizes[0],expected);}const history=game.undo.length;actions.get('+')();assert.equal(game.undo.length,history);
+ actions.get('第2槽：珍珠')();actions.get('−')();assert.deepEqual(plain(game.workingSizes.slice(0,3)),[12,7,8]);
  actions.get('撤销')();assert.deepEqual(plain(game.workingSizes.slice(0,3)),[12,8,8]);
  assert.deepEqual(plain(game.save.inventory),stock);assert.equal(game.save.beadSize,8);
  game.save=rules.normalizeSave(plain(game.save));assert.deepEqual(plain(game.save.draftSizes.slice(0,3)),[12,8,8]);
@@ -81,10 +81,28 @@ test('old uniform sizes migrate per bead and malformed sizes fall back without a
  assert.deepEqual(plain(rules.normalizeSave(legacy).commerce.works[0].beadSizes),[12,12]);
 });
 
+test('every integer millimeter works in the slider, buttons and saved works, with unchanged bounds',()=>{
+ const {game,actions}=fixture(),stock=plain(game.save.inventory),touch=x=>({getUILocation:()=>({x,y:203})});
+ actions.get('第1槽：珍珠')();
+ for(const size of [6,7,8,9,10,11,12]){
+  const slider=game.page.children.find(n=>n.name==='Single bead size slider'),event=touch(205+289*(size-6)/6);
+  slider.events.start(event);slider.events.end(event);assert.equal(game.workingSizes[0],size);
+  assert.deepEqual(plain(game.workingSizes.slice(1,3)),[8,8]);
+  const work=trade.finishWork(game.save,1000),listed=trade.listWork(work,1,trade.suggestedPrice(work.commerce.works[0].beads),2000);
+  assert.equal(rules.normalizeSave(plain(listed)).commerce.works[0].beadSizes[0],size);
+ }
+ const history=game.undo.length;actions.get('+')();assert.equal(game.workingSizes[0],12);assert.equal(game.undo.length,history);
+ for(const size of [11,10,9,8,7,6]){actions.get('−')();assert.equal(game.workingSizes[0],size);}
+ const minimumHistory=game.undo.length;actions.get('−')();assert.equal(game.workingSizes[0],6);assert.equal(game.undo.length,minimumHistory);
+ const malformed=rules.normalizeSave({...game.save,beadSize:9,draftSizes:[7,9,11,5,13,8.5,'7']});
+ assert.deepEqual(plain(malformed.draftSizes.slice(0,7)),[7,9,11,9,9,9,9]);
+ assert.deepEqual(plain(game.save.inventory),stock);
+});
+
 test('contest size edits and undo remain isolated from the normal DIY draft',()=>{
  const {game,actions}=fixture(),normal=plain(game.save.draftSizes);
  game.save.competitions.draft={id:'spring',beads:[0,...Array(11).fill(null)],beadSizes:Array(12).fill(8),charm:'none'};
  game.screen='contestCraft';game.render();actions.get('第1槽：珍珠')();actions.get('+')();
- assert.equal(game.save.competitions.draft.beadSizes[0],10);assert.deepEqual(plain(game.save.draftSizes),normal);
+ assert.equal(game.save.competitions.draft.beadSizes[0],9);assert.deepEqual(plain(game.save.draftSizes),normal);
  actions.get('撤销')();assert.equal(game.save.competitions.draft.beadSizes[0],8);assert.deepEqual(plain(game.save.draftSizes),normal);
 });

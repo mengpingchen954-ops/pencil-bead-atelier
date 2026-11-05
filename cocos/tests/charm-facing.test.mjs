@@ -17,7 +17,7 @@ const art=(game,index)=>game.slotNodes[index].children.find(n=>n.name.startsWith
 
 test('all twelve charm holes stay on the circular wire at every slot, size and facing',()=>{
  const {game}=fixture();
- for(let type=36;type<48;type++)for(const facing of ['in','out'])for(const size of [6,8,10,12]){
+ for(let type=36;type<48;type++)for(const facing of ['in','out'])for(const size of [6,7,8,9,10,11,12]){
   game.save.draft=Array(12).fill(type);game.save.draftSizes=Array(12).fill(size);game.save.draftFacings=Array(12).fill(facing);game.render();
   for(let i=0;i<12;i++){
    const image=art(game,i),t=image.getComponent(UITransform),half=game.craftSlotSize()/2;
@@ -34,7 +34,7 @@ test('only the selected charm flips, no-op taps do not add history, and dragging
  const {game,actions}=fixture(),stock=plain(game.save.inventory);
  assert.equal(actions.has('朝内'),false);actions.get('第1槽：叶子挂饰')();actions.get('朝内')();
  assert.deepEqual(plain(game.save.draftFacings.slice(0,3)),['in','out','out']);const history=game.undo.length;actions.get('朝内')();assert.equal(game.undo.length,history);
- actions.get('+')();assert.equal(game.save.draftFacings[0],'in');assert.equal(game.save.draftSizes[0],10);
+ actions.get('+')();assert.equal(game.save.draftFacings[0],'in');assert.equal(game.save.draftSizes[0],9);
  const touch=i=>{const p=game.slotPos(i);return {getUILocation:()=>({x:p.x,y:1280-p.y})};},node=game.slotNodes[0];
  node.events.start(touch(0));node.events.move(touch(3));node.events.end(touch(3));
  assert.equal(game.save.draft[3],leaf);assert.equal(game.save.draftFacings[3],'in');assert.equal(game.save.draftFacings[0],'out');

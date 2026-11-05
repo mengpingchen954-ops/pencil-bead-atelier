@@ -19,7 +19,7 @@ export function ringMaterials(beads:(number|null)[],sizes:number[]|undefined,cha
   return {beads:parts,sizes:dimensions,facings:directions};
 }
 export const normalizeBeadSizes = (beads:any[],sizes:any,fallback=8) =>
-  Array.from(beads,(_,i)=>[6,8,10,12].includes(sizes?.[i])?sizes[i]:[6,8,10,12].includes(fallback)?fallback:8);
+  Array.from(beads,(_,i)=>[6,7,8,9,10,11,12].includes(sizes?.[i])?sizes[i]:[6,7,8,9,10,11,12].includes(fallback)?fallback:8);
 export const normalizeBeadFacings = (beads:any[],facings:any) =>
   Array.from(beads,(type,i)=>MATERIALS[type]?.id&&facings?.[i]==='in'?'in':'out');
 // Hole and body points measured on the existing 192px charm sprites; bow threads through its knot.

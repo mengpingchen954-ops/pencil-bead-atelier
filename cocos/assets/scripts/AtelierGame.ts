@@ -738,7 +738,7 @@ export class AtelierGame extends Component {
       const sizes=this.workingSizes,next=Math.max(6,Math.min(12,value));if(next===sizes[this.slot])return;
       this.clearCraftFlights();this.remember();sizes[this.slot]=next;this.workingSizes=sizes;this.persist();this.render();
     };
-    this.button('−',151,1057,42,39,()=>resize(this.workingSizes[this.slot]-2));
+    this.button('−',151,1057,42,39,()=>resize(this.workingSizes[this.slot]-1));
     const selected=this.slot>=0&&this.workingDraft[this.slot]!=null,size=selected?this.workingSizes[this.slot]:8;
     const meter=this.box('Single bead size slider',193,1055,313,44),readout=this.text(selected?size+' mm':'选珠',566,1059,73,34,22,INK,this.page,true);
     const drawSize=(value:number)=>{
@@ -751,7 +751,7 @@ export class AtelierGame extends Component {
     let before:number[]|null=null,target=-1;
     const slide=(e:EventTouch)=>{
       if(!before)return;
-      const value=6+2*Math.max(0,Math.min(3,Math.round((this.localPoint(e).x-meter.position.x-12)/289*3))),sizes=this.workingSizes;
+      const value=6+Math.max(0,Math.min(6,Math.round((this.localPoint(e).x-meter.position.x-12)/289*6))),sizes=this.workingSizes;
       if(sizes[target]===value)return;
       sizes[target]=value;this.workingSizes=sizes;this.drawCraftSlot(this.slotNodes[target],target);drawSize(value);readout.string=value+' mm';
     };
@@ -768,8 +768,8 @@ export class AtelierGame extends Component {
       this.render();
     });
     meter.on(Node.EventType.TOUCH_CANCEL,()=>{if(!before)return;this.workingSizes=before;before=null;this.render();});
-    [6,8,10,12].forEach(value=>this.accessibleButton('选中珠子设为'+value+'毫米',()=>resize(value),this.page,selected));
-    this.button('+',509,1057,42,39,()=>resize(this.workingSizes[this.slot]+2));
+    [6,7,8,9,10,11,12].forEach(value=>this.accessibleButton('选中珠子设为'+value+'毫米',()=>resize(value),this.page,selected));
+    this.button('+',509,1057,42,39,()=>resize(this.workingSizes[this.slot]+1));
     if(!event&&selected&&MATERIALS[this.workingDraft[this.slot]]?.id){
       const facing=this.workingFacings[this.slot];
       for(const [i,value] of ['in','out'].entries())this.button(value==='in'?'朝内':'朝外',420+i*111,650,103,44,()=>{
