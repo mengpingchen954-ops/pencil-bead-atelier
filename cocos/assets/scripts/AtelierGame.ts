@@ -54,6 +54,7 @@ export class AtelierGame extends Component {
   private craftTap: {index:number;at:number} | null = null;
   private craftMotion: Node;
   private coinEffects: Node;
+  private gatherEffects: Node;
   private craftFlights = new Map<number,{node:Node;type:number}>();
   private craftRipples = new WeakSet<Node>();
   private tool = '';
@@ -145,6 +146,7 @@ export class AtelierGame extends Component {
     this.overlay = this.container('Dialogs', root);
     this.notices = this.container('Notices', root);
     this.coinEffects = this.container('Coin receipts', root);
+    this.gatherEffects = this.container('Gather receipts', root);
     this.accessibility = new BrowserAccessibility();
     this.sound = this.node.addComponent(AudioSource);
     this.rect('Paper', 0, 0, 720, 1280, PAPER);
@@ -183,6 +185,7 @@ export class AtelierGame extends Component {
     this.cancelMusicTap();
     this.clearCraftFlights();
     if(this.coinEffects)this.clear(this.coinEffects);
+    if(this.gatherEffects)this.clear(this.gatherEffects);
     this.releaseInputs(this.node);
     input.off(Input.EventType.KEY_DOWN, this.onKey, this);
     game.off(Game.EVENT_HIDE, this.onHide, this);
@@ -384,6 +387,7 @@ export class AtelierGame extends Component {
     if (page === 'orderArrival') page='craft';
     if(page==='craft'&&this.migrateDraftCharm())this.persist();
     this.clearCraftFlights();if(this.coinEffects)this.clear(this.coinEffects);this.craftToolsOpen=false;
+    if(this.gatherEffects)this.clear(this.gatherEffects);
     if (page === 'orderArrival') this.orderGuide = true;
     if (page === 'orders') {this.ordersPage=0;this.tickSales();}
     if(this.save.firstSteps?.craft&&this.save.completed.length===1&&['craft','orderArrival'].includes(page)){this.save=rules.recordFirstStep(this.save,'secondOrder');this.persist();}
@@ -1261,6 +1265,7 @@ export class AtelierGame extends Component {
   private startMatch() {
     this.bankGather();
     this.save=rules.refreshEnergy(this.save);if(this.save.energy<1)return this.toast('体力不足，稍等一会儿，或先去做手串。');
+    if(this.gatherEffects)this.clear(this.gatherEffects);
     this.returnScreen=this.screen==='match'?this.returnScreen:this.screen;this.save.energy--;this.save.energyAt=Date.now();
     this.save=rules.recordFirstStep(this.save,'firstGather');this.persist();
     this.session=rules.newSession(Date.now()%1000000,this.save.level);this.selected=-1;this.tool='';this.hint=[];this.closeModal();this.screen='match';this.render();
@@ -1403,6 +1408,7 @@ export class AtelierGame extends Component {
   }
   private async resolve(result: any,pair?: number[]) {
     if(!result.valid)return this.toast('这个工具已经用完了。');
+    const gathered=rules.total(result.session.collected)-rules.total(this.session.collected);
     this.setBusy(true);this.selected=-1;this.hint=[];
     if(pair){await Promise.all([this.animate(this.boardNodes[pair[0]],this.boardPos(pair[1]),.18),this.animate(this.boardNodes[pair[1]],this.boardPos(pair[0]),.18)]);
       [this.boardNodes[pair[0]],this.boardNodes[pair[1]]]=[this.boardNodes[pair[1]],this.boardNodes[pair[0]]];}
@@ -1442,7 +1448,30 @@ export class AtelierGame extends Component {
       if(chain>0)this.chainLabel(chain+1);
     }
     this.session=result.session;this.bankGather();this.setBusy(false);this.render();
+    this.gatherFeedback(gathered,frames);
     if(this.session.status==='playing')this.consumeInput();else{this.queued=null;this.result();}
+  }
+  private gatherFeedback(amount:number,frames:any[]) {
+    if(amount<=0)return;
+    if(!this.gatherEffects)this.gatherEffects=this.container('Gather receipts',this.page.parent||this.node);
+    this.clear(this.gatherEffects);
+    const message='本次采集 +'+amount;
+    this.accessibility?.announce(message);
+    const badge=this.rect('Gather count',38,153,644,39,PAPER,this.gatherEffects,12,'#d8c7ae');
+    this.text(message,4,0,636,39,24,SAGE,badge,true);
+    if(this.save.reduced){this.scheduleOnce(()=>{if(badge.isValid){badge.removeFromParent();badge.destroy();}},1.5);return;}
+    const hits=frames.flatMap(frame=>frame.hit.map((index:number)=>({index,type:frame.before[index]})));
+    const count=Math.min(10,hits.length);
+    for(let i=0;i<count;i++){
+      const hit=hits[Math.floor(i*hits.length/count)],p=this.boardPos(hit.index);
+      const n=this.image(this.materialArt(this.boardType(hit.type)),p.x+16,16-p.y,40,40,this.gatherEffects);
+      n.name='Gather bead '+i;
+      tween(n).delay(i*.035).to(.16,{position:new Vec3(p.x+16+(i%3-1)*20,54+p.y,0),scale:new Vec3(1.12,1.12,1)},{easing:'quadOut'})
+        .to(.62,{position:new Vec3(278,-35,0),scale:new Vec3(.35,.35,1)},{easing:'quadIn'})
+        .call(()=>{n.removeFromParent();n.destroy();}).start();
+    }
+    const opacity=badge.addComponent(UIOpacity);
+    tween(opacity).delay(1.2).to(.25,{opacity:0}).call(()=>{badge.removeFromParent();badge.destroy();}).start();
   }
   private updateGoals(s:any) {
     rules.goalProgress(s).forEach((g:any,i:number)=>{
@@ -1458,11 +1487,6 @@ export class AtelierGame extends Component {
       const a=(index*2.3+k*2.1),distance=18+k*9;
       tween(n).to(.27,{position:new Vec3(n.position.x+Math.cos(a)*distance,n.position.y+Math.sin(a)*distance,0),scale:new Vec3(.15,.15,1)},{easing:'quadOut'}).call(()=>n.destroy()).start();
       tween(opacity).to(.27,{opacity:0}).start();
-    }
-    if(index%4===0){
-      const n=this.image(this.materialArt(this.boardType(type)),cx-13,cy-13,26,26),opacity=n.addComponent(UIOpacity);
-      tween(n).to(.42,{position:new Vec3(53+type*109,-1004,0),scale:new Vec3(.3,.3,1)},{easing:'quadIn'}).call(()=>n.destroy()).start();
-      tween(opacity).delay(.24).to(.18,{opacity:0}).start();
     }
   }
   private specialFlash(index:number,kind:string) {
@@ -1485,7 +1509,7 @@ export class AtelierGame extends Component {
     this.bankGather();const won=this.session.status==='won';
     this.dialog('result',won?'珠盒又多了一点光':'这一趟，也有收获');if(won)this.play('success');
     this.text(won?'第 '+this.session.level+' 关完成':'本关目标未全部完成',100,337,520,60,30,SAGE,this.overlay,true);
-    this.text('本次采到的珠材已全部保存。\n回手作台自由搭配，或继续收集更多颜色。',100,413,520,85,25,INK,this.overlay,true);
+    this.text('本关采集 '+rules.total(this.session.collected)+' 件珠材 · 已保存\n回手作台自由搭配，或继续收集更多颜色。',100,413,520,85,25,INK,this.overlay,true);
     this.session.collected.forEach((n:number,i:number)=>{const x=137+(i%3)*164,y=525+Math.floor(i/3)*137;this.rect('Reward '+i,x-8,y-4,126,120,'#fff9ed',this.overlay,18,'#dfcfb1');this.image(this.materialArt(this.boardType(i)),x+10,y,80,80,this.overlay);this.text('+'+n,x,y+80,100,36,25,SAGE,this.overlay,true);});
     this.button(won?'收好珠材 · 回工坊':'带着珠材回制作',130,865,460,70,()=>won?this.claim():this.leaveGather(),this.overlay,true);
     if(!won)this.button('重新采珠 · 1 体力',130,958,460,56,()=>this.startMatch(),this.overlay);
