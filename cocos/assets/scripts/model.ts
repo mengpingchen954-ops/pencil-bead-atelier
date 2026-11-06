@@ -150,12 +150,16 @@ export function findSupplyMove(board,goals) {
   }
   return null;
 }
+export const GATHER_EXCHANGE = 10;
+export function gatheredMaterials(session) {
+  return session.collected.map(n=>Math.floor(n/GATHER_EXCHANGE));
+}
 export function bankEarlyCollection(save,session) {
   if(!session||session.level>3&&!session.freeGather)return {save,session};
   const previous=session.banked||Array(6).fill(0);
   if(session.collected.every((n,i)=>n<=previous[i]))return {save,session};
   const inventory=Array.from({length:MATERIALS.length},(_,i)=>save.inventory[i]||0), gatheredStock=Array.from({length:MATERIALS.length},(_,i)=>save.gatheredStock?.[i]||0), materialUnlocked=Array.from({length:MATERIALS.length},(_,i)=>save.materialUnlocked?.[i]===true);
-  session.collected.forEach((n,i)=>{const amount=Math.max(0,n-previous[i]),type=(session.materialTypes||[0,1,2,3,4,5])[i];
+  gatheredMaterials(session).forEach((n,i)=>{const amount=Math.max(0,n-Math.floor(previous[i]/GATHER_EXCHANGE)),type=(session.materialTypes||[0,1,2,3,4,5])[i];
     if(amount&&MATERIALS[type]){inventory[type]+=amount;gatheredStock[type]+=amount;materialUnlocked[type]=true;}
   });
   return {save:{...save,inventory,gatheredStock,materialUnlocked},session:{...session,banked:[...session.collected]}};
@@ -166,7 +170,7 @@ export function goalProgress(session) {
     const target = goal.kind === 'total' ? session.target : goal.target;
     const current = goal.kind === 'total' ? total(session.collected) : goal.kind === 'color'
       ? session.collected[goal.type] : session.cleared?.[goal.kind] || 0;
-    const label = goal.kind === 'total' ? '采集珠材' : goal.kind === 'color'
+    const label = goal.kind === 'total' ? '消除珠子' : goal.kind === 'color'
       ? MATERIALS[(session.materialTypes||[0,1,2,3,4,5])[goal.type]].short : goal.kind === 'paper' ? '打开纸袋' : '解开线结';
     return { ...goal, target, current, label, done: current >= target };
   });
@@ -350,13 +354,7 @@ export function useTool(session, tool, index = 0) {
 }
 export function sessionRewards(session, save = null) {
   if (session?.status !== 'won') return [0, 0, 0, 0, 0, 0];
-  const reward = [...session.collected];
-  if(session.supplyOnly||session.freeGather)return reward;
-  const order = session.rewardOrder || (save ? currentOrder(save) : null);
-  if (!order) return reward;
-  const needed = Array(6).fill(0);
-  (order.palette || []).forEach(type => needed[type]++);
-  return reward.map((count, type) => count + Math.min(8, Math.max(0, needed[type] - (save?.inventory?.[type] || 0) - count)));
+  return gatheredMaterials(session);
 }
 export function freshSave() {
   return {

@@ -33,13 +33,13 @@ async function fixture(width,height,reduced=false){
  return {context,page,state,cell,button,settled,effects};
 }
 async function verifyCollection(ui,action,reduced=false){
- const before=await ui.state();await action();await ui.settled();const after=await ui.state(),amount=total(after.session.collected)-total(before.session.collected),effects=await ui.effects();
- assert.ok(amount>0);assert.deepEqual(effects.text,['本次采集 +'+amount]);assert.equal(total(after.save.inventory)-total(before.save.inventory),amount);
- const expected=[...before.save.inventory];after.session.collected.forEach((n,i)=>expected[after.session.materialTypes[i]]+=n-before.session.collected[i]);
+ const before=await ui.state();await action();await ui.settled();const after=await ui.state(),gains=after.session.collected.map((n,i)=>Math.floor(n/10)-Math.floor(before.session.collected[i]/10)),amount=total(gains),effects=await ui.effects();
+ assert.deepEqual(effects.text,amount?['本次兑换 +'+amount+' 颗']:[]);assert.equal(total(after.save.inventory)-total(before.save.inventory),amount);
+ const expected=[...before.save.inventory];after.session.collected.forEach((n,i)=>expected[after.session.materialTypes[i]]+=gains[i]);
  assert.deepEqual(after.save.inventory,expected);assert.deepEqual(after.save.gatheredStock,expected);
- if(reduced)assert.deepEqual(effects.beads,[]);else{
-  assert.ok(effects.beads.length>0&&effects.beads.length<=10);
-  const arts=new Set(after.session.collected.flatMap((n,i)=>{if(n<=before.session.collected[i])return [];const t=after.session.materialTypes[i],m=MATERIALS[t];return [m.id?'charm-'+m.id:'bead-'+t];}));
+ if(reduced||!amount)assert.deepEqual(effects.beads,[]);else{
+  assert.ok(effects.beads.length>0&&effects.beads.length===Math.min(10,amount));
+  const arts=new Set(after.session.collected.flatMap((n,i)=>{if(!gains[i])return [];const t=after.session.materialTypes[i],m=MATERIALS[t];return [m.id?'charm-'+m.id:'bead-'+t];}));
   effects.beads.forEach(b=>assert.ok(arts.has(b.art),b.art));
  }
  return {amount,after,effects};
@@ -47,8 +47,7 @@ async function verifyCollection(ui,action,reduced=false){
 try{
  for(const [width,height] of [[390,844],[1440,900]]){
   const ui=await fixture(width,height),{page,state,cell,button,settled,effects}=ui;
-  let s=await state();const pair=findMove(s.session.board,s.session.specials,s.session.obstacles);
-  const first=await verifyCollection(ui,async()=>{for(const i of pair)await cell(i);});await page.screenshot({path:dir+'/flight-start-'+width+'.png'});
+  let s,first;for(let turn=0;turn<14;turn++){s=await state();assert.equal(s.session.status,'playing');const pair=findMove(s.session.board,s.session.specials,s.session.obstacles);first=await verifyCollection(ui,async()=>{for(const i of pair)await cell(i);});if(first.amount)break;}assert.ok(first.amount);await page.screenshot({path:dir+'/flight-start-'+width+'.png'});
   await page.waitForTimeout(260);const middle=await effects();
   assert.ok(middle.beads.some(n=>{const old=first.effects.beads.find(o=>o.id===n.id);return old&&n.y<old.y-30;}),'materials move upward toward the pearl header');
   await page.screenshot({path:dir+'/flight-up-'+width+'.png'});
@@ -69,9 +68,9 @@ try{
   const s=await ui.state(),pair=findMove(s.session.board,s.session.specials,s.session.obstacles);assert.ok(pair);
   await verifyCollection(ui,async()=>{for(const i of pair)await ui.cell(i);},true);assert.ok(++turns<=26);
  }
- const s=await ui.state(),count=total(s.session.collected);assert.equal(s.modal,'result');assert.ok((await ui.effects()).result.some(t=>t.startsWith('本关采集 '+count+' 件珠材')));
+ const s=await ui.state(),count=total(s.session.collected.map(n=>Math.floor(n/10)));assert.equal(s.modal,'result');assert.ok((await ui.effects()).result.some(t=>t.startsWith('本关获得 '+count+' 颗珠材')));
  assert.equal(total(s.save.inventory),count);await ui.page.screenshot({path:dir+'/result-total.png'});
  await ui.button(s.session.status==='won'?'收好珠材 · 回工坊':'带着珠材回制作');assert.equal(total((await ui.state()).save.inventory),count);assert.deepEqual((await ui.effects()).text,[]);await ui.context.close();
- assert.deepEqual(errors,[]);fs.writeFileSync(dir+'/report.json',JSON.stringify({base,widths:[390,1440],nativeTouchAndMouse:true,actualSprites:true,upwardFlights:true,cappedParticles:true,exactMoveAndCascadeCounts:true,toolsAndInvalidAndShuffle:true,resultTotal:count,terminalStatus:s.session.status,reducedMotion:true,cleanup:true,reloadPreservesStock:true,noDuplicateStock:true,errors},null,2));
+ assert.deepEqual(errors,[]);fs.writeFileSync(dir+'/report.json',JSON.stringify({base,widths:[390,1440],nativeTouchAndMouse:true,actualSprites:true,upwardFlights:true,cappedParticles:true,tenForOnePerMaterial:true,exactMoveAndCascadeCounts:true,toolsAndInvalidAndShuffle:true,resultTotal:count,terminalStatus:s.session.status,reducedMotion:true,cleanup:true,reloadPreservesStock:true,noDuplicateStock:true,errors},null,2));
  console.log('Gather feedback passed: native touch/mouse, actual material flights upward, exact collection/tool/cascade counts, invalid/shuffle silence, cleanup, terminal total, reduced motion and saved stock.');
 }finally{await browser.close();}

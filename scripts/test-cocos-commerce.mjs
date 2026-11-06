@@ -27,17 +27,17 @@ async function fixture(save,viewport={width:390,height:844}){
  await page.goto(base,{waitUntil:'networkidle'});await ready();
  return {context,page,state,ready,tap,button,action,escape};
 }
-async function gather(ui,minimum=20){
+async function gather(ui,minimum=1){
  const {state,tap,button,page}=ui;await button('消除采珠');assert.equal((await state()).modal,'intro');
  const label=await page.getByRole('button',{name:/^开始采珠 · /}).textContent();await button(label);
  assert.equal((await state()).session.freeGather,true);assert.equal((await state()).session.rewardOrder,null);
  for(let turn=0;turn<16;turn++){
-  const s=await state();if(s.session.collected.reduce((n,m,i)=>n+(s.session.materialTypes[i]<36?m:0),0)>=minimum||s.modal==='result')break;
+  const s=await state();if(s.session.collected.reduce((n,m,i)=>n+(s.session.materialTypes[i]<36?Math.floor(m/10):0),0)>=minimum||s.modal==='result')break;
   const pair=findMove(s.session.board,s.session.specials,s.session.obstacles);assert.ok(pair);
   for(const index of pair)await tap(48+index%8*78+36,340+Math.floor(index/8)*78+36);
   await page.waitForFunction(()=>!JSON.parse(window.render_game_to_text()).busy,{},{timeout:12000});
  }
- const s=await state();assert.ok(total(s.session.collected)>=12);const expected=Array(48).fill(0);s.session.collected.forEach((n,i)=>expected[s.session.materialTypes[i]]=n);assert.deepEqual(s.save.inventory,expected,'Every eliminated bead must already be stored');
+ const s=await state();assert.ok(total(s.save.inventory)>0);const expected=Array(48).fill(0);s.session.collected.forEach((n,i)=>expected[s.session.materialTypes[i]]=Math.floor(n/10));assert.deepEqual(s.save.inventory,expected,'Every exchanged bead must already be stored');
  await page.screenshot({path:dir+'/gather.png'});
  if(s.modal==='result')await ui.escape();else{await button('暂停');await button('返回店铺');await button('确认返回店铺');}
  return (await state()).save.inventory;
@@ -50,10 +50,10 @@ try{
  await button('自由 DIY');let s=await state();assert.equal(s.screen,'craft');
  const recipe=[];for(let i=0;i<36;i++)for(let j=0;j<gathered[i]&&recipe.length<12;j++)recipe.push(i);
  for(const type of recipe){const m=(await state()).crafting.materials[type];if((await state()).crafting.category!==m.category)await button(['珠宝','水晶','木质','饰品'][m.category]);await tap(m.x,m.y);}
- await page.waitForTimeout(1100);s=await state();assert.equal(s.save.charm,'none');assert.equal(s.save.draft.includes(null),false);
- const crafted=[...s.save.draft],coins=s.save.coins;await page.screenshot({path:dir+'/free-diy.png'});
+ await page.waitForTimeout(1100);s=await state();assert.equal(s.save.charm,'none');assert.ok(s.save.draft.some(Number.isInteger));
+ const draft=[...s.save.draft],crafted=draft.filter(Number.isInteger),coins=s.save.coins;await page.screenshot({path:dir+'/free-diy.png'});
  await button('完成制作');assert.equal((await state()).screen,'packing');await page.screenshot({path:dir+'/finished.png'});
- await button('返回修改');assert.deepEqual((await state()).save.draft,crafted);await button('完成制作');await button('保存并上架');s=await state();
+ await button('返回修改');assert.deepEqual((await state()).save.draft,draft);await button('完成制作');await button('保存并上架');s=await state();
  assert.equal(s.modal,'listing');assert.equal(s.save.coins,coins);assert.equal(s.save.commerce.works.length,1);assert.equal(s.save.commerce.works[0].status,'ready');
  assert.deepEqual(s.save.inventory,gathered.map((n,i)=>n-(draftCounts(crafted)[i]||0)));assert.deepEqual(s.save.commerce.works[0].beads,crafted);assert.equal(s.save.commerce.works[0].charm,'none');
  await button('加价 10');await page.screenshot({path:dir+'/price.png'});await button('确认上架');s=await state();assert.equal(s.save.coins,coins);assert.equal(s.save.commerce.works[0].status,'listing');
@@ -71,7 +71,7 @@ try{
  await ui.context.close();
 
  // A later level must retain every collected material even when the player exits before winning.
- const later=await fixture({...initial,level:4});await gather(later,12);const laterStock=(await later.state()).save.inventory;
+ const later=await fixture({...initial,level:4});await gather(later,1);const laterStock=(await later.state()).save.inventory;
  await later.page.reload({waitUntil:'networkidle'});await later.ready();assert.deepEqual((await later.state()).save.inventory,laterStock);report.laterGatheringExitAndReload=true;await later.context.close();
 
  // Existing progress is preserved while a representative gallery exercises pagination and all navigation widths.

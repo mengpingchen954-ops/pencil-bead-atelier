@@ -51,7 +51,7 @@ try{
    }
    assert.ok(best);for(const i of best)await tap(84+(i%8)*78,376+Math.floor(i/8)*78);
    await page.waitForFunction(()=>!JSON.parse(window.render_game_to_text()).busy);s=await state();
-   assert.deepEqual(s.save.inventory,miningStock.map((n,i)=>n+s.session.collected[i]));
+   assert.deepEqual(s.save.inventory,miningStock.map((n,i)=>n+Math.floor((s.session.collected[s.session.materialTypes.indexOf(i)]||0)/10)));
  }
  s=await state();assert.equal(s.modal,'result');assert.equal(s.session.status,'won');await page.screenshot({path:dir+'/gathered-for-order.png'});
  const earned=s.save.inventory;await action('收好珠材 · 回工坊');s=await state();assert.equal(s.screen,'craft');assert.deepEqual(s.save.inventory,earned);

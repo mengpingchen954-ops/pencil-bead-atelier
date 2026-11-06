@@ -30,7 +30,7 @@ test('every level favors pale materials, caps dark draw weight at 20%, and retai
 });
 test('only actual eliminated materials unlock, bank once and survive failure, exit and reload',()=>{
  let save=freshSave();for(let level=1;level<=8;level++){
-  const session={...newSession(91,level),collected:[3,0,1,0,0,0],status:'lost'};const types=session.materialTypes;
+  const session={...newSession(91,level),collected:[30,0,10,0,0,0],status:'lost'};const types=session.materialTypes;
   const before=structuredClone(save),bank=bankEarlyCollection(save,session);save=bank.save;
   assert.equal(save.gatheredStock[types[0]],before.gatheredStock[types[0]]+3);assert.equal(save.gatheredStock[types[2]],before.gatheredStock[types[2]]+1);
   assert.equal(save.materialUnlocked[types[1]],before.materialUnlocked[types[1]]);assert.equal(save.materialUnlocked[types[0]],true);
@@ -40,14 +40,14 @@ test('only actual eliminated materials unlock, bank once and survive failure, ex
 test('gifted and legacy inventory cannot bypass matching provenance in placement or completion',()=>{
  const old={...freshSave(),inventory:Array(48).fill(100),draft:Array(12).fill(0),coins:1234};delete old.gatheredStock;delete old.materialUnlocked;
  let save=normalizeSave(old);assert.equal(save.coins,1234);assert.equal(save.inventory[0],100);assert.equal(materialStock(save,0),0);assert.equal(canPlace(save,0,0),false);assert.equal(finishWork(save),null);
- const session={...newSession(4,1),collected:[12,0,0,0,0,0]};save=bankEarlyCollection(save,session).save;
+ const session={...newSession(4,1),collected:[120,0,0,0,0,0]};save=bankEarlyCollection(save,session).save;
  assert.equal(canPlace(save,0,0),true);assert.ok(Object.values(craftChecks(save)).every(Boolean));
  const done=finishWork(save,100);assert.ok(done);assert.equal(done.inventory[0],100);assert.equal(done.gatheredStock[0],0);assert.equal(done.materialUnlocked[0],true);assert.equal(finishWork({...done,draft:Array(12).fill(0)},200),null);
 });
 test('gathered charms are optional, locked charms are rejected and a saved charm is consumed exactly once',()=>{
- let save=bankEarlyCollection(freshSave(),{...newSession(4,1),collected:[12,0,0,0,0,0]}).save;save.draft=Array(12).fill(0);save.charm='heart';
+ let save=bankEarlyCollection(freshSave(),{...newSession(4,1),collected:[120,0,0,0,0,0]}).save;save.draft=Array(12).fill(0);save.charm='heart';
  assert.equal(finishWork(save,100),null);
- const type=charmType('heart'),session=newSession(4,12),slot=session.materialTypes.indexOf(type);assert.ok(slot>=0);session.collected[slot]=1;save=bankEarlyCollection(save,session).save;
+ const type=charmType('heart'),session=newSession(4,12),slot=session.materialTypes.indexOf(type);assert.ok(slot>=0);session.collected[slot]=10;save=bankEarlyCollection(save,session).save;
  const done=finishWork(save,100);assert.ok(done);assert.equal(done.gatheredStock[type],0);assert.equal(done.inventory[type],0);assert.equal(done.commerce.works[0].charm,'heart');assert.equal(done.charm,'none');assert.equal(finishWork(done,100),null);
 });
 
@@ -76,7 +76,7 @@ test('legacy order boards retain their original uniform generation',()=>{
 });
 
 test('chosen bead size is preserved in saved work and restored across reload',()=>{
- let save=bankEarlyCollection(freshSave(),{...newSession(4,1),collected:[12,0,0,0,0,0]}).save;
+ let save=bankEarlyCollection(freshSave(),{...newSession(4,1),collected:[120,0,0,0,0,0]}).save;
  save.draft=Array(12).fill(0);save.beadSize=10;delete save.draftSizes;const done=finishWork(save,100);
  assert.equal(done.commerce.works[0].beadSize,10);assert.deepEqual(done.commerce.works[0].beadSizes,Array(12).fill(10));assert.deepEqual(normalizeSave(done).commerce.works[0].beadSizes,Array(12).fill(10));
 });
@@ -84,8 +84,8 @@ test('chosen bead size is preserved in saved work and restored across reload',()
 test('wood-era and later levels always contain all four categories and bank their actual IDs',()=>{
  for(const level of [1,5,6,13,14,29,30,100,100000]){
   const session=newSession(19,level);assert.deepEqual([...new Set(session.board.map(t=>MATERIALS[session.materialTypes[t]].category))].sort(),[0,1,2,3]);
-  const collected=[3,4,5,6,7,8],bank=bankEarlyCollection(freshSave(),{...session,collected}).save;
-  session.materialTypes.forEach((type,i)=>{assert.equal(bank.inventory[type],collected[i]);assert.equal(bank.gatheredStock[type],collected[i]);assert.equal(bank.materialUnlocked[type],true);});
+  const collected=[30,40,50,60,70,80],bank=bankEarlyCollection(freshSave(),{...session,collected}).save;
+  session.materialTypes.forEach((type,i)=>{assert.equal(bank.inventory[type],collected[i]/10);assert.equal(bank.gatheredStock[type],collected[i]/10);assert.equal(bank.materialUnlocked[type],true);});
   assert.equal(bank.inventory.reduce((n,m)=>n+m,0),33);
  }
 });

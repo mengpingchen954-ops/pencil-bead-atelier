@@ -127,18 +127,18 @@ test('shuffling preserves each special and every obstacle without awarding colle
   assert.deepEqual(matches(result.session.board),[]);assert.ok(findMove(result.session.board,result.session.specials));
 });
 
-test('commission rewards are pure, bounded to actual collection plus missing recipe pieces, and absent on loss', () => {
+test('commission rewards use the same 10-for-1 rule without missing-recipe bonuses', () => {
   const save=freshSave(),session=newSession(31,1,ORDERS[1]);
-  session.collected=[1,2,1,0,0,0];session.status='won';
+  session.collected=[9,10,19,20,29,30];session.status='won';
   const before=JSON.stringify({session,save}),reward=sessionRewards(session,save);
-  const expected=[...session.collected],need=Array(6).fill(0);ORDERS[1].palette.forEach(t=>need[t]++);
-  expected.forEach((n,i)=>expected[i]+=Math.min(8,Math.max(0,need[i]-save.inventory[i]-n)));
+  const expected=[0,1,1,2,2,3];
+
   assert.deepEqual(reward,expected);assert.deepEqual(sessionRewards(session,save),reward);
-  reward.forEach((n,i)=>assert.ok(n>=session.collected[i]&&n<=session.collected[i]+8));
+  reward.forEach((n,i)=>assert.ok(n===Math.floor(session.collected[i]/10)));
   assert.equal(JSON.stringify({session,save}),before);
   assert.deepEqual(sessionRewards({...session,status:'lost'},save),Array(6).fill(0));
   assert.deepEqual(sessionRewards({...session,status:'playing'},save),Array(6).fill(0));
-  assert.deepEqual(sessionRewards(session,{...save,inventory:Array(6).fill(100)}),session.collected);
+  assert.deepEqual(sessionRewards(session,{...save,inventory:Array(6).fill(100)}),expected);
 });
 
 

@@ -51,12 +51,12 @@ try{
    const pair=findMove(s.session.board,s.session.specials,s.session.obstacles);assert.ok(pair);for(const i of pair)await ui.tap(48+i%8*78+36,340+Math.floor(i/8)*78+36);
    await ui.page.waitForFunction(()=>!JSON.parse(window.render_game_to_text()).busy,{},{timeout:12000});
   }
-  s=await ui.state();const expected=Array(48).fill(0);s.session.collected.forEach((n,i)=>expected[s.session.materialTypes[i]]=n);
-  assert.deepEqual(s.save.inventory,expected);assert.deepEqual(s.save.gatheredStock,expected);assert.deepEqual([...new Set(expected.flatMap((n,i)=>n?[MATERIALS[i].category]:[]))].sort(),[0,1,2,3]);
+  s=await ui.state();const expected=Array(48).fill(0);s.session.collected.forEach((n,i)=>expected[s.session.materialTypes[i]]=Math.floor(n/10));
+  assert.deepEqual(s.save.inventory,expected);assert.deepEqual(s.save.gatheredStock,expected);assert.ok(expected.every((n,i)=>n===0||s.session.materialTypes.includes(i)));
   if(s.modal==='result')await ui.escape();else{await ui.button('暂停');await ui.button('返回店铺');await ui.button('确认返回店铺');}
   if((await ui.state()).screen!=='craft')await ui.button('自由 DIY');
-  for(let c=0;c<4;c++){await ui.button(names[c]);const earned=expected.findIndex((n,i)=>n>0&&MATERIALS[i].category===c),tile=(await ui.state()).crafting.materials[earned];assert.equal(tile.unlocked,true);assert.equal(tile.stock,expected[earned]);await ui.tap(tile.x,tile.y);const after=await ui.state();assert.ok(after.save.draft.includes(earned));}
+  for(let c=0;c<4;c++){await ui.button(names[c]);const earned=expected.findIndex((n,i)=>n>0&&MATERIALS[i].category===c);if(earned<0){const tiles=(await ui.state()).crafting.materials.filter(m=>m.category===c);assert.ok(tiles.every(m=>!m.unlocked));continue;}const tile=(await ui.state()).crafting.materials[earned];assert.equal(tile.unlocked,true);assert.equal(tile.stock,expected[earned]);await ui.tap(tile.x,tile.y);const after=await ui.state();assert.ok(after.save.draft.includes(earned));}
   await ui.page.reload({waitUntil:'networkidle'});await ui.ready();assert.deepEqual((await ui.state()).save.inventory,expected);await ui.context.close();
  }
- assert.deepEqual(errors,[]);fs.writeFileSync(dir+'/report.json',JSON.stringify({base,levels:[1,3,5,6,18],nativeSpritesAllCategories:true,paleMaterialsDominate:true,actualEliminatedStock:true,allFourDiyCategories:true,reloadPreserved:true,errors},null,2));console.log('Mixed materials passed: four categories visibly present on every tested board, correct real rewards, all four DIY tabs usable after collection, and reload preserves stock.');
+ assert.deepEqual(errors,[]);fs.writeFileSync(dir+'/report.json',JSON.stringify({base,levels:[1,3,5,6,18],nativeSpritesAllCategories:true,paleMaterialsDominate:true,actualEliminatedStock:true,onlyExchangedMaterialsUnlock:true,reloadPreserved:true,errors},null,2));console.log('Mixed materials passed: four categories visibly present on every tested board, correct real rewards, DIY availability follows the 10-for-1 exchanged inventory, and reload preserves stock.');
 }finally{await browser.close();}

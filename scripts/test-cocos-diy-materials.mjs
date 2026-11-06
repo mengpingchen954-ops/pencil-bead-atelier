@@ -32,15 +32,15 @@ const initial={...freshSave(),started:true,sound:false,music:{enabled:false,trac
 async function startGather(ui){
  await ui.button('采珠');const name=await ui.page.getByRole('button',{name:/^开始采珠 · /}).textContent();await ui.button(name);
 }
-async function gatherMoves(ui,minimum=16){
+async function gatherMoves(ui,minimum=1){
  for(let turn=0;turn<20;turn++){
-  const s=await ui.state();if(s.session.collected.reduce((n,m,i)=>n+(s.session.materialTypes[i]<36?m:0),0)>=minimum||s.modal==='result')break;
+  const s=await ui.state();if(s.session.collected.reduce((n,m,i)=>n+(s.session.materialTypes[i]<36?Math.floor(m/10):0),0)>=minimum||s.modal==='result')break;
   const pair=findMove(s.session.board,s.session.specials,s.session.obstacles);assert.ok(pair);
   for(const index of pair)await ui.tap(48+index%8*78+36,340+Math.floor(index/8)*78+36);
   await ui.page.waitForFunction(()=>!JSON.parse(window.render_game_to_text()).busy,{},{timeout:12000});
  }
- const s=await ui.state();assert.ok(total(s.session.collected)>=minimum);
- const expected=Array(48).fill(0);s.session.collected.forEach((n,i)=>expected[s.session.materialTypes[i]]=n);
+ const s=await ui.state();assert.ok(total(s.save.inventory)>0);
+ const expected=Array(48).fill(0);s.session.collected.forEach((n,i)=>expected[s.session.materialTypes[i]]=Math.floor(n/10));
  assert.deepEqual(s.save.inventory,expected);assert.deepEqual(s.save.gatheredStock,expected);assert.deepEqual(s.save.materialUnlocked,expected.map(n=>n>0));
  if(s.modal==='result')await ui.escape();else{await ui.button('暂停');await ui.button('返回店铺');await ui.button('确认返回店铺');}
  if((await ui.state()).screen==='home')await ui.button('自由 DIY');
@@ -56,17 +56,17 @@ try{
   await page.screenshot({path:dir+'/locked-category-'+c+'.png'});
  }
  await button('珠宝');await startGather(ui);await page.screenshot({path:dir+'/match-reference-materials.png'});
- const gathered=await gatherMoves(ui,18);report.realGathering=true;
+ const gathered=await gatherMoves(ui,1);report.realGathering=true;
  const recipe=[];for(let i=0;i<36;i++)for(let j=0;j<gathered[i]&&recipe.length<12;j++)recipe.push(i);
- assert.equal(recipe.length,12);
+ assert.ok(recipe.length>0);
  for(const type of recipe){s=await state();const m=s.crafting.materials[type];if(s.crafting.category!==m.category)await button(['珠宝','水晶','木质','饰品'][m.category]);await tap(m.x,m.y);}
- await page.waitForTimeout(1100);s=await state();assert.equal(s.save.draft.includes(null),false);const draft=s.save.draft.slice(),stock=s.save.inventory.slice();
+ await page.waitForTimeout(1100);s=await state();assert.ok(s.save.draft.some(Number.isInteger));const draft=s.save.draft.slice(),stock=s.save.inventory.slice();
  await page.screenshot({path:dir+'/crafted-from-gathered.png'});
  // Native drag swaps slots and undo restores them, without changing stock.
- const from=s.crafting.slots[0],to=s.crafting.slots[4];const b=await page.locator('#GameCanvas').boundingBox(),scale=Math.min(b.width/720,b.height/1280),xy=p=>({x:b.x+b.width/2+(p.x-360)*scale,y:b.y+b.height/2+(p.y-640)*scale});
- const a=xy(from),z=xy(to);await page.mouse.move(a.x,a.y);await page.mouse.down();await page.mouse.move(z.x,z.y,{steps:8});await page.mouse.up();await page.waitForTimeout(100);const swapped=draft.slice();[swapped[0],swapped[4]]=[swapped[4],swapped[0]];assert.deepEqual((await state()).save.draft,swapped);await button('撤销');assert.deepEqual((await state()).save.draft,draft);assert.deepEqual((await state()).save.inventory,stock);
+ const index=draft.findIndex(Number.isInteger),target=(index+4)%draft.length,from=s.crafting.slots[index],to=s.crafting.slots[target];const b=await page.locator('#GameCanvas').boundingBox(),scale=Math.min(b.width/720,b.height/1280),xy=p=>({x:b.x+b.width/2+(p.x-360)*scale,y:b.y+b.height/2+(p.y-640)*scale});
+ const a=xy(from),z=xy(to);await page.mouse.move(a.x,a.y);await page.mouse.down();await page.mouse.move(z.x,z.y,{steps:8});await page.mouse.up();await page.waitForTimeout(100);const swapped=draft.slice();[swapped[index],swapped[target]]=[swapped[target],swapped[index]];assert.deepEqual((await state()).save.draft,swapped);await button('撤销');assert.deepEqual((await state()).save.draft,draft);assert.deepEqual((await state()).save.inventory,stock);
  // Size controls change actual bead display and survive reload.
- s=await state();await tap(s.crafting.slots[0].x,s.crafting.slots[0].y);await button('+');assert.equal((await state()).save.draftSizes[0],9);assert.ok((await state()).save.draftSizes.slice(1).every(n=>n===8));await button('−');assert.equal((await state()).save.draftSizes[0],8);
+ s=await state();await tap(s.crafting.slots[index].x,s.crafting.slots[index].y);await button('+');assert.equal((await state()).save.draftSizes[index],9);assert.ok((await state()).save.draftSizes.every((n,i)=>i===index||n===8));await button('−');assert.equal((await state()).save.draftSizes[index],8);
  await button('完成制作');assert.equal((await state()).screen,'packing');await button('保存并上架');s=await state();assert.equal(s.modal,'listing');assert.equal(s.save.commerce.works.length,1);assert.equal(s.save.coins,initial.coins);assert.equal(s.save.commerce.works[0].charm,'none');
  const expected=stock.map((n,i)=>n-(draftCounts(draft)[i]||0));assert.deepEqual(s.save.inventory,expected);assert.deepEqual(s.save.gatheredStock,expected);
  await button('确认上架');const listed=(await state()).save.commerce.works[0];await page.waitForFunction(()=>JSON.parse(window.render_game_to_text()).save.commerce.works[0].status==='sold',{},{timeout:30000});
@@ -75,7 +75,7 @@ try{
  await ui.context.close();
  // Each later category uses the same six actual materials on the board and in earned inventory.
  for(const level of [3,5,7,8]){
-  const later=await fixture({...initial,level});await later.button('自由 DIY');await startGather(later);const shot=await later.state();assert.deepEqual(shot.session.materialTypes,materialPalette(level));await later.page.screenshot({path:dir+'/match-level-'+level+'.png'});await gatherMoves(later,12);await later.context.close();
+  const later=await fixture({...initial,level});await later.button('自由 DIY');await startGather(later);const shot=await later.state();assert.deepEqual(shot.session.materialTypes,materialPalette(level));await later.page.screenshot({path:dir+'/match-level-'+level+'.png'});await gatherMoves(later,1);await later.context.close();
  }
  // No provenance migration invents unlocks, while old works, coins and stock survive.
  const old={...initial,coins:1342,inventory:[10,2,3,4,0,0]};delete old.gatheredStock;delete old.materialUnlocked;

@@ -373,7 +373,7 @@ test('native goal HUD supports four objectives and claiming a win grants the dis
   game.session=rules.newSession(19,15);game.screen='match';game.render();
   assert.equal(game.goalLabels.length,4);assert.equal(game.boardNodes.length,64);
   assert.ok(game.obstacleNodes.filter(Boolean).length>0);
-  game.session.status='won';game.session.collected=[4,2,1,2,0,1];
+  game.session.status='won';game.session.collected=[40,20,10,20,0,10];
   const before=game.save.inventory.slice(),reward=rules.sessionRewards(game.session,game.save),types=game.session.materialTypes.slice();
   game.result();actions.get('收好珠材 · 回工坊')();
   assert.equal(game.screen,'craft');assert.equal(game.save.level,16);
@@ -540,8 +540,8 @@ test('early failed gathering banks every collected color once through result, Es
  game.persist=()=>{};game.toast=()=>{};game.scheduleOnce=()=>{};
  game.accessibility={clear(){actions.clear();},text(){},button(name,action,modal,enabled){if(enabled)actions.set(name,action);},showDialog(){actions.clear();},closeDialog(){},announce(){}};
  game.save={...rules.freshSave(),reduced:true};game.screen='cover';game.render();actions.get('打开小店  →')();assert.equal(game.modal,'welcome-diy');actions.get('自由做一条')();assert.equal(game.screen,'craft');
- const stock=game.save.inventory.slice();game.session={...rules.newSession(91,1),status:'lost',moves:0,collected:[2,1,3,0,0,1]};game.screen='match';game.result();
- assert.deepEqual(game.save.inventory,stock.map((n,i)=>n+(game.session.collected[game.session.materialTypes.indexOf(i)]||0)));const saved=JSON.stringify(game.save);game.result();assert.equal(JSON.stringify(game.save),saved);
+ const stock=game.save.inventory.slice();game.session={...rules.newSession(91,1),status:'lost',moves:0,collected:[20,10,30,0,0,10]};game.screen='match';game.result();
+ assert.deepEqual(game.save.inventory,stock.map((n,i)=>n+Math.floor((game.session.collected[game.session.materialTypes.indexOf(i)]||0)/10)));const saved=JSON.stringify(game.save);game.result();assert.equal(JSON.stringify(game.save),saved);
  game.dismiss();assert.equal(game.screen,'craft');assert.equal(game.session,null);assert.equal(JSON.stringify(game.save),saved);
  assert.deepEqual(rules.normalizeSave(JSON.parse(saved)).inventory,game.save.inventory);
 });
