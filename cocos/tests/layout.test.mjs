@@ -541,7 +541,7 @@ test('early failed gathering banks every collected color once through result, Es
  game.accessibility={clear(){actions.clear();},text(){},button(name,action,modal,enabled){if(enabled)actions.set(name,action);},showDialog(){actions.clear();},closeDialog(){},announce(){}};
  game.save={...rules.freshSave(),reduced:true};game.screen='cover';game.render();actions.get('打开小店  →')();assert.equal(game.modal,'welcome-diy');actions.get('自由做一条')();assert.equal(game.screen,'craft');
  const stock=game.save.inventory.slice();game.session={...rules.newSession(91,1),status:'lost',moves:0,collected:[20,10,30,0,0,10]};game.screen='match';game.result();
- assert.deepEqual(game.save.inventory,stock.map((n,i)=>n+Math.floor((game.session.collected[game.session.materialTypes.indexOf(i)]||0)/10)));const saved=JSON.stringify(game.save);game.result();assert.equal(JSON.stringify(game.save),saved);
+ assert.deepEqual(game.save.inventory,stock.map((n,i)=>n+(rules.gatheredMaterials(game.session)[game.session.materialTypes.indexOf(i)]||0)));const saved=JSON.stringify(game.save);game.result();assert.equal(JSON.stringify(game.save),saved);
  game.dismiss();assert.equal(game.screen,'craft');assert.equal(game.session,null);assert.equal(JSON.stringify(game.save),saved);
  assert.deepEqual(rules.normalizeSave(JSON.parse(saved)).inventory,game.save.inventory);
 });

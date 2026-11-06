@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import {freshSave,normalizeSave,newSession,bankEarlyCollection,sessionRewards,move,findMove} from '../assets/scripts/model.ts';
+import {freshSave,normalizeSave,newSession,bankEarlyCollection,gatheredMaterials,sessionRewards,move,findMove} from '../assets/scripts/model.ts';
 import {finishWork,listWork,withdrawWork,settleSales,collectSale,suggestedPrice,priceBounds,saleDuration,salesProgress} from '../assets/scripts/commerce.ts';
 import {storyUnlocked,storyRoute} from '../assets/scripts/story.ts';
 import {STORIES} from '../assets/scripts/content.ts';
@@ -50,12 +50,13 @@ test('old saves retain progress and corrupt or duplicate commerce records never 
   const work=finishWork(prepared(),1000).commerce.works[0];const bad=normalizeSave({...old,commerce:{nextId:0,works:[null,work,{...work},{...work,id:2,beads:Array(12)},{...work,id:3,status:'sold',price:999999,listedAt:0,sellAt:0}]}});
   assert.equal(bad.commerce.works.length,1);assert.equal(bad.commerce.nextId,2);assert.equal(settleSales(bad,50000).coins,old.coins);
 });
-test('all gathering levels bank precisely the 10-for-1 exchanged materials, including failure, restart and repeated banking',()=>{
+test('all gathering levels bank the final reward exactly once',()=>{
   for(const level of [1,4,15,16]){
     const save=freshSave(),session=newSession(124,level),result=move(session,...findMove(session.board));assert.ok(result.valid);assert.equal(session.freeGather,true);assert.equal(session.rewardOrder,null);
-    const bank=bankEarlyCollection(save,result.session),again=bankEarlyCollection(bank.save,{...bank.session,status:'lost'});
-    assert.deepEqual(bank.save.inventory,save.inventory.map((n,i)=>n+Math.floor((result.session.collected[result.session.materialTypes.indexOf(i)]||0)/10)));assert.deepEqual(again.save.inventory,bank.save.inventory);
-    assert.deepEqual(sessionRewards({...bank.session,status:'won'},bank.save),result.session.collected.map(n=>Math.floor(n/10)));
+    assert.deepEqual(bankEarlyCollection(save,result.session).save,save);
+    const completed={...result.session,status:'lost',moves:0},reward=gatheredMaterials(completed),bank=bankEarlyCollection(save,completed),again=bankEarlyCollection(bank.save,bank.session);
+    assert.deepEqual(bank.save.inventory,save.inventory.map((n,i)=>n+(reward[result.session.materialTypes.indexOf(i)]||0)));assert.deepEqual(again.save.inventory,bank.save.inventory);
+    assert.deepEqual(sessionRewards({...bank.session,status:'won'},bank.save),reward);
   }
 });
 test('sold work unlocks story and competitions without creating fake legacy commissions',()=>{

@@ -1,4 +1,4 @@
-System.register(["./application.abee3.js"], function (_export, _context) {
+System.register(["./application.4170a.js"], function (_export, _context) {
   "use strict";
 
   var Application, canvas, $p, bcr, application;
@@ -6,8 +6,8 @@ System.register(["./application.abee3.js"], function (_export, _context) {
     return System["import"](url);
   }
   return {
-    setters: [function (_applicationAbee3Js) {
-      Application = _applicationAbee3Js.Application;
+    setters: [function (_application4170aJs) {
+      Application = _application4170aJs.Application;
     }],
     execute: function () {
       canvas = document.getElementById('GameCanvas');

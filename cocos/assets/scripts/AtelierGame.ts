@@ -1243,13 +1243,13 @@ export class AtelierGame extends Component {
     if(this.busy)return;
     const preview=rules.newSession(42,this.save.level);
     this.dialog('intro',`第 ${this.save.level} 关 · ${preview.title}`);
-    this.text('同种材质每消除 10 个，兑换 1 颗珠材',100,340,520,50,25,SAGE,this.overlay,true);
+    this.text('每关结算 3～4 种珠材，共 13～14 颗',100,340,520,50,25,SAGE,this.overlay,true);
     this.text(this.materialNeed(),100,397,520,66,23,MUTED,this.overlay,true);
     rules.goalProgress(preview).forEach((g:any,i:number)=>{
       this.rect('Level objective '+i,107,482+i*51,506,44,'#e7ebdb',this.overlay,12);
       this.text(g.label+'  '+g.target,125,482+i*51,470,44,25,INK,this.overlay,true);
     });
-    this.text('本关材料：'+preview.materialTypes.map(i=>MATERIALS[i].name).join('、')+'\n兑换珠材立即入库，失败或退出也保留。\n本关内累计，不同材质不混算；余数不结转。',100,710,520,134,24,INK,this.overlay,true);
+    this.text('本关材料：'+preview.materialTypes.map(i=>MATERIALS[i].name).join('、')+'\n通关或步数用完后统一发放，优先采集消除最多的材质。\n提前退出或重开不领取本关奖励。',100,710,520,134,24,INK,this.overlay,true);
     this.button('开始采珠 · '+preview.moves+' 步',130,879,460,66,()=>this.startMatch(),this.overlay,true);
     this.button('返回自由手作',130,969,460,54,()=>this.navigate('craft'),this.overlay);
   }
@@ -1279,7 +1279,7 @@ export class AtelierGame extends Component {
   private match() {
     const s=this.session;if(!s){this.screen='home';this.home();return;}
     this.text(`第 ${s.level} 关 · ${s.title}`,38,105,644,46,30,INK,this.page,true);
-    this.text('同材质消除 10 个兑换 1 颗 · 本关内累计',38,155,644,37,21,MUTED,this.page,true);
+    this.text('本关结算 3～4 种珠材 · 共 13～14 颗',38,155,644,37,21,MUTED,this.page,true);
     this.rect('Moves shadow',40,206,112,107,'#cfb98e',this.page,20);
     this.rect('Moves card',40,198,112,107,'#728467',this.page,20,'#c6b681');
     this.movesLabel=this.text(String(s.moves),45,198,102,67,43,PAPER,this.page,true);
@@ -1311,7 +1311,7 @@ export class AtelierGame extends Component {
       this.accessibleButton(`${this.hint.includes(i)?'提示格 ':''}第${Math.floor(i/8)+1}行第${i%8+1}列 ${MATERIALS[this.boardType(type)].name}${special?' '+(special==='burst'?'花束珠':'丝线珠'):''}${obstacle?' '+(obstacle==='paper'?'纸袋':'线结'):''}`,()=>this.boardClick(i));
     });
     this.drawObstacles(s.obstacles);
-    s.collected.forEach((count: number,i: number)=>{this.image(this.materialArt(this.boardType(i)),44+i*109,991,43,43);this.text(Math.floor(count/rules.GATHER_EXCHANGE)+'颗\n'+count%rules.GATHER_EXCHANGE+'/10',88+i*109,988,53,51,17);});
+    s.collected.forEach((count: number,i: number)=>{this.image(this.materialArt(this.boardType(i)),44+i*109,991,43,43);this.text('消除\n'+count,88+i*109,988,53,51,17);});
     ['hammer','bloom','shuffle','hint'].forEach((id,i)=>{
       const names=['小木槌','花开十字','重新排珠','灵感提示'];
       this.button(names[i]+(id==='hint'?'':` ${s.tools[id]}`),38+i*165,1063,149,64,()=>this.selectTool(id),this.page,this.tool===id,id==='hint'||s.tools[id]>0);
@@ -1454,7 +1454,7 @@ export class AtelierGame extends Component {
     if(this.gatherEffects)this.clear(this.gatherEffects);
     const amount=rules.total(gathered);if(amount<=0)return;
     if(!this.gatherEffects)this.gatherEffects=this.container('Gather receipts',this.page.parent||this.node);
-    const message='本次兑换 +'+amount+' 颗';
+    const message='本关采集 +'+amount+' 颗';
     this.accessibility?.announce(message);
     const badge=this.rect('Gather count',38,153,644,39,PAPER,this.gatherEffects,12,'#d8c7ae');
     this.text(message,4,0,636,39,24,SAGE,badge,true);
@@ -1462,9 +1462,9 @@ export class AtelierGame extends Component {
     const hits=frames.flatMap(frame=>frame.hit.map((index:number)=>({index,type:frame.before[index]})));
     const earned=gathered.flatMap((n,type)=>Array(n).fill(type)),count=Math.min(10,earned.length);
     for(let i=0;i<count;i++){
-      const type=earned[Math.floor(i*earned.length/count)],hit=hits.find(hit=>hit.type===type);if(!hit)continue;
-      const p=this.boardPos(hit.index);
-      const n=this.image(this.materialArt(this.boardType(hit.type)),p.x+16,16-p.y,40,40,this.gatherEffects);
+      const type=earned[Math.floor(i*earned.length/count)],hit=hits.find(hit=>hit.type===type);
+      const p=this.boardPos(hit?.index??Math.max(0,this.session.board.indexOf(type)));
+      const n=this.image(this.materialArt(this.boardType(type)),p.x+16,16-p.y,40,40,this.gatherEffects);
       n.name='Gather bead '+i;
       tween(n).delay(i*.035).to(.16,{position:new Vec3(p.x+16+(i%3-1)*20,54+p.y,0),scale:new Vec3(1.12,1.12,1)},{easing:'quadOut'})
         .to(.62,{position:new Vec3(278,-35,0),scale:new Vec3(.35,.35,1)},{easing:'quadIn'})
@@ -1509,8 +1509,9 @@ export class AtelierGame extends Component {
     this.bankGather();const won=this.session.status==='won';
     this.dialog('result',won?'珠盒又多了一点光':'这一趟，也有收获');if(won)this.play('success');
     this.text(won?'第 '+this.session.level+' 关完成':'本关目标未全部完成',100,337,520,60,30,SAGE,this.overlay,true);
-    this.text('本关获得 '+rules.total(rules.gatheredMaterials(this.session))+' 颗珠材 · 已保存\n消除 '+rules.total(this.session.collected)+' 个；不足 10 个的余数不结转。',100,413,520,85,25,INK,this.overlay,true);
-    rules.gatheredMaterials(this.session).forEach((n:number,i:number)=>{const x=137+(i%3)*164,y=525+Math.floor(i/3)*137;this.rect('Reward '+i,x-8,y-4,126,120,'#fff9ed',this.overlay,18,'#dfcfb1');this.image(this.materialArt(this.boardType(i)),x+10,y,80,80,this.overlay);this.text('+'+n,x,y+80,100,36,25,SAGE,this.overlay,true);});
+    const reward=rules.gatheredMaterials(this.session),types=reward.flatMap((n:number,i:number)=>n?[i]:[]);
+    this.text('本关获得 '+types.length+' 种珠材，共 '+rules.total(reward)+' 颗 · 已保存\n累计消除 '+rules.total(this.session.collected)+' 个，回工坊自由搭配。',100,413,520,85,25,INK,this.overlay,true);
+    types.forEach((type:number,i:number)=>{const columns=types.length===3?3:2,x=(columns===3?137:213)+(i%columns)*164,y=525+Math.floor(i/columns)*137;this.rect('Reward '+type,x-8,y-4,126,120,'#fff9ed',this.overlay,18,'#dfcfb1');this.image(this.materialArt(this.boardType(type)),x+10,y,80,80,this.overlay);this.text('+'+reward[type],x,y+80,100,36,25,SAGE,this.overlay,true);});
     this.button(won?'收好珠材 · 回工坊':'带着珠材回制作',130,865,460,70,()=>won?this.claim():this.leaveGather(),this.overlay,true);
     if(!won)this.button('重新采珠 · 1 体力',130,958,460,56,()=>this.startMatch(),this.overlay);
   }
@@ -1568,7 +1569,7 @@ export class AtelierGame extends Component {
   }
   private pauseRestart() {
     this.dialog('pause-restart',this.screen==='match'?'重新开始本关？':'重新制作当前作品？');
-    this.text(this.screen==='match'?('本局已兑换的珠材保留，未满10个的进度清空。')+'\n重新开始消耗 1 体力，已有库存与作品不变。':'只清空正在制作的珠子。\n成品、吊坠和库存保留，可用撤销找回作品。',105,402,510,198,27,INK,this.overlay,true);
+    this.text(this.screen==='match'?('重开会放下本局进度，不发放本关珠材。')+'\n重新开始消耗 1 体力，已有库存与作品不变。':'只清空正在制作的珠子。\n成品、吊坠和库存保留，可用撤销找回作品。',105,402,510,198,27,INK,this.overlay,true);
     this.button('继续当前游戏',130,711,460,66,()=>this.pauseMatch(),this.overlay);
     this.button(this.screen==='match'?'重开本关 · 1 体力':'重新制作本件',130,811,460,66,()=>{
       if(this.modal!=='pause-restart')return;
@@ -1579,7 +1580,7 @@ export class AtelierGame extends Component {
   private pauseLeave() {
     if(this.screen!=='match'){this.navigate('home');return;}
     this.dialog('pause-leave','返回店铺？');
-    this.text(('本局已兑换的珠材保留，未满10个的进度清空。')+'\n已消耗体力不会返还，作品草稿继续保留。',105,421,510,174,27,INK,this.overlay,true);
+    this.text(('提前退出不发放本关珠材，已有库存保留。')+'\n已消耗体力不会返还，作品草稿继续保留。',105,421,510,174,27,INK,this.overlay,true);
     this.button('继续当前游戏',130,711,460,66,()=>this.pauseMatch(),this.overlay);
     this.button('确认返回店铺',130,811,460,66,()=>{if(this.modal!=='pause-leave')return;this.session=null;this.navigate('home');},this.overlay,true);
   }
@@ -2072,7 +2073,7 @@ export class AtelierGame extends Component {
     this.button('操作音效  '+(this.save.sound?'开启':'关闭'),110,425,500,64,()=>{this.save.sound=!this.save.sound;this.persist();this.settings();},this.overlay);
     this.button('减少动态效果  '+(this.save.reduced?'开启':'关闭'),110,505,500,64,()=>{this.save.reduced=!this.save.reduced;this.persist();this.settings();},this.overlay);
     this.button('导出 / 导入存档',110,585,500,64,()=>this.saveDialog(),this.overlay);
-    this.button('玩法说明',110,665,500,64,()=>this.info('小店的日常','采珠：交换相邻珠子，三连或 2×2 同色方块可消，同种材质本关累计消除10个兑换1颗，兑换后立即保存，不同材质不混算，余数不结转。\n手作：珠子种类和数量自由搭配，保存时按实际用料扣除。\n售珠：作品上架橱窗，定价越高等候越久，售出后到「已售」点击收钱。\n音乐：设置中点选切歌，拖动音量条调节。\n装修：先免费打扫，再用金币修屋与添置家具。\n故事：累计售出作品推进主线，家具解锁支线。\n电脑：Esc 返回，F 全屏；方向键、空格操作棋盘。'),this.overlay);
+    this.button('玩法说明',110,665,500,64,()=>this.info('小店的日常','采珠：交换相邻珠子，三连或 2×2 同色方块可消。通关或步数用完时，获得3～4种珠材，共13～14颗，优先发放本关消除最多的材质。提前退出或重开不发本关奖励。\n手作：珠子种类和数量自由搭配，保存时按实际用料扣除。\n售珠：作品上架橱窗，定价越高等候越久，售出后到「已售」点击收钱。\n音乐：设置中点选切歌，拖动音量条调节。\n装修：先免费打扫，再用金币修屋与添置家具。\n故事：累计售出作品推进主线，家具解锁支线。\n电脑：Esc 返回，F 全屏；方向键、空格操作棋盘。'),this.overlay);
     this.button('我们的故事',110,745,500,64,()=>this.navigate('journal'),this.overlay);
     this.button('重新开始',110,871,500,60,()=>this.resetDialog(),this.overlay);
     this.text('Cocos 原生版 · 本地自动存档\n原网页存档可通过 JSON 导入继续',110,952,500,66,20,MUTED,this.overlay,true);

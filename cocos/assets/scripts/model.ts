@@ -111,7 +111,7 @@ export function newSession(seed = 1, level = 1, order = null, save = null) {
     moves: config.moves,
     target: config.target,
     title: early ? '为这条手串备料' : config.title,
-    tip: early ? '先消除缺少的颜色，备齐后就能返回制作。前三关采到的珠材会立即保存。' : config.tip,
+    tip: early ? '先消除缺少的颜色；本关结束统一获得3～4种珠材，共13～14颗。' : config.tip,
     objectives: early ? supply : config.objectives,
     supplyGoals: supply,
     supplyOnly: early,
@@ -150,19 +150,23 @@ export function findSupplyMove(board,goals) {
   }
   return null;
 }
-export const GATHER_EXCHANGE = 10;
 export function gatheredMaterials(session) {
-  return session.collected.map(n=>Math.floor(n/GATHER_EXCHANGE));
+  const reward=Array(6).fill(0);
+  if(!session||!total(session.collected)||!(session.status==='won'||session.status==='lost'&&session.moves<=0))return reward;
+  const seed=Math.abs(Math.trunc(session.seed||0)),kinds=3+seed%2,quantity=13+Math.floor(seed/2)%2;
+  const types=[0,1,2,3,4,5].sort((a,b)=>session.collected[b]-session.collected[a]||(a+seed)%6-(b+seed)%6).slice(0,kinds);
+  types.forEach((type,i)=>reward[type]=Math.floor(quantity/kinds)+(i<quantity%kinds?1:0));
+  return reward;
 }
 export function bankEarlyCollection(save,session) {
   if(!session||session.level>3&&!session.freeGather)return {save,session};
-  const previous=session.banked||Array(6).fill(0);
-  if(session.collected.every((n,i)=>n<=previous[i]))return {save,session};
+  const gathered=gatheredMaterials(session),previous=session.banked||Array(6).fill(0);
+  if(gathered.every((n,i)=>n<=previous[i]))return {save,session};
   const inventory=Array.from({length:MATERIALS.length},(_,i)=>save.inventory[i]||0), gatheredStock=Array.from({length:MATERIALS.length},(_,i)=>save.gatheredStock?.[i]||0), materialUnlocked=Array.from({length:MATERIALS.length},(_,i)=>save.materialUnlocked?.[i]===true);
-  gatheredMaterials(session).forEach((n,i)=>{const amount=Math.max(0,n-Math.floor(previous[i]/GATHER_EXCHANGE)),type=(session.materialTypes||[0,1,2,3,4,5])[i];
+  gathered.forEach((n,i)=>{const amount=Math.max(0,n-previous[i]),type=(session.materialTypes||[0,1,2,3,4,5])[i];
     if(amount&&MATERIALS[type]){inventory[type]+=amount;gatheredStock[type]+=amount;materialUnlocked[type]=true;}
   });
-  return {save:{...save,inventory,gatheredStock,materialUnlocked},session:{...session,banked:[...session.collected]}};
+  return {save:{...save,inventory,gatheredStock,materialUnlocked},session:{...session,banked:[...gathered]}};
 }
 export function goalProgress(session) {
   const objectives = session.objectives || [{ kind: 'total', target: session.target }];

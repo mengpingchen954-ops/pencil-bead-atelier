@@ -1,7 +1,7 @@
 import {chromium} from 'playwright';
 import assert from 'node:assert/strict';
 import fs from 'node:fs';
-import {freshSave,normalizeSave,findMove,total,draftCounts,deliver} from '../cocos/assets/scripts/model.ts';
+import {gatheredMaterials,freshSave,normalizeSave,findMove,total,draftCounts,deliver} from '../cocos/assets/scripts/model.ts';
 import {finishWork,listWork,settleSales,suggestedPrice,priceBounds} from '../cocos/assets/scripts/commerce.ts';
 import {ORDERS,MATERIALS} from '../cocos/assets/scripts/content.ts';
 
@@ -27,25 +27,26 @@ async function fixture(save,viewport={width:390,height:844}){
  await page.goto(base,{waitUntil:'networkidle'});await ready();
  return {context,page,state,ready,tap,button,action,escape};
 }
-async function gather(ui,minimum=1){
+async function gather(ui){
  const {state,tap,button,page}=ui;await button('消除采珠');assert.equal((await state()).modal,'intro');
  const label=await page.getByRole('button',{name:/^开始采珠 · /}).textContent();await button(label);
  assert.equal((await state()).session.freeGather,true);assert.equal((await state()).session.rewardOrder,null);
- for(let turn=0;turn<16;turn++){
-  const s=await state();if(s.session.collected.reduce((n,m,i)=>n+(s.session.materialTypes[i]<36?Math.floor(m/10):0),0)>=minimum||s.modal==='result')break;
+ for(let turn=0;turn<32;turn++){
+  const s=await state();if(s.modal==='result')break;assert.equal(total(s.save.inventory),0);
   const pair=findMove(s.session.board,s.session.specials,s.session.obstacles);assert.ok(pair);
   for(const index of pair)await tap(48+index%8*78+36,340+Math.floor(index/8)*78+36);
   await page.waitForFunction(()=>!JSON.parse(window.render_game_to_text()).busy,{},{timeout:12000});
  }
- const s=await state();assert.ok(total(s.save.inventory)>0);const expected=Array(48).fill(0);s.session.collected.forEach((n,i)=>expected[s.session.materialTypes[i]]=Math.floor(n/10));assert.deepEqual(s.save.inventory,expected,'Every exchanged bead must already be stored');
+ const s=await state();assert.equal(s.modal,'result');assert.ok([13,14].includes(total(s.save.inventory)));assert.ok([3,4].includes(s.save.inventory.filter(Boolean).length));const expected=Array(48).fill(0);gatheredMaterials(s.session).forEach((n,i)=>expected[s.session.materialTypes[i]]=n);assert.deepEqual(s.save.inventory,expected,'Every awarded bead must be stored');
  await page.screenshot({path:dir+'/gather.png'});
  if(s.modal==='result')await ui.escape();else{await button('暂停');await button('返回店铺');await button('确认返回店铺');}
+ if((await state()).screen==='craft')await button('返回售珠');await tap(72,1210);
  return (await state()).save.inventory;
 }
 try{
  const initial={...freshSave(),started:true,inventory:Array(48).fill(0),sound:false,music:{enabled:false,track:'glimmer',volume:0}};
  const ui=await fixture(initial),{page,state,tap,button,action,ready}=ui;
- const gathered=await gather(ui);report.gatheringImmediate=true;
+ const gathered=await gather(ui);report.gatheringAtCompletion=true;
  if((await state()).screen!=='home')await action('小店');
  await button('自由 DIY');let s=await state();assert.equal(s.screen,'craft');
  const recipe=[];for(let i=0;i<36;i++)for(let j=0;j<gathered[i]&&recipe.length<12;j++)recipe.push(i);
@@ -70,8 +71,8 @@ try{
  report.freeDiyFromGatheredStock=true;report.saveConsumesOnceWithoutIncome=true;report.priceAndWithdrawal=true;report.saleAndReloadPayOnce=true;report.realWorkGallery=true;
  await ui.context.close();
 
- // A later level must retain every collected material even when the player exits before winning.
- const later=await fixture({...initial,level:4});await gather(later,1);const laterStock=(await later.state()).save.inventory;
+ // A later level receives the same final budget and preserves it on reload.
+ const later=await fixture({...initial,level:4});await gather(later);const laterStock=(await later.state()).save.inventory;
  await later.page.reload({waitUntil:'networkidle'});await later.ready();assert.deepEqual((await later.state()).save.inventory,laterStock);report.laterGatheringExitAndReload=true;await later.context.close();
 
  // Existing progress is preserved while a representative gallery exercises pagination and all navigation widths.
@@ -80,7 +81,7 @@ try{
  for(let i=0;i<8;i++)old=finishWork({...old,draft:Array.from({length:12},(_,j)=>(i+j)%6),charm:['daisy','moon','heart'][i%3]},1000+i);
  old=listWork(old,1,suggestedPrice(old.commerce.works[0].beads),1000);old=settleSales(old,50000);old=listWork(old,2,suggestedPrice(old.commerce.works[1].beads),Date.now()+3600000);
  const archive=JSON.stringify(old.collection),legacy=await fixture(normalizeSave(old));
- const before=(await legacy.state()).save;
+ const {energyAt:beforeClock,...before}=(await legacy.state()).save;
  for(const [width,height]of [[360,740],[390,844],[540,960],[1440,900]]){
   await legacy.page.setViewportSize({width,height});await legacy.page.waitForTimeout(250);
   for(const [tab,screen]of [['小店','home'],['售珠','orders'],['手作','craft'],['装修','decor'],['图鉴','album']]){
@@ -93,7 +94,7 @@ try{
  }
  await legacy.action('售珠');await legacy.button('后页 →');assert.equal((await legacy.state()).sales.page,1);await legacy.button('← 前页');assert.equal((await legacy.state()).sales.page,0);
  await legacy.action('图鉴');await legacy.button('后页 →');assert.equal((await legacy.state()).album.page,1);await legacy.button('旧版珍藏');assert.equal((await legacy.state()).album.collected,6);
- assert.equal(JSON.stringify((await legacy.state()).save.collection),archive);assert.deepEqual((await legacy.state()).save,before);report.oldProgressAndCollectionsPreserved=true;report.pagination=true;report.widths=[360,390,540,1440];await legacy.context.close();
+ assert.equal(JSON.stringify((await legacy.state()).save.collection),archive);const {energyAt:afterClock,...after}=(await legacy.state()).save;assert.ok(afterClock>=beforeClock);assert.deepEqual(after,before);report.oldProgressAndCollectionsPreserved=true;report.pagination=true;report.widths=[360,390,540,1440];await legacy.context.close();
 
  // Opening after a sale's deadline settles without requiring another page or an authenticated connection.
  let offline=finishWork({...initial,inventory:Array(48).fill(20),gatheredStock:Array(48).fill(20),materialUnlocked:Array(48).fill(true),draft:Array(12).fill(0)},1000);offline=listWork(offline,1,suggestedPrice(offline.commerce.works[0].beads),1000);

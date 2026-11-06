@@ -1,7 +1,7 @@
 import {chromium} from 'playwright';
 import assert from 'node:assert/strict';
 import fs from 'node:fs';
-import {freshSave,findMove,move,total} from '../cocos/assets/scripts/model.ts';
+import {freshSave,findMove,move,total,gatheredMaterials} from '../cocos/assets/scripts/model.ts';
 import {MATERIALS} from '../cocos/assets/scripts/content.ts';
 
 const base=process.env.GAME_URL||'http://127.0.0.1:8337/pencil-bead-atelier/',dir=process.env.GATHER_ARTIFACTS||'artifacts/gather-feedback';
@@ -30,11 +30,11 @@ async function fixture(width,height,reduced=false){
  });
  await page.goto(base,{waitUntil:'networkidle'});await page.waitForFunction(()=>typeof window.render_game_to_text==='function');await page.waitForTimeout(200);
  await button('消除采珠');const start=await page.getByRole('button',{name:/^开始采珠 · /}).textContent();await button(start);
- return {context,page,state,cell,button,settled,effects};
+ return {context,page,state,tap,cell,button,settled,effects};
 }
 async function verifyCollection(ui,action,reduced=false){
- const before=await ui.state();await action();await ui.settled();const after=await ui.state(),gains=after.session.collected.map((n,i)=>Math.floor(n/10)-Math.floor(before.session.collected[i]/10)),amount=total(gains),effects=await ui.effects();
- assert.deepEqual(effects.text,amount?['本次兑换 +'+amount+' 颗']:[]);assert.equal(total(after.save.inventory)-total(before.save.inventory),amount);
+ const before=await ui.state();await action();await ui.settled();const after=await ui.state(),gains=gatheredMaterials(after.session).map((n,i)=>n-gatheredMaterials(before.session)[i]),amount=total(gains),effects=await ui.effects();
+ assert.deepEqual(effects.text,amount?['本关采集 +'+amount+' 颗']:[]);assert.equal(total(after.save.inventory)-total(before.save.inventory),amount);
  const expected=[...before.save.inventory];after.session.collected.forEach((n,i)=>expected[after.session.materialTypes[i]]+=gains[i]);
  assert.deepEqual(after.save.inventory,expected);assert.deepEqual(after.save.gatheredStock,expected);
  if(reduced||!amount)assert.deepEqual(effects.beads,[]);else{
@@ -44,33 +44,52 @@ async function verifyCollection(ui,action,reduced=false){
  }
  return {amount,after,effects};
 }
+async function finish(ui,reduced=false){
+ let final;
+ for(let turn=0;turn<32;turn++){
+  const s=await ui.state();assert.equal(s.session.status,'playing');
+  const pair=findMove(s.session.board,s.session.specials,s.session.obstacles);assert.ok(pair);
+  final=await verifyCollection(ui,async()=>{for(const i of pair)await ui.cell(i);},reduced);
+  if(final.after.modal==='result')break;
+  assert.equal(final.amount,0);assert.equal(total(final.after.save.inventory),0);
+ }
+ const {after,amount,effects}=final,kinds=after.save.inventory.filter(Boolean).length;
+ assert.equal(after.modal,'result');assert.ok([13,14].includes(amount));assert.ok([3,4].includes(kinds));
+ assert.ok(effects.result.some(t=>t.startsWith('本关获得 '+kinds+' 种珠材，共 '+amount+' 颗')));
+ assert.equal(effects.result.filter(t=>/^\+[1-9]\d*$/.test(t)).length,kinds);assert.ok(!effects.result.includes('+0'));
+ return final;
+}
 try{
+ const results=[];
  for(const [width,height] of [[390,844],[1440,900]]){
   const ui=await fixture(width,height),{page,state,cell,button,settled,effects}=ui;
-  let s,first;for(let turn=0;turn<14;turn++){s=await state();assert.equal(s.session.status,'playing');const pair=findMove(s.session.board,s.session.specials,s.session.obstacles);first=await verifyCollection(ui,async()=>{for(const i of pair)await cell(i);});if(first.amount)break;}assert.ok(first.amount);await page.screenshot({path:dir+'/flight-start-'+width+'.png'});
+  let s=await state(),invalid;
+  for(let i=0;i<63&&!invalid;i++){const j=i%8<7?i+1:i+8;if(j<64&&!move(s.session,i,j).valid)invalid=[i,j];}
+  assert.ok(invalid);for(const i of invalid)await cell(i);await settled();assert.deepEqual((await effects()).text,[]);assert.deepEqual((await state()).save.inventory,s.save.inventory);
+  await button('重新排珠 '+s.session.tools.shuffle);await settled();assert.deepEqual((await effects()).text,[]);
+  s=await state();await verifyCollection(ui,async()=>{await button('小木槌 '+s.session.tools.hammer);await cell(27);});
+  s=await state();await verifyCollection(ui,async()=>{await button('花开十字 '+s.session.tools.bloom);await cell(35);});
+  // Restart abandons raw clears without awarding a partial pack.
+  await button('暂停');await button('重新开始');await button('重开本关 · 1 体力');assert.equal(total((await state()).save.inventory),0);
+  const final=await finish(ui);results.push({width,kinds:final.after.save.inventory.filter(Boolean).length,total:final.amount,status:final.after.session.status});
+  await page.screenshot({path:dir+'/flight-start-'+width+'.png'});
   await page.waitForTimeout(260);const middle=await effects();
-  assert.ok(middle.beads.some(n=>{const old=first.effects.beads.find(o=>o.id===n.id);return old&&n.y<old.y-30;}),'materials move upward toward the pearl header');
+  assert.ok(middle.beads.some(n=>{const old=final.effects.beads.find(o=>o.id===n.id);return old&&n.y<old.y-30;}),'materials move upward toward the pearl header');
   await page.screenshot({path:dir+'/flight-up-'+width+'.png'});
   await page.waitForFunction(async()=>{const cc=await System.import('cc'),g=cc.director.getScene().getChildByName('AtelierGame').getComponent('AtelierGame');return g.gatherEffects.children.some(n=>n.name.startsWith('Gather bead ')&&-n.position.y<150);},{},{timeout:2000});
   await page.screenshot({path:dir+'/flight-header-'+width+'.png'});await page.waitForTimeout(1350);assert.deepEqual((await effects()).beads,[]);assert.deepEqual((await effects()).text,[]);
-  s=await state();let invalid;
-  for(let i=0;i<63&&!invalid;i++){const j=i%8<7?i+1:i+8;if(j<64&&!move(s.session,i,j).valid)invalid=[i,j];}
-  assert.ok(invalid);for(const i of invalid)await cell(i);await settled();assert.deepEqual((await effects()).text,[]);assert.deepEqual((await state()).save.inventory,s.save.inventory);
-  s=await state();await button('重新排珠 '+s.session.tools.shuffle);await settled();assert.deepEqual((await effects()).text,[]);
-  s=await state();await verifyCollection(ui,async()=>{await button('小木槌 '+s.session.tools.hammer);await cell(27);});
-  await page.waitForTimeout(1600);s=await state();await verifyCollection(ui,async()=>{await button('花开十字 '+s.session.tools.bloom);await cell(35);});
-  const inventory=(await state()).save.inventory;await button('暂停');await button('返回店铺');await button('确认返回店铺');assert.deepEqual((await effects()).beads,[]);
+  await page.screenshot({path:dir+'/result-'+width+'.png'});
+  const inventory=final.after.save.inventory;await button(final.after.session.status==='won'?'收好珠材 · 回工坊':'带着珠材回制作');assert.deepEqual((await state()).save.inventory,inventory);
+  // Exiting the next unfinished run preserves only previously earned property.
+  if((await state()).screen==='craft')await button('返回售珠');await ui.tap(72,1210);
+  await button('消除采珠');await button(await page.getByRole('button',{name:/^开始采珠 · /}).textContent());
+  s=await state();for(const i of findMove(s.session.board,s.session.specials,s.session.obstacles))await cell(i);await settled();
+  assert.equal((await state()).session.status,'playing');assert.deepEqual((await state()).save.inventory,inventory);
+  await button('暂停');await button('返回店铺');await button('确认返回店铺');assert.deepEqual((await effects()).beads,[]);
   await page.reload({waitUntil:'networkidle'});await page.waitForFunction(()=>typeof window.render_game_to_text==='function');assert.deepEqual((await state()).save.inventory,inventory);await ui.context.close();
  }
- // Finish a complete run through actual touch input with reduced motion; no particle fixtures or runtime mutation.
- const ui=await fixture(390,844,true);let turns=0;
- while((await ui.state()).session.status==='playing'){
-  const s=await ui.state(),pair=findMove(s.session.board,s.session.specials,s.session.obstacles);assert.ok(pair);
-  await verifyCollection(ui,async()=>{for(const i of pair)await ui.cell(i);},true);assert.ok(++turns<=26);
- }
- const s=await ui.state(),count=total(s.session.collected.map(n=>Math.floor(n/10)));assert.equal(s.modal,'result');assert.ok((await ui.effects()).result.some(t=>t.startsWith('本关获得 '+count+' 颗珠材')));
- assert.equal(total(s.save.inventory),count);await ui.page.screenshot({path:dir+'/result-total.png'});
- await ui.button(s.session.status==='won'?'收好珠材 · 回工坊':'带着珠材回制作');assert.equal(total((await ui.state()).save.inventory),count);assert.deepEqual((await ui.effects()).text,[]);await ui.context.close();
- assert.deepEqual(errors,[]);fs.writeFileSync(dir+'/report.json',JSON.stringify({base,widths:[390,1440],nativeTouchAndMouse:true,actualSprites:true,upwardFlights:true,cappedParticles:true,tenForOnePerMaterial:true,exactMoveAndCascadeCounts:true,toolsAndInvalidAndShuffle:true,resultTotal:count,terminalStatus:s.session.status,reducedMotion:true,cleanup:true,reloadPreservesStock:true,noDuplicateStock:true,errors},null,2));
- console.log('Gather feedback passed: native touch/mouse, actual material flights upward, exact collection/tool/cascade counts, invalid/shuffle silence, cleanup, terminal total, reduced motion and saved stock.');
+ const ui=await fixture(390,844,true),final=await finish(ui,true);results.push({reduced:true,total:final.amount,kinds:final.after.save.inventory.filter(Boolean).length});
+ await ui.page.screenshot({path:dir+'/result-reduced.png'});await ui.button(final.after.session.status==='won'?'收好珠材 · 回工坊':'带着珠材回制作');assert.equal(total((await ui.state()).save.inventory),final.amount);assert.deepEqual((await ui.effects()).text,[]);await ui.context.close();
+ assert.deepEqual(errors,[]);fs.writeFileSync(dir+'/report.json',JSON.stringify({base,results,nativeTouchAndMouse:true,actualSprites:true,upwardFlights:true,cappedParticles:true,terminalBudget:true,noMidRunRewards:true,toolsAndInvalidAndShuffle:true,restartAndEarlyExit:true,reducedMotion:true,cleanup:true,reloadPreservesStock:true,noDuplicateStock:true,errors},null,2));
+ console.log('Gather feedback passed: final 3–4 kinds/13–14 pieces, end-only inventory/flights, touch/mouse, restart/exit, reduced motion, result and reload without duplicates.');
 }finally{await browser.close();}

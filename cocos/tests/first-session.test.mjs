@@ -1,7 +1,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import {ORDERS} from '../assets/scripts/content.ts';
-import {freshSave,normalizeSave,deliver,checkOrder,materialDeficits,supplyGoals,newSession,findSupplyMove,move,bankEarlyCollection,sessionRewards,recordFirstStep} from '../assets/scripts/model.ts';
+import {freshSave,normalizeSave,deliver,checkOrder,materialDeficits,supplyGoals,newSession,findSupplyMove,move,bankEarlyCollection,gatheredMaterials,sessionRewards,recordFirstStep} from '../assets/scripts/model.ts';
 
 test('new game starts with locked materials and migration preserves old property without inventing gathered stock',()=>{
  const save=freshSave();assert.ok(save.inventory.every(n=>n===0));assert.ok(save.materialUnlocked.every(n=>!n));
@@ -17,9 +17,9 @@ test('early gathering uses exact missing colors, offers an immediate target-colo
    const pair=findSupplyMove(session.board,session.supplyGoals);assert.ok(pair);const result=move(session,...pair);assert.ok(result.valid);
    assert.ok(result.session.collected[0]+result.session.collected[2]>0);
    const bank=bankEarlyCollection(first,result.session),again=bankEarlyCollection(bank.save,bank.session);
-   assert.deepEqual(bank.save.inventory,first.inventory.map((n,i)=>n+Math.floor((result.session.collected[i]||0)/10)));assert.deepEqual(again.save.inventory,bank.save.inventory);
+   assert.deepEqual(bank.save.inventory,first.inventory.map((n,i)=>n+(gatheredMaterials(result.session)[i]||0)));assert.deepEqual(again.save.inventory,bank.save.inventory);
    assert.deepEqual(bankEarlyCollection(bank.save,{...bank.session,status:'lost'}).save.inventory,bank.save.inventory);
-   assert.deepEqual(sessionRewards({...bank.session,status:'won'},bank.save),bank.session.collected.map(n=>Math.floor(n/10)));
+   assert.deepEqual(sessionRewards({...bank.session,status:'won'},bank.save),gatheredMaterials({...bank.session,status:'won'}));
  }
  const ready={...first,inventory:Array(6).fill(50)};assert.deepEqual(supplyGoals(ready),[]);assert.equal(newSession(7,1,ORDERS[1],ready).supplyOnly,false);
  const empty={...first,inventory:Array(6).fill(0)};assert.ok(supplyGoals(empty).some(g=>g.kind==='total'&&g.target===12));

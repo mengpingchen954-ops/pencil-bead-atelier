@@ -29,10 +29,10 @@ test('Creator production bundle preserves collection iteration and complete game
     module.execute();return exports;
   }
   const model=load([...definitions.keys()].find(n=>n.endsWith('/model.ts')));
-  const exchange={...model.newSession(42,19),collected:[9,10,19,20,29,30]};
-  assert.deepEqual(Array.from(model.gatheredMaterials(exchange)),[0,1,1,2,2,3]);
+  const exchange={...model.newSession(42,19),collected:[9,10,19,20,29,30],status:'won'};
+  assert.deepEqual(Array.from(model.gatheredMaterials(exchange)),[0,0,0,4,5,5]);
   const exchanged=model.bankEarlyCollection(model.freshSave(),exchange);
-  exchange.materialTypes.forEach((type,i)=>assert.equal(exchanged.save.inventory[type],[0,1,1,2,2,3][i]));
+  exchange.materialTypes.forEach((type,i)=>assert.equal(exchanged.save.inventory[type],[0,0,0,4,5,5][i]));
   assert.deepEqual(model.bankEarlyCollection(exchanged.save,exchanged.session).save,exchanged.save);
   const daily=load([...definitions.keys()].find(n=>n.endsWith('/daily.ts')));
   const signed=daily.claimDaily(model.freshSave(),Date.parse('2026-11-04T02:00:00Z'));

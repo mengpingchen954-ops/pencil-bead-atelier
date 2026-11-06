@@ -1,7 +1,7 @@
 import {chromium} from 'playwright';
 import assert from 'node:assert/strict';
 import fs from 'node:fs';
-import {freshSave,normalizeSave,findMove,total,draftCounts,deliver} from '../cocos/assets/scripts/model.ts';
+import {gatheredMaterials,freshSave,normalizeSave,findMove,total,draftCounts,deliver} from '../cocos/assets/scripts/model.ts';
 import {finishWork,listWork,settleSales,suggestedPrice,priceBounds} from '../cocos/assets/scripts/commerce.ts';
 import {ORDERS,MATERIALS} from '../cocos/assets/scripts/content.ts';
 import {materialPalette,charmType} from '../cocos/assets/scripts/materials.ts';
@@ -32,15 +32,15 @@ const initial={...freshSave(),started:true,sound:false,music:{enabled:false,trac
 async function startGather(ui){
  await ui.button('采珠');const name=await ui.page.getByRole('button',{name:/^开始采珠 · /}).textContent();await ui.button(name);
 }
-async function gatherMoves(ui,minimum=1){
- for(let turn=0;turn<20;turn++){
-  const s=await ui.state();if(s.session.collected.reduce((n,m,i)=>n+(s.session.materialTypes[i]<36?Math.floor(m/10):0),0)>=minimum||s.modal==='result')break;
+async function gatherMoves(ui){
+ for(let turn=0;turn<32;turn++){
+  const s=await ui.state();if(s.modal==='result')break;assert.equal(total(s.save.inventory),0);
   const pair=findMove(s.session.board,s.session.specials,s.session.obstacles);assert.ok(pair);
   for(const index of pair)await ui.tap(48+index%8*78+36,340+Math.floor(index/8)*78+36);
   await ui.page.waitForFunction(()=>!JSON.parse(window.render_game_to_text()).busy,{},{timeout:12000});
  }
- const s=await ui.state();assert.ok(total(s.save.inventory)>0);
- const expected=Array(48).fill(0);s.session.collected.forEach((n,i)=>expected[s.session.materialTypes[i]]=Math.floor(n/10));
+ const s=await ui.state();assert.equal(s.modal,'result');assert.ok([13,14].includes(total(s.save.inventory)));assert.ok([3,4].includes(s.save.inventory.filter(Boolean).length));
+ const expected=Array(48).fill(0);gatheredMaterials(s.session).forEach((n,i)=>expected[s.session.materialTypes[i]]=n);
  assert.deepEqual(s.save.inventory,expected);assert.deepEqual(s.save.gatheredStock,expected);assert.deepEqual(s.save.materialUnlocked,expected.map(n=>n>0));
  if(s.modal==='result')await ui.escape();else{await ui.button('暂停');await ui.button('返回店铺');await ui.button('确认返回店铺');}
  if((await ui.state()).screen==='home')await ui.button('自由 DIY');
@@ -56,7 +56,7 @@ try{
   await page.screenshot({path:dir+'/locked-category-'+c+'.png'});
  }
  await button('珠宝');await startGather(ui);await page.screenshot({path:dir+'/match-reference-materials.png'});
- const gathered=await gatherMoves(ui,1);report.realGathering=true;
+ const gathered=await gatherMoves(ui);report.realGathering=true;
  const recipe=[];for(let i=0;i<36;i++)for(let j=0;j<gathered[i]&&recipe.length<12;j++)recipe.push(i);
  assert.ok(recipe.length>0);
  for(const type of recipe){s=await state();const m=s.crafting.materials[type];if(s.crafting.category!==m.category)await button(['珠宝','水晶','木质','饰品'][m.category]);await tap(m.x,m.y);}
@@ -75,7 +75,7 @@ try{
  await ui.context.close();
  // Each later category uses the same six actual materials on the board and in earned inventory.
  for(const level of [3,5,7,8]){
-  const later=await fixture({...initial,level});await later.button('自由 DIY');await startGather(later);const shot=await later.state();assert.deepEqual(shot.session.materialTypes,materialPalette(level));await later.page.screenshot({path:dir+'/match-level-'+level+'.png'});await gatherMoves(later,1);await later.context.close();
+  const later=await fixture({...initial,level});await later.button('自由 DIY');await startGather(later);const shot=await later.state();assert.deepEqual(shot.session.materialTypes,materialPalette(level));await later.page.screenshot({path:dir+'/match-level-'+level+'.png'});await gatherMoves(later);await later.context.close();
  }
  // No provenance migration invents unlocks, while old works, coins and stock survive.
  const old={...initial,coins:1342,inventory:[10,2,3,4,0,0]};delete old.gatheredStock;delete old.materialUnlocked;
