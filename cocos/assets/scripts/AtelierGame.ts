@@ -620,10 +620,11 @@ export class AtelierGame extends Component {
   private nameField(value:string,y:number,parent:Node,onChange:(value:string)=>void) {
     const field=this.rect('Work name',100,y,360,62,'#fffaf2',parent,12,'#b6977e');
     field.active=false;const edit=field.addComponent(EditBox);
-    // Set single-line mode before labels; the default multiline mode forces top alignment.
-    edit.inputMode=EditBox.InputMode.SINGLE_LINE;
     edit.textLabel=this.text('',14,4,332,54,26,INK,field,true);
     edit.placeholderLabel=this.text('为作品取个名字',14,4,332,54,24,MUTED,field,true);
+    // Assign labels first to avoid defaults, then undo multiline mode's forced top alignment.
+    edit.inputMode=EditBox.InputMode.SINGLE_LINE;
+    edit.textLabel.verticalAlign=edit.placeholderLabel.verticalAlign=Label.VerticalAlign.CENTER;
     edit.maxLength=24;edit.placeholder='为作品取个名字';edit.string=value;field.active=true;
     const accessible=this.accessibility?.workName?.(value,value=>{edit.string=value;onChange(value);},parent===this.overlay);
     field.on(EditBox.EventType.TEXT_CHANGED,()=>{if(accessible)accessible.value=edit.string;onChange(edit.string);});

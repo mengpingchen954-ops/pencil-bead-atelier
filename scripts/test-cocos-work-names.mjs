@@ -27,7 +27,7 @@ async function fixture(save,viewport={width:390,height:844}){
 }
 
 async function checkNameAlignment(ui){
- const labels=await ui.page.evaluate(async()=>{const cc=await System.import('cc'),g=cc.director.getScene().getChildByName('AtelierGame').getComponent('AtelierGame'),field=(g.modal?g.overlay:g.page).children.find(n=>n.name==='Work name'),edit=field.getComponent(cc.EditBox);return [edit.textLabel,edit.placeholderLabel].map(l=>({horizontal:l.horizontalAlign,vertical:l.verticalAlign}));});
+ const labels=await ui.page.evaluate(async()=>{const cc=await System.import('cc'),g=cc.director.getScene().getChildByName('AtelierGame').getComponent('AtelierGame'),field=(g.modal?g.overlay:g.page).children.find(n=>n.name==='Work name'),edit=field.getComponent(cc.EditBox);if(field.children.length!==2)throw Error('Unexpected default EditBox labels');return [edit.textLabel,edit.placeholderLabel].map(l=>({horizontal:l.horizontalAlign,vertical:l.verticalAlign}));});
  assert.deepEqual(labels,[{horizontal:1,vertical:1},{horizontal:1,vertical:1}]);
 }
 async function enterName(ui,value,y=855){
