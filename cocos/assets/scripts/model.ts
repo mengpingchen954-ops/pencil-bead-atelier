@@ -7,7 +7,7 @@ import { storyUnlocked } from "./story.ts";
 import { freshSeaHeart, normalizeSeaHeart } from "./heart.ts";
 import { freshCompetitions, normalizeCompetitions } from "./competition.ts";
 import { normalizeMusic } from "./music-settings.ts";
-import { freshCommerce, normalizeCommerce, salesProgress, workName } from "./commerce.ts";
+import { freshCommerce, normalizeCommerce, salesProgress, workName, freshCustomers, normalizeCustomers } from "./commerce.ts";
 import { materialPalette, MATERIAL_DROPS, materialStock, validMaterial, normalizeBeadSizes, normalizeBeadFacings } from './materials.ts';
 import { freshDaily, normalizeDaily } from './daily.ts';
 export const SAVE_KEY = "pencil-bead-atelier-v1";
@@ -364,6 +364,7 @@ export function freshSave() {
   return {
     version: 1,
     commerce: freshCommerce(),
+    customers: freshCustomers(),
     daily: freshDaily(),
     seaHeart: freshSeaHeart(),
     competitions: freshCompetitions(),
@@ -423,6 +424,7 @@ export function normalizeSave(input) {
   const s = freshSave();
   if (!input || input.version !== 1) return s;
   s.commerce = normalizeCommerce(input.commerce);
+  s.customers = normalizeCustomers(input.customers,s.commerce);
   s.daily = normalizeDaily(input.daily);
   for (const k of ["coins", "rep", "level"]) s[k] = bounded(input[k]);
   s.level = Math.max(1, s.level);

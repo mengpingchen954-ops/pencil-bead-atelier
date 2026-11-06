@@ -9,7 +9,7 @@ import { BEADS, MATERIALS, ORDERS, RETURN_ORDERS, CHAPTERS, STORIES, JOURNEY, FU
 import * as rules from './model';
 import { DAILY_REWARDS, ENERGY_EXCHANGE, dailyStatus, claimDaily } from './daily';
 import { materialStock, charmType, normalizeBeadSizes, normalizeBeadFacings, ringMaterials, materialPlacement } from './materials';
-import { craftChecks, finishWork, listWork, withdrawWork, settleSales, collectSale, suggestedPrice, priceBounds, saleDuration, salesProgress, randomWorkName, renameWork } from './commerce';
+import { craftChecks, finishWork, listWork, withdrawWork, settleSales, collectSale, suggestedPrice, priceBounds, saleDuration, salesProgress, randomWorkName, renameWork, CUSTOM_STYLES, customerFit, updateCustomers, acceptCustomer, declineCustomer, deliverCustomer } from './commerce';
 import { pendingStory, storyUnlocked, finishStory, STORY_STOPS, storyRoute } from './story';
 import { BrowserAccessibility } from './BrowserAccessibility';
 import { AtelierLayout } from './AtelierLayout';
@@ -177,6 +177,8 @@ export class AtelierGame extends Component {
     game.on(Game.EVENT_SHOW, this.onShow, this);
     this.schedule(this.tickEnergy, 15);
     this.schedule(this.tickSales, 1);
+    this.schedule(this.tickCustomers, 1);
+    this.tickCustomers();
     // Read-only automation/QA interface; all gameplay input uses Cocos events.
     if (typeof window !== 'undefined') (window as any).render_game_to_text = () => JSON.stringify(this.snapshot());
   }
@@ -206,6 +208,7 @@ export class AtelierGame extends Component {
       supply: this.session ? rules.goalProgress({...this.session,objectives:this.session.supplyGoals||[]}):[],
       save: this.save, session: this.session, selected: this.selected, slot: this.slot,
       daily:dailyStatus(this.save),
+      customers:{...this.save.customers,style:CUSTOM_STYLES.find(style=>style.id===this.save.customers?.active?.style)||null,draft:this.save.customers?.active?customerFit(this.save.customers.active.style,this.save.draft,this.save.charm):null},
       sales:{tab:this.salesTab,page:this.ordersPage,works:this.save.commerce.works},
       delivery: rules.pendingDelivery(this.save),
       dialogue: this.dialogueState,
@@ -221,7 +224,7 @@ export class AtelierGame extends Component {
       story: this.modal === 'story' ? { id: STORIES[this.storyIndex].id, line: this.storyLine } : null };
   }
   private onHide() { this.cancelMusicTap();this.persist(); this.video?.pause(); this.sound.pause(); this.music?.setHidden(true); }
-  private onShow() { this.tickEnergy(); this.tickSales();this.music?.setHidden(false); }
+  private onShow() { this.tickEnergy(); this.tickSales();this.tickCustomers();this.music?.setHidden(false); }
   private tickSales() {
     const next=settleSales(this.save);
     if(next===this.save)return;
@@ -229,6 +232,18 @@ export class AtelierGame extends Component {
     this.save=next;this.persist();
     if(!this.busy&&!this.modal&&['home','orders','album','contest'].includes(this.screen))this.render();
     this.toast(count+' 件作品已售出，去「售珠 → 已售」点击收钱。');
+  }
+  private tickCustomers() {
+    if(this.busy||this.modal||!['home','orders'].includes(this.screen))return;
+    const before=this.save,next=updateCustomers(before);if(next===before)return;
+    if(!this.commitCustomer(next))return;
+    if(next.customers.active){this.render();this.play('land');this.toast('叮铃！'+next.customers.active.buyer+'进店了，想定制一条手串。');}
+  }
+  private commitCustomer(next:any) {
+    if(!next)return false;
+    const before=this.save;this.save=next;this.persist();
+    if(this.storageFailed){this.save=before;this.toast('未能保存定制进度，请检查存储空间后重试。');return false;}
+    return true;
   }
   private fitCamera() {
     const size=view.getFrameSize();
@@ -504,6 +519,13 @@ export class AtelierGame extends Component {
     this.button('自由 DIY',72,821,276,72,()=>this.navigate('craft'),this.page,true,true,'leading-craft');
     this.button('消除采珠',369,821,284,72,()=>this.matchIntro(),this.page,false,true,'leading-bag');
 
+    const customer=this.save.customers?.active,style=CUSTOM_STYLES.find(item=>item.id===customer?.style);
+    this.rect('Customer invitation',62,516,598,110,'#faf5e9f2',this.page,16,'#d8c7ae');
+    this.image('pencil-album-flower',73,533,66,66);
+    this.text(customer?customer.buyer+(customer.status==='accepted'?' · 定制制作中':' · 来店定制'):'顾客定制 · 随机来客',151,526,475,35,25,INK);
+    this.text(style?style.name+' · 报酬 '+style.reward+' 金币':'铃铛响起时，会有新的手作心愿',151,570,325,32,19,SAGE);
+    this.button('顾客定制',486,568,154,42,()=>this.customerDialog(),this.page,!!customer);
+
     const pending=pendingStory(this.save);
     this.text(chapter.title,45,934,438,40,22,INK);
     const storyLabel=seaVisitReady(this.save)?'小满回来了 · 看旅行留影':this.save.orderId==='sea'&&!this.save.completed.includes('sea')?'听听她的故事 · 小满的第一次旅行':pending?'继续剧情 · '+pending.title:'翻阅我们的故事';
@@ -545,6 +567,7 @@ export class AtelierGame extends Component {
     this.text('MY LITTLE SHOWCASE',48,116,540,30,18,MUTED);
     this.text('让喜欢，遇见喜欢的人',48,157,620,57,36,INK);
     this.text('三消采珠 → 自由 DIY → 上架售卖',48,221,620,35,23,SAGE);
+    this.button('顾客定制',480,111,188,45,()=>this.customerDialog(),this.page,!!this.save.customers?.active);
     ['ready','listing','sold'].forEach((tab,i)=>{
       const names={ready:'待上架',listing:'在售',sold:'已售'},count=this.save.commerce.works.filter(w=>w.status===tab).length;
       this.button(names[tab]+' '+count,42+i*216,277,204,54,()=>{this.salesTab=tab;this.ordersPage=0;this.render();},this.page,this.salesTab===tab);
@@ -563,7 +586,7 @@ export class AtelierGame extends Component {
       this.bracelet(work.beads,100,89,62,n,work.beadSize,work.beadSizes,work.charm,work.beadFacings);
       this.text(work.name,207,17,400,43,29,INK,n);
       this.text((work.beads.length+(charmType(work.charm)>=0?1:0))+' 件串珠与饰品',207,64,400,30,21,MUTED,n);
-      this.text(work.status==='ready'?'建议售价 '+suggestedPrice(work.beads)+' 金':work.status==='listing'?'售价 '+work.price+' 金 · 顾客选购中':work.buyer+' 已购 · '+work.price+(work.claimed===false?' 金待收款':' 金已收款'),207,101,403,33,22,SAGE,n);
+      this.text(work.status==='ready'?'建议售价 '+suggestedPrice(work.beads)+' 金':work.status==='listing'?'售价 '+work.price+' 金 · 顾客选购中':work.buyer+(work.commission?' 定制已交付 · ':' 已购 · ')+work.price+(work.claimed===false?' 金待收款':' 金已收款'),207,101,403,33,22,SAGE,n);
       if(work.status==='ready')this.button('上架橱窗 · '+work.id,255,y+146,257,43,()=>this.listingDialog(work.id),this.page,true);
       if(work.status==='listing')this.button('下架作品 · '+work.id,255,y+146,257,43,()=>{this.tickSales();const next=withdrawWork(this.save,work.id);if(!next){this.render();return;}this.save=next;this.salesTab='ready';this.ordersPage=0;this.persist();this.render();},this.page);
       this.hitButton('欣赏作品 · '+work.id,52,y+18,176,173,()=>this.freeWorkPreview(work.id));
@@ -577,6 +600,77 @@ export class AtelierGame extends Component {
       this.button('后页 →',508,1045,154,56,()=>{this.ordersPage++;this.render();},this.page,false,this.ordersPage<pages-1);
     }
   }
+  private customerDialog() {
+    const active=this.save.customers?.active,style=CUSTOM_STYLES.find(item=>item.id===active?.style);
+    if(!active||!style){
+      this.dialog('customer','等一位有缘的顾客');
+      this.image('pencil-album-flower',284,368,152,152,this.overlay);
+      this.text('顾客会在小店营业时随机来访。\n每次带来一种手串风格心愿，接单后可慢慢制作。',106,560,508,134,26,INK,this.overlay,true);
+      this.text('已完成 '+this.save.commerce.works.filter(work=>work.commission).length+' 份定制\n自由 DIY、橱窗售卖照常进行。',106,731,508,84,23,SAGE,this.overlay,true);
+      this.button('先去自由 DIY',130,899,460,64,()=>this.navigate('craft'),this.overlay,true);return;
+    }
+    this.dialog('customer',active.buyer+' 的定制心愿');
+    this.rect('Customer style',105,344,510,67,'#e6ebdf',this.overlay,15);
+    this.text(style.name,110,351,500,51,32,SAGE,this.overlay,true);
+    this.text('“'+style.wish+'”',107,437,506,91,27,INK,this.overlay,true);
+    this.text(style.rule+'\n本单固定报酬 '+style.reward+' 金币 · +12 口碑',104,555,512,102,25,INK,this.overlay,true);
+    const fit=customerFit(style.id,this.save.draft,this.save.charm);
+    this.text(active.status==='accepted'?'当前草稿：'+fit.total+' 件 · 风格珠材 '+fit.matching+'/'+fit.required+' 件\n'+(fit.ok?'已符合要求，完成制作后可保存并交付。':'按风格自由搭配，满足要求即可交付。'):'接受后自由选珠搭配，不要求固定配方。\n只使用已有珠材；没有交付时限。',104,689,512,83,23,SAGE,this.overlay,true);
+    if(active.status==='offered'){
+      this.button('接受定制',130,804,460,64,()=>{if(this.commitCustomer(acceptCustomer(this.save,active.id))){this.navigate('craft');this.toast('已接单：'+style.name+'，可以慢慢搭配。');}},this.overlay,true);
+      this.button('婉拒这位顾客',130,965,460,52,()=>{if(this.commitCustomer(declineCustomer(this.save,active.id))){this.closeModal();this.render();this.toast('顾客道别了，稍后会有新的来客。');}},this.overlay);
+    }else{
+      this.button('去制作定制',130,797,460,60,()=>this.navigate('craft'),this.overlay,true);
+      this.button('挑选已有作品',130,877,460,56,()=>this.customerWorks(),this.overlay);
+      this.button('取消这份定制',196,967,328,46,()=>{
+        this.dialog('customer-cancel','暂时放下这份心愿？');
+        this.text('取消后，草稿、成品和库存都会保留。\n稍后会有另一位顾客带来新的心愿。',105,443,510,160,28,INK,this.overlay,true);
+        this.button('继续这份定制',130,755,460,62,()=>this.customerDialog(),this.overlay,true);
+        this.button('确认取消定制',130,855,460,62,()=>{if(this.commitCustomer(declineCustomer(this.save,active.id))){this.closeModal();this.render();}},this.overlay);
+      },this.overlay);
+    }
+  }
+  private customerWorks(page=0) {
+    const active=this.save.customers?.active;if(active?.status!=='accepted')return this.customerDialog();
+    const works=this.save.commerce.works.filter(work=>work.status==='ready').slice().reverse(),pages=Math.max(1,Math.ceil(works.length/3));
+    page=Math.max(0,Math.min(pages-1,page));this.dialog('customer-works','挑一份手作，回应心愿');
+    const style=CUSTOM_STYLES.find(item=>item.id===active.style)!;
+    this.text(style.name+' · '+style.rule,102,341,516,71,23,SAGE,this.overlay,true);
+    if(!works.length)this.text('还没有待上架的作品。\n先做一条喜欢的手串吧。',110,515,500,126,28,INK,this.overlay,true);
+    works.slice(page*3,page*3+3).forEach((work,i)=>{
+      const y=434+i*151,fit=customerFit(active.style,work.beads,work.charm);
+      this.rect('Custom work '+work.id,100,y,520,140,'#fffaf0',this.overlay,16,'#d8c7ae');
+      this.bracelet(work.beads,174,y+68,48,this.overlay,work.beadSize,work.beadSizes,work.charm,work.beadFacings);
+      this.text(work.name,246,y+10,348,35,24,INK,this.overlay);
+      this.text(fit.ok?'符合风格 · 可交付':fit.total+' 件 · 风格 '+fit.matching+'/'+fit.required,246,y+48,348,33,20,fit.ok?SAGE:MUTED,this.overlay);
+      this.button('选这件 · '+work.id,354,y+88,230,38,()=>this.customerConfirm(work.id),this.overlay,fit.ok,fit.ok);
+    });
+    if(pages>1){this.button('上一批',105,897,135,44,()=>this.customerWorks(page-1),this.overlay,false,page>0);this.text((page+1)+' / '+pages,253,901,214,38,22,MUTED,this.overlay,true);this.button('下一批',480,897,135,44,()=>this.customerWorks(page+1),this.overlay,false,page<pages-1);}
+    this.button('返回定制心愿',130,971,460,52,()=>this.customerDialog(),this.overlay);
+  }
+  private customerConfirm(id:number) {
+    const active=this.save.customers?.active,work=this.save.commerce.works.find(work=>work.id===id),style=CUSTOM_STYLES.find(item=>item.id===active?.style);
+    if(active?.status!=='accepted'||!work||work.status!=='ready'||!style)return;
+    if(!customerFit(style.id,work.beads,work.charm).ok){this.customerDialog();return this.toast('这件作品尚不符合定制风格。');}
+    this.dialog('customer-confirm','把心愿交到顾客手中');
+    this.bracelet(work.beads,360,502,133,this.overlay,work.beadSize,work.beadSizes,work.charm,work.beadFacings);
+    this.text(work.name,105,682,510,47,30,INK,this.overlay,true);
+    this.text(active.buyer+' · '+style.name+'\n交付后收取 '+style.reward+' 金币，增加12口碑。\n作品会保存在已售记录和图鉴中。',105,755,510,121,24,SAGE,this.overlay,true);
+    this.button('交付并收款',130,931,460,66,()=>{
+      const next=deliverCustomer(this.save,active.id,id);if(!this.commitCustomer(next))return;
+      this.salesTab='sold';this.navigate('orders');this.customerReceipt(next.commerce.works.find(work=>work.id===id));
+    },this.overlay,true);
+  }
+  private customerReceipt(work:any) {
+    const style=CUSTOM_STYLES.find(style=>style.id===work.commission.style)!;
+    this.dialog('customer-receipt','这正是我想要的手串');
+    this.bracelet(work.beads,360,500,130,this.overlay,work.beadSize,work.beadSizes,work.charm,work.beadFacings);
+    this.text(work.buyer+'：谢谢你，把'+style.name+'串得这么好看。',105,686,510,85,27,INK,this.overlay,true);
+    this.text('定制已交付 · +'+style.reward+' 金币 · +12 口碑\n成品与收款记录已保存',105,804,510,81,26,SAGE,this.overlay,true);
+    this.button('收好这份心意',130,951,460,64,()=>this.closeModal(),this.overlay,true);
+    this.play('success');this.flySaleCoins(360,886);
+  }
+
   private collectReceipt(id:number,x:number,y:number) {
     const before=this.save,next=collectSale(before,id);if(!next)return;
     this.save=next;this.persist();
@@ -615,6 +709,7 @@ export class AtelierGame extends Component {
     const materials=rules.draftCounts(ringMaterials(work.beads,work.beadSizes,work.charm).beads).flatMap((n,i)=>n?[MATERIALS[i].name+' ×'+n]:[]).join(' · ');
     this.text(materials+'\n'+(work.status==='sold'?'已售给'+work.buyer:work.status==='listing'?'橱窗在售':'待上架'),105,754,510,115,24,INK,this.overlay,true);
     this.button('编辑名称',220,674,280,55,()=>this.renameWorkDialog(id),this.overlay);
+    if(work.status==='ready'&&this.save.customers?.active?.status==='accepted')this.button('交付给顾客',130,875,460,42,()=>this.customerConfirm(id),this.overlay);
     this.button('再做一条',130,925,460,64,()=>{this.remember();this.workingDraft=[...work.beads];this.workingSizes=normalizeBeadSizes(work.beads,work.beadSizes,work.beadSize);this.workingFacings=normalizeBeadFacings(work.beads,work.beadFacings);this.save.charm=work.charm;this.persist();this.navigate('craft');},this.overlay,true);
     this.text('沿用配色作为草稿，仍需准备实际珠材。',105,1004,510,39,20,MUTED,this.overlay,true);
   }
@@ -730,6 +825,11 @@ export class AtelierGame extends Component {
     this.hitButton('暂停',558,13,139,65,()=>this.pauseMatch());
     const labels=['珠宝','水晶','木质','饰品'];
     const placed=this.workingDraft.filter(t=>t!==null).length;
+    if(!event&&this.save.customers?.active?.status==='accepted'){
+      const active=this.save.customers.active,style=CUSTOM_STYLES.find(style=>style.id===active.style)!,fit=customerFit(active.style,this.save.draft,this.save.charm);
+      this.button('定制：'+style.name+' · 查看要求',155,102,410,43,()=>this.customerDialog(),this.page,true);
+      this.text('至少6件 · 风格珠材 '+fit.matching+'/'+fit.required+' · '+(fit.ok?'已达标':'自由搭配中'),125,155,470,32,20,SAGE,this.page,true);
+    }
     if(event)this.text(event.theme,145,108,430,35,21,'#7c8d82',this.page,true);
     if(event)this.text(placed+' / 12 颗 · 赛事练习珠材',191,155,338,30,19,'#a49184',this.page,true);
     if(this.contestEntry&&this.workingCharm!=='none')this.image('charm-'+this.workingCharm,339,467,42,42);
@@ -1074,6 +1174,10 @@ export class AtelierGame extends Component {
     this.text('手动输入或随机取名 · 最多 24 个字\n留空将使用默认名称，保存后仍可改名',100,903,520,70,22,MUTED,this.page,true);
     this.text(this.save.draft.filter(t=>t!==null).length+' 件串珠与饰品 · 建议 '+price+' 金币',100,988,520,40,25,SAGE,this.page,true);
     this.text('保存扣除用料，售出后到「已售」点击收钱。',80,1046,560,42,22,MUTED,this.page,true);
+    if(this.save.customers?.active?.status==='accepted'){
+      const fit=customerFit(this.save.customers.active.style,this.save.draft,this.save.charm);
+      this.button(fit.ok?'保存并交付定制':'查看定制要求',185,1090,350,36,()=>fit.ok?this.completeCustomerPacking():this.customerDialog(),this.page,fit.ok);
+    }
     this.button('保存作品',62,1130,284,82,()=>this.completePacking(),this.page);
     this.button('保存并上架',374,1130,284,82,()=>this.completePacking(true),this.page,true);
   }
@@ -1083,6 +1187,15 @@ export class AtelierGame extends Component {
     const id=next.commerce.nextId-1;this.save=next;this.undo=[];this.persist();this.play('success');
     this.salesTab='ready';this.navigate('orders');
     if(list)this.listingDialog(id);else this.toast('作品已保存，可在「待上架」中放进橱窗。');
+  }
+
+  private completeCustomerPacking() {
+    const active=this.save.customers?.active;if(this.screen!=='packing'||active?.status!=='accepted')return;
+    const crafted=finishWork(this.save);if(!crafted)return this.toast('珠材不足，请返回修改。');
+    const id=crafted.commerce.nextId-1,next=deliverCustomer(crafted,active.id,id);
+    if(!next){this.customerDialog();return this.toast('作品尚未符合定制要求，用料未扣除。');}
+    if(!this.commitCustomer(next))return;
+    this.undo=[];this.salesTab='sold';this.navigate('orders');this.customerReceipt(next.commerce.works.find(work=>work.id===id));
   }
 
   private deliverOrder() {
@@ -2073,7 +2186,7 @@ export class AtelierGame extends Component {
     this.button('操作音效  '+(this.save.sound?'开启':'关闭'),110,425,500,64,()=>{this.save.sound=!this.save.sound;this.persist();this.settings();},this.overlay);
     this.button('减少动态效果  '+(this.save.reduced?'开启':'关闭'),110,505,500,64,()=>{this.save.reduced=!this.save.reduced;this.persist();this.settings();},this.overlay);
     this.button('导出 / 导入存档',110,585,500,64,()=>this.saveDialog(),this.overlay);
-    this.button('玩法说明',110,665,500,64,()=>this.info('小店的日常','采珠：交换相邻珠子，三连或 2×2 同色方块可消。通关或步数用完时，获得3～4种珠材，共13～14颗，优先发放本关消除最多的材质。提前退出或重开不发本关奖励。\n手作：珠子种类和数量自由搭配，保存时按实际用料扣除。\n售珠：作品上架橱窗，定价越高等候越久，售出后到「已售」点击收钱。\n音乐：设置中点选切歌，拖动音量条调节。\n装修：先免费打扫，再用金币修屋与添置家具。\n故事：累计售出作品推进主线，家具解锁支线。\n电脑：Esc 返回，F 全屏；方向键、空格操作棋盘。'),this.overlay);
+    this.button('玩法说明',110,665,500,64,()=>this.info('小店的日常','采珠：交换相邻珠子，三连或 2×2 同色方块可消。通关或步数用完时，获得3～4种珠材，共13～14颗，优先发放本关消除最多的材质。提前退出或重开不发本关奖励。\n手作：珠子种类和数量自由搭配，保存时按实际用料扣除。\n定制：顾客随机来访，接单后按风格制作；达标后交付并收款，也可交付已有成品。\n售珠：作品上架橱窗，定价越高等候越久，售出后到「已售」点击收钱。\n音乐：设置中点选切歌，拖动音量条调节。\n装修：先免费打扫，再用金币修屋与添置家具。\n故事：累计售出作品推进主线，家具解锁支线。\n电脑：Esc 返回，F 全屏；方向键、空格操作棋盘。'),this.overlay);
     this.button('我们的故事',110,745,500,64,()=>this.navigate('journal'),this.overlay);
     this.button('重新开始',110,871,500,60,()=>this.resetDialog(),this.overlay);
     this.text('Cocos 原生版 · 本地自动存档\n原网页存档可通过 JSON 导入继续',110,952,500,66,20,MUTED,this.overlay,true);

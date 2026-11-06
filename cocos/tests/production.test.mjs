@@ -48,6 +48,12 @@ test('Creator production bundle preserves collection iteration and complete game
   }
   for(const level of [1,5,6,12,13,100]){const session=model.newSession(19,level);assert.deepEqual(Array.from(session.materialTypes,t=>content.MATERIALS[t].category),[0,1,0,1,2,3]);assert.deepEqual(Array.from(session.dropPool),Array.from(materials.MATERIAL_DROPS));}
   const trade=load([...definitions.keys()].find(n=>n.endsWith('/commerce.ts')));
+  let customer={...model.freshSave(),started:true,inventory:Array(48).fill(6),gatheredStock:Array(48).fill(6),draft:Array(6).fill(0)};
+  customer=trade.updateCustomers(customer,1000,()=>0);customer=trade.updateCustomers(customer,16000,()=>0);assert.equal(customer.customers.active.style,'jewelry');
+  customer=trade.acceptCustomer(customer,1);customer=trade.finishWork(customer,17000);customer=trade.deliverCustomer(customer,1,1,18000,()=>0);
+  assert.equal(customer.coins,280);assert.equal(customer.rep,12);assert.equal(customer.gatheredStock[0],0);assert.equal(customer.commerce.works[0].commission.id,1);
+  assert.equal(model.normalizeSave(customer).commerce.works[0].buyer,'林阿姨');assert.equal(trade.deliverCustomer(customer,1,1,19000),null);assert.equal(trade.collectSale(customer,1),null);
+
   const named=trade.finishWork({...model.freshSave(),draft:[0],inventory:Array(48).fill(2),gatheredStock:Array(48).fill(2),draftName:' 星河手作 '},1000);
   assert.equal(named.commerce.works[0].name,'星河手作');assert.equal(named.draftName,'');
   assert.equal(model.normalizeSave(trade.renameWork(named,1,'月光小梦')).commerce.works[0].name,'月光小梦');
