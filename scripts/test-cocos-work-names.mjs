@@ -26,10 +26,14 @@ async function fixture(save,viewport={width:390,height:844}){
  return {context,page,state,ready,tap,button,action,escape};
 }
 
+async function checkNameAlignment(ui){
+ const labels=await ui.page.evaluate(async()=>{const cc=await System.import('cc'),g=cc.director.getScene().getChildByName('AtelierGame').getComponent('AtelierGame'),field=(g.modal?g.overlay:g.page).children.find(n=>n.name==='Work name'),edit=field.getComponent(cc.EditBox);return [edit.textLabel,edit.placeholderLabel].map(l=>({horizontal:l.horizontalAlign,vertical:l.verticalAlign}));});
+ assert.deepEqual(labels,[{horizontal:1,vertical:1},{horizontal:1,vertical:1}]);
+}
 async function enterName(ui,value,y=855){
  await ui.tap(270,y);
  const input=ui.page.locator('input:not([aria-label])');
- await input.waitFor({state:'visible'});
+ await input.waitFor({state:'visible'});assert.equal(await input.evaluate(el=>getComputedStyle(el).textAlign),'center');
  await input.fill(value);await ui.page.keyboard.press('End');
  await ui.page.keyboard.insertText('f ');await ui.page.keyboard.press('Backspace');await ui.page.keyboard.press('Backspace');
  await ui.tap(360,y+90);
@@ -40,7 +44,7 @@ try{
   const ui=await fixture(initial,{width,height}),{page,button,action,state,ready}=ui;
   await button('自由 DIY');await button('完成制作');assert.equal((await state()).screen,'packing');
   await enterName(ui,'月光与蔷薇');assert.equal((await state()).save.draftName,'月光与蔷薇');
-  await page.screenshot({path:dir+'/packing-'+width+'.png'});
+  await checkNameAlignment(ui);await page.screenshot({path:dir+'/packing-'+width+'.png'});
   await button('返回修改');await button('完成制作');assert.equal((await state()).save.draftName,'月光与蔷薇');
   await page.reload({waitUntil:'networkidle'});await ready();assert.equal((await state()).save.draftName,'月光与蔷薇');
   await button('自由 DIY');await button('完成制作');
@@ -54,7 +58,7 @@ try{
   await button('改名 · 1');assert.equal((await state()).modal,'work-name');
   await button('随机名称');await button('取消改名');assert.equal((await state()).save.commerce.works[0].name,'月光与蔷薇');
   await button('编辑名称');await enterName(ui,'  ',611);await button('保存名称');assert.equal((await state()).modal,'work-name');
-  await enterName(ui,'星河小梦',611);await page.screenshot({path:dir+'/rename-'+width+'.png'});
+  await enterName(ui,'星河小梦',611);await checkNameAlignment(ui);await page.screenshot({path:dir+'/rename-'+width+'.png'});
   await button('保存名称');s=await state();assert.equal(s.save.commerce.works[0].name,'星河小梦');
   assert.equal(s.save.commerce.works[0].price,work.price);assert.equal(s.save.commerce.works[0].sellAt,work.sellAt);
   assert.deepEqual(s.save.inventory,stock.map((n,i)=>n-(initial.draft.filter(t=>t===i).length)));assert.equal(s.save.coins,coins);
