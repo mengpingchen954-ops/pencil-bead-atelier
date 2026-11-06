@@ -519,13 +519,6 @@ export class AtelierGame extends Component {
     this.button('自由 DIY',72,821,276,72,()=>this.navigate('craft'),this.page,true,true,'leading-craft');
     this.button('消除采珠',369,821,284,72,()=>this.matchIntro(),this.page,false,true,'leading-bag');
 
-    const customer=this.save.customers?.active,style=CUSTOM_STYLES.find(item=>item.id===customer?.style);
-    this.rect('Customer invitation',62,516,598,110,'#faf5e9f2',this.page,16,'#d8c7ae');
-    this.image('pencil-album-flower',73,533,66,66);
-    this.text(customer?customer.buyer+(customer.status==='accepted'?' · 定制制作中':' · 来店定制'):'顾客定制 · 随机来客',151,526,475,35,25,INK);
-    this.text(style?style.name+' · 报酬 '+style.reward+' 金币':'铃铛响起时，会有新的手作心愿',151,570,325,32,19,SAGE);
-    this.button('顾客定制',486,568,154,42,()=>this.customerDialog(),this.page,!!customer);
-
     const pending=pendingStory(this.save);
     this.text(chapter.title,45,934,438,40,22,INK);
     const storyLabel=seaVisitReady(this.save)?'小满回来了 · 看旅行留影':this.save.orderId==='sea'&&!this.save.completed.includes('sea')?'听听她的故事 · 小满的第一次旅行':pending?'继续剧情 · '+pending.title:'翻阅我们的故事';
@@ -533,9 +526,23 @@ export class AtelierGame extends Component {
     const story=this.box('Story invitation',43,928,640,48);
     story.on(Node.EventType.TOUCH_END,storyAction);this.accessibleButton(storyLabel,storyAction);
     this.text(seaVisitReady(this.save)?'旅行留影  ›':this.save.orderId==='sea'&&!this.save.completed.includes('sea')?'心意来信  ›':pending?'新故事  ›':'阅读  ›',565,934,112,40,22,SAGE,this.page,true);
-    this.hitButton('故事解锁',43,988,198,110,()=>this.navigate('storyMap'));
-    this.hitButton('手账',260,988,198,110,()=>this.navigate('journal'));
+    this.rect('Story journal label',52,1058,181,37,'#faf6e9',this.page,0);
+    this.text('故事与手账',49,1057,187,37,23,INK,this.page,true);
+    this.hitButton('故事与手账',43,988,198,110,()=>this.storyJournal());
+    this.rect('Customer shortcut',260,988,198,110,'#faf6e9',this.page,14,'#e1d2b9');
+    this.image('pencil-album-flower',333,999,52,52);
+    this.text('顾客定制',269,1057,180,37,23,INK,this.page,true);
+    if(this.save.customers?.active)this.ellipse('Customer available dot',436,1004,6,6,SAGE);
+    this.hitButton('顾客定制',260,988,198,110,()=>this.customerDialog());
     this.hitButton('参加比赛',479,988,198,110,()=>this.navigate('contest'));
+  }
+  private storyJournal() {
+    this.dialog('story-journal','故事与手账');
+    this.image('pencil-album-flower',291,355,138,138,this.overlay);
+    this.text('一间小店，两代人的手作时光。\n故事进度与日常记录，都收在这里。',105,517,510,113,27,INK,this.overlay,true);
+    this.button('故事解锁',130,697,460,72,()=>this.navigate('storyMap'),this.overlay,true);
+    this.button('手账',130,804,460,72,()=>this.navigate('journal'),this.overlay);
+    this.button('回到小店',130,945,460,54,()=>this.closeModal(),this.overlay);
   }
   private dailyDialog() {
     const status=dailyStatus(this.save);

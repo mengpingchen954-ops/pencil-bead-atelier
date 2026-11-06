@@ -502,7 +502,7 @@ test('story map opens actual unlocked stories, shows locked conditions and keeps
  game.persist=()=>{};game.scheduleOnce=()=>{};game.toast=()=>{};
  game.accessibility={clear(){actions.clear();},text(){},button(name,action,modal,enabled){if(enabled)actions.set(name,action);},showDialog(){actions.clear();},closeDialog(){actions.clear();},announce(){}};
  game.save={...rules.freshSave(),started:true,reduced:true};const before=JSON.stringify(game.save);game.screen='home';game.render();
- actions.get('故事解锁')();assert.equal(game.screen,'storyMap');actions.get('解锁条件 · 饰品小店')();assert.equal(game.modal,'');assert.equal(JSON.stringify(game.save),before);
+ actions.get('故事与手账')();assert.equal(game.modal,'story-journal');actions.get('故事解锁')();assert.equal(game.screen,'storyMap');actions.get('解锁条件 · 饰品小店')();assert.equal(game.modal,'');assert.equal(JSON.stringify(game.save),before);
  actions.get('继续故事')();assert.equal(game.modal,'story');assert.equal(game.storyIndex,0);actions.get('跳过')();assert.equal(game.screen,'storyMap');assert.equal(game.snapshot().storyRoute.read,1);assert.equal(game.save.coins,80);
  actions.get('制作手串 · 解锁故事')();assert.equal(game.screen,'craft');assert.equal(game.currentOrder().id,'daisy');
  game.save.completed=['daisy'];game.navigate('storyMap');actions.get('查看章节 · 旧工作间')();assert.equal(game.modal,'route-chapter');assert.equal(actions.has('阅读 · 待解锁'),false);
