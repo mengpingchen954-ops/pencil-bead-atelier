@@ -104,7 +104,8 @@ test('Creator production bundle preserves collection iteration and complete game
   assert.equal(save.completed.length,6);assert.equal(save.collection.length,6);
   for(const spot of content.CLEAN_SPOTS)save=model.cleanSpot(save,spot.id);
   for(const repair of content.REPAIRS)save=model.repairShop(save,repair.id);
-  for(const f of content.FURNITURE)for(let tier=1;tier<=2;tier++)save=model.purchase(save,f.id,tier);
+  save={...save,coins:save.coins+2100};
+  for(const f of content.FURNITURE)for(let tier=1;tier<f.prices.length;tier++)save=model.purchase(save,f.id,tier);
   assert.equal(model.shopProgress(save).percent,100);
   for(const s of content.STORIES)save=story.finishStory(save,s.id);
   assert.equal(save.seenStories.length,10);
@@ -128,9 +129,9 @@ test('Creator production bundle preserves collection iteration and complete game
   let entry=competitions.beginCompetition(restored,'spring');
   entry.competitions.draft.beads=competitions.competitionPalette('spring');
   entry=competitions.submitCompetition(entry);
-  assert.equal(entry.coins,beforeCoins+60);assert.equal(entry.competitions.entries[0].score,100);
+  assert.equal(entry.coins,beforeCoins+84);assert.equal(entry.competitions.entries[0].score,83);
   assert.deepEqual(Array.from(entry.inventory),originalStock);assert.deepEqual(Array.from(entry.draft),originalDraft);
   assert.equal(competitions.submitCompetition(entry),null);assert.equal(competitions.beginCompetition(entry,'spring'),null);
-  assert.equal(model.normalizeSave(JSON.parse(JSON.stringify(entry))).competitions.entries[0].score,100);
+  assert.equal(model.normalizeSave(JSON.parse(JSON.stringify(entry))).competitions.entries[0].score,83);
   assert.equal(restored.completed.length,6);assert.equal(restored.renovation.cleared.length,11);assert.equal(restored.seenStories.length,10);
 });

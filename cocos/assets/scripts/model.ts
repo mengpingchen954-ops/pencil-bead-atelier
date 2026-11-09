@@ -111,7 +111,7 @@ export function newSession(seed = 1, level = 1, order = null, save = null) {
     moves: config.moves,
     target: config.target,
     title: early ? '为这条手串备料' : config.title,
-    tip: early ? '先消除缺少的颜色；本关结束统一获得3～4种珠材，共13～14颗。' : config.tip,
+    tip: early ? '先消除缺少的颜色；通关获得13～14颗珠材，未过关保留六成奖励。' : config.tip,
     objectives: early ? supply : config.objectives,
     supplyGoals: supply,
     supplyOnly: early,
@@ -123,7 +123,11 @@ export function newSession(seed = 1, level = 1, order = null, save = null) {
       mainNeed: order.mainNeed, accentNeed: order.accentNeed, palette: [...(order.palette || [])] } : null,
     collected: [0, 0, 0, 0, 0, 0],
     score: 0,
-    tools: { hammer: 2, shuffle: 2, bloom: 1 },
+    tools: early ? { hammer: 2, shuffle: 2, bloom: 1 } : {
+      hammer: 2 + (config.obstacles.includes('thread') ? 1 : 0),
+      shuffle: 2,
+      bloom: 1 + (config.obstacles.includes('paper') ? 1 : 0),
+    },
     status: "playing",
     level,
   };
@@ -150,10 +154,16 @@ export function findSupplyMove(board,goals) {
   }
   return null;
 }
+export function gatherRewardRange(session) {
+  const bonus=session.supplyOnly?0:Math.floor(((session.level-1)%15)/5)*2;
+  return {min:13+bonus,max:14+bonus};
+}
 export function gatheredMaterials(session) {
   const reward=Array(6).fill(0);
   if(!session||!total(session.collected)||!(session.status==='won'||session.status==='lost'&&session.moves<=0))return reward;
-  const seed=Math.abs(Math.trunc(session.seed||0)),kinds=3+seed%2,quantity=13+Math.floor(seed/2)%2;
+  const seed=Math.abs(Math.trunc(session.seed||0)),kinds=3+seed%2;
+  const base=gatherRewardRange(session).min+Math.floor(seed/2)%2;
+  const quantity=session.status==='won'?base:Math.max(kinds,Math.floor(base*.6));
   const types=[0,1,2,3,4,5].sort((a,b)=>session.collected[b]-session.collected[a]||(a+seed)%6-(b+seed)%6).slice(0,kinds);
   types.forEach((type,i)=>reward[type]=Math.floor(quantity/kinds)+(i<quantity%kinds?1:0));
   return reward;
@@ -453,7 +463,7 @@ export function normalizeSave(input) {
   s.firstSteps = Object.fromEntries(['craft','firstDelivery','secondOrder','firstGather','secondDelivery'].flatMap(key=>
     Number.isFinite(input.firstSteps?.[key])&&input.firstSteps[key]>0?[[key,Math.min(Date.now(),input.firstSteps[key])]]:[]));
   for (const f of FURNITURE)
-    s.upgrades[f.id] = bounded(input.upgrades?.[f.id], 2);
+    s.upgrades[f.id] = bounded(input.upgrades?.[f.id], f.prices.length-1);
   s.renovation.cleared = input.renovation === undefined && Object.values(s.upgrades).some((tier) => tier > 0)
     ? CLEAN_SPOTS.map((spot) => spot.id)
     : Array.from(new Set((Array.isArray(input.renovation?.cleared) ? input.renovation.cleared : [])
@@ -571,7 +581,7 @@ export function recordFirstStep(save,key,now=Date.now()) {
 }
 export function purchase(save, id, tier) {
   const item = FURNITURE.find((f) => f.id === id);
-  if (!item || !Number.isInteger(tier) || tier < 0 || tier > 2) return null;
+  if (!item || !Number.isInteger(tier) || tier < 0 || tier >= item.prices.length) return null;
   const owned = save.upgrades[id];
   if (tier <= owned) return { ...save };
   if (!isShopClean(save)) return null;
@@ -601,9 +611,10 @@ export function shopProgress(save) {
   const cleaned = save.renovation.cleared.length;
   const furnished = Object.values(save.upgrades).reduce((sum, tier) => sum + tier, 0);
   const repaired = REPAIRS.filter((item) => save.renovation.repairs[item.id]).length;
-  const percent = Math.round(((cleaned + furnished + repaired) / (CLEAN_SPOTS.length + 6 + REPAIRS.length)) * 100);
+  const tiers=FURNITURE.reduce((sum,item)=>sum+item.prices.length-1,0);
+  const percent = Math.round(((cleaned + furnished + repaired) / (CLEAN_SPOTS.length + tiers + REPAIRS.length)) * 100);
   return { cleaned, repaired, furnished, percent,
-    stage: !isShopClean(save) ? "破败小店 · 等你打扫" : repaired === 3 && furnished === 6 ? "焕然一新 · 我们的家" : "干净小店 · 一点点添置" };
+    stage: !isShopClean(save) ? "破败小店 · 等你打扫" : repaired === REPAIRS.length && furnished === tiers ? "焕然一新 · 我们的家" : "干净小店 · 一点点添置" };
 }
 export function refreshEnergy(save, now = Date.now()) {
   const recovered = Math.max(0, Math.floor((now - save.energyAt) / 180000));

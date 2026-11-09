@@ -11,8 +11,8 @@ test('occasional invitations open after the first, third and fifth commissions',
   assert.equal(beginCompetition(freshSave(),'unknown'),null);
 });
 test('judges use the published rubric, with gold, silver, bronze and participation awards',()=>{
-  const gold=evaluateCompetition('spring',competitionPalette('spring'),'daisy');
-  assert.deepEqual(gold,{score:100,theme:45,accent:20,detail:10,echo:25,medal:'金色灵感奖',reward:60});
+  const gold=evaluateCompetition('spring',Array.from({length:12},(_,i)=>i%2?5:3),'daisy');
+  assert.deepEqual(gold,{score:100,theme:45,accent:20,detail:10,echo:25,medal:'金色灵感奖',reward:120});
   assert.equal(evaluateCompetition('spring',Array(12).fill(3),'daisy').medal,'银色巧思奖');
   assert.equal(evaluateCompetition('spring',[3,3,3,3,3,3,5,5,5,0,0,0],'heart').medal,'铜色心意奖');
   assert.equal(evaluateCompetition('spring',Array(12).fill(1),'heart').medal,'参与纪念奖');
@@ -25,7 +25,7 @@ test('submissions reward once and leave commission work, inventory, stories and 
   assert.equal(submitCompetition(save),null);
   save.competitions.draft.beads=competitionPalette('spring');
   const next=submitCompetition(save);
-  assert.equal(next.coins,base.coins+60);assert.equal(next.competitions.draft,null);
+  assert.equal(next.coins,base.coins+84);assert.equal(next.competitions.draft,null);
   for(const key of ['draft','charm','inventory','energy','rep','completed','collection','seenStories'])assert.deepEqual(next[key],base[key]);
   assert.equal(beginCompetition(next,'spring'),null);assert.equal(submitCompetition(next),null);
   assert.equal(submitCompetition({...next,competitions:{...next.competitions,draft:save.competitions.draft}}),null);
@@ -49,7 +49,7 @@ test('save import filters locked or malformed contests and recomputes forged sco
   const entry={id:'spring',beads:competitionPalette('spring'),charm:'daisy',score:999,reward:999999};
   const save=normalizeSave({...old,completed:['daisy'],competitions:{draft:{id:'sea',beads:Array(12).fill(2),charm:'moon'},entries:[entry,entry,{...entry,id:'sea'}]}});
   assert.equal(save.coins,old.coins);assert.equal(save.competitions.draft,null);
-  assert.equal(save.competitions.entries.length,1);assert.equal(save.competitions.entries[0].score,100);assert.equal(save.competitions.entries[0].reward,60);
+  assert.equal(save.competitions.entries.length,1);assert.equal(save.competitions.entries[0].score,83);assert.equal(save.competitions.entries[0].reward,84);
   const reloaded=normalizeSave(JSON.parse(JSON.stringify(save)));
   assert.deepEqual(reloaded.competitions,save.competitions);assert.equal(reloaded.coins,old.coins);
 });

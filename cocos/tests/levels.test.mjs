@@ -23,7 +23,7 @@ test('15 authored stages introduce color, paper and thread goals progressively w
   assert.equal(new Set(OPENING_LEVELS.map(level => level.title)).size, 15);
   for (let level = 1; level <= 15; level++) {
     const config = levelConfig(level, ORDERS[1]);
-    assert.ok(config.moves >= 16 && config.moves <= 24);
+    assert.ok(config.moves >= 16 && config.moves <= 26);
     assert.ok(config.objectives.length > 0 && config.objectives.every(goal => goal.target > 0));
     assert.equal(config.obstacles.length, 64);
     for (const goal of config.objectives) {

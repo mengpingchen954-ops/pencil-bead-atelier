@@ -37,7 +37,7 @@ async function gather(ui){
   for(const index of pair)await tap(48+index%8*78+36,340+Math.floor(index/8)*78+36);
   await page.waitForFunction(()=>!JSON.parse(window.render_game_to_text()).busy,{},{timeout:12000});
  }
- const s=await state();assert.equal(s.modal,'result');assert.ok([13,14].includes(total(s.save.inventory)));assert.ok([3,4].includes(s.save.inventory.filter(Boolean).length));const expected=Array(48).fill(0);gatheredMaterials(s.session).forEach((n,i)=>expected[s.session.materialTypes[i]]=n);assert.deepEqual(s.save.inventory,expected,'Every awarded bead must be stored');
+ const s=await state();assert.equal(s.modal,'result');assert.equal(total(s.save.inventory),total(gatheredMaterials(s.session)));assert.ok([3,4].includes(s.save.inventory.filter(Boolean).length));const expected=Array(48).fill(0);gatheredMaterials(s.session).forEach((n,i)=>expected[s.session.materialTypes[i]]=n);assert.deepEqual(s.save.inventory,expected,'Every awarded bead must be stored');
  await page.screenshot({path:dir+'/gather.png'});
  if(s.modal==='result')await ui.escape();else{await button('暂停');await button('返回店铺');await button('确认返回店铺');}
  if((await state()).screen==='craft')await button('返回售珠');await tap(72,1210);

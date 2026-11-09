@@ -41,8 +41,9 @@ export function normalizeCommerce(raw:any) {
       !['ready','listing','sold'].includes(work.status) || !validTime(work.createdAt)) continue;
     const commission=work.commission;
     if(commission&&(commissions.has(commission.id)||!requestId(commission.id)||!customStyle(commission.style)||work.status!=='sold'||work.claimed!==true||!buyers.includes(work.buyer)||work.price!==customStyle(commission.style)!.reward||!validTime(work.listedAt)||work.sellAt!==work.listedAt||work.listedAt<work.createdAt||!customerFit(commission.style,work.beads,work.charm).ok))continue;
+    // Honor existing listings' original price and deadline, including the old squared wait.
     if (!commission && work.status !== 'ready' && (!validTime(work.listedAt) || !validTime(work.sellAt) ||
-      !validPrice(work.beads,work.price) || work.sellAt !== work.listedAt + saleDuration(work.beads,work.price))) continue;
+      !validPrice(work.beads,work.price,300) || ![saleDuration(work.beads,work.price),Math.round(SALE_DELAY*Math.pow(work.price/suggestedPrice(work.beads),2))].some(duration=>work.sellAt===work.listedAt+duration))) continue;
     ids.add(work.id);if(commission)commissions.add(commission.id);
     works.push({id:work.id,name:workName(work.name,'我的手作 · '+work.id),
       beads:[...work.beads],beadSize:[6,7,8,9,10,11,12].includes(work.beadSize)?work.beadSize:8,beadSizes:normalizeBeadSizes(work.beads,work.beadSizes,work.beadSize),beadFacings:normalizeBeadFacings(work.beads,work.beadFacings),charm:work.charm,status:work.status,createdAt:work.createdAt,
@@ -55,14 +56,15 @@ export function suggestedPrice(beads:number[]) {
   const placed=Array.isArray(beads)?beads.filter(type=>type!==null):[];
   return validBeads(placed) ? placed.reduce((sum,type)=>sum+(beadPrices[type]||16),30) : 0;
 }
-export function priceBounds(beads:number[]) {
-  const price=suggestedPrice(beads);return {min:Math.ceil(price*.6),max:Math.floor(price*1.5)};
+export function priceBounds(beads:number[],rep=0) {
+  const price=suggestedPrice(beads),cap=1.2+Math.min(.3,Math.max(0,Number.isFinite(rep)?rep:0)/1000);
+  return {min:Math.ceil(price*.6),max:Math.floor(price*cap)};
 }
-function validPrice(beads:number[],price:number) {
-  const bounds=priceBounds(beads);return Number.isInteger(price)&&price>=bounds.min&&price<=bounds.max;
+function validPrice(beads:number[],price:number,rep=0) {
+  const bounds=priceBounds(beads,rep);return Number.isInteger(price)&&price>=bounds.min&&price<=bounds.max;
 }
 export function saleDuration(beads:number[],price:number) {
-  return Math.round(SALE_DELAY*Math.pow(price/suggestedPrice(beads),2));
+  return Math.round(SALE_DELAY*Math.pow(price/suggestedPrice(beads),3));
 }
 export function craftChecks(save:any) {
   const counts = Array(MATERIALS.length).fill(0);
@@ -84,7 +86,7 @@ export function finishWork(save:any, now=Date.now()) {
 }
 export function listWork(save:any, id:number, price:number, now=Date.now()) {
   const work=save.commerce.works.find((w:any)=>w.id===id);
-  if (!work || work.status!=='ready' || !validPrice(work.beads,price) || !validTime(now)) return null;
+  if (!work || work.status!=='ready' || !validPrice(work.beads,price,save.rep) || !validTime(now)) return null;
   return {...save,commerce:{...save.commerce,works:save.commerce.works.map((w:any)=>w.id===id?
     {...w,status:'listing',price,listedAt:now,sellAt:now+saleDuration(w.beads,price)}:w)}};
 }

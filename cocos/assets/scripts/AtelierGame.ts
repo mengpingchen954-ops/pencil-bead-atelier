@@ -495,7 +495,14 @@ export class AtelierGame extends Component {
     this.dialog('welcome-diy','从一颗珠子，开始自己的作品');
     this.text('三消收集珠材，按自己的喜好搭配珠子与吊坠，种类与颗数自由决定。\n\n完成后保存作品，挂到「售珠」橱窗，让喜欢它的顾客带走。\n\n珠宝、水晶、木质和饰品都要先通过三消采集，获得后才会解锁。',105,350,510,340,27,INK,this.overlay);
     this.button('先去三消采珠',130,795,460,66,()=>this.matchIntro(),this.overlay,true);
-    this.button('自由做一条',130,888,460,62,()=>this.navigate('craft'),this.overlay);
+    this.button('自由做一条',130,888,460,62,()=>this.leaveWelcome(),this.overlay);
+  }
+
+  private leaveWelcome() {
+    if(this.busy)return;
+    this.save=rules.recordFirstStep(this.save,'craft');
+    this.persist();
+    this.navigate('craft');
   }
 
   private get repeatOrder() { return this.save.completed.length===ORDERS.length; }
@@ -699,13 +706,13 @@ export class AtelierGame extends Component {
   }
   private listingDialog(id:number,price?:number) {
     const work=this.save.commerce.works.find(w=>w.id===id);if(!work||work.status!=='ready')return;
-    const bounds=priceBounds(work.beads);price=price===undefined?suggestedPrice(work.beads):Math.max(bounds.min,Math.min(bounds.max,price));
+    const bounds=priceBounds(work.beads,this.save.rep);price=price===undefined?suggestedPrice(work.beads):Math.max(bounds.min,Math.min(bounds.max,price));
     this.dialog('listing','把作品挂进橱窗');this.bracelet(work.beads,360,484,115,this.overlay,work.beadSize,work.beadSizes,work.charm,work.beadFacings);
     this.text(work.name,110,662,500,42,28,INK,this.overlay,true);
     this.text('售价 '+price+' 金币',220,733,280,55,32,GOLD,this.overlay,true);
     this.button('降价 10',106,734,108,52,()=>this.listingDialog(id,price!-10),this.overlay,false,price>bounds.min);
     this.button('加价 10',506,734,108,52,()=>this.listingDialog(id,price!+10),this.overlay,false,price<bounds.max);
-    this.text('建议 '+suggestedPrice(work.beads)+' 金 · 可定价 '+bounds.min+'–'+bounds.max+' 金\n预计 '+Math.ceil(saleDuration(work.beads,price)/1000)+' 秒售出，定价越高等候越久。\n离开页面或刷新仍会继续售卖。',105,813,510,120,23,MUTED,this.overlay,true);
+    this.text('口碑 '+this.save.rep+' · 可定价 '+bounds.min+'–'+bounds.max+' 金\n预计 '+Math.ceil(saleDuration(work.beads,price)/1000)+' 秒售出，定价越高等候越久。\n口碑越高，加价上限越高，最高为建议价150%。',105,813,510,120,23,MUTED,this.overlay,true);
     this.button('确认上架',130,962,460,66,()=>{
       const next=listWork(this.save,id,price!);if(!next)return;this.save=next;this.persist();this.salesTab='listing';this.ordersPage=0;this.navigate('orders');this.toast('作品已上架，售出后到「已售」点击收钱。');
     },this.overlay,true);
@@ -1135,7 +1142,7 @@ export class AtelierGame extends Component {
     const event=COMPETITIONS.find(e=>e.id===this.contestEntry?.id);if(!event)return;
     const palette=competitionPalette(event.id)!;
     this.dialog('contest-sample','一点配色灵感');this.bracelet(palette,360,500,145,this.overlay);
-    this.text('主题色与辅助色交替，\n让相对的珠子相互呼应。\n这是一个示例，也可以做自己的设计。',105,715,510,130,26,INK,this.overlay,true);
+    this.text('先从主题色与辅助色开始，\n再调整排列，寻找相对珠槽的呼应。\n这只是起点，也可以做自己的设计。',105,715,510,130,26,INK,this.overlay,true);
     this.button('以此为起点排珠',135,918,450,62,()=>{this.remember();this.workingDraft=palette.slice();this.workingCharm=event.charm;this.slot=-1;this.persist();this.closeModal();this.render();},this.overlay,true);
   }
   private contestConfirm() {
@@ -1363,7 +1370,7 @@ export class AtelierGame extends Component {
     if(this.busy)return;
     const preview=rules.newSession(42,this.save.level);
     this.dialog('intro',`第 ${this.save.level} 关 · ${preview.title}`);
-    this.text('每关结算 3～4 种珠材，共 13～14 颗',100,340,520,50,25,SAGE,this.overlay,true);
+    this.text('通关 '+rules.gatherRewardRange(preview).min+'～'+rules.gatherRewardRange(preview).max+' 颗 · 未过关保留六成',100,340,520,50,25,SAGE,this.overlay,true);
     this.text(this.materialNeed(),100,397,520,66,23,MUTED,this.overlay,true);
     rules.goalProgress(preview).forEach((g:any,i:number)=>{
       this.rect('Level objective '+i,107,482+i*51,506,44,'#e7ebdb',this.overlay,12);
@@ -1386,7 +1393,7 @@ export class AtelierGame extends Component {
     this.bankGather();
     this.save=rules.refreshEnergy(this.save);if(this.save.energy<1)return this.toast('体力不足，稍等一会儿，或先去做手串。');
     if(this.gatherEffects)this.clear(this.gatherEffects);
-    this.returnScreen=this.screen==='match'?this.returnScreen:this.screen;this.save.energy--;this.save.energyAt=Date.now();
+    this.returnScreen=this.screen==='match'?this.returnScreen:this.screen;const wasFull=this.save.energy>=10;this.save.energy--;if(wasFull)this.save.energyAt=Date.now();
     this.save=rules.recordFirstStep(this.save,'firstGather');this.persist();
     this.session=rules.newSession(Date.now()%1000000,this.save.level);this.selected=-1;this.tool='';this.hint=[];this.closeModal();this.screen='match';this.render();
   }
@@ -1399,7 +1406,7 @@ export class AtelierGame extends Component {
   private match() {
     const s=this.session;if(!s){this.screen='home';this.home();return;}
     this.text(`第 ${s.level} 关 · ${s.title}`,38,105,644,46,30,INK,this.page,true);
-    this.text('本关结算 3～4 种珠材 · 共 13～14 颗',38,155,644,37,21,MUTED,this.page,true);
+    this.text('通关 '+rules.gatherRewardRange(s).min+'～'+rules.gatherRewardRange(s).max+' 颗 · 未过关保留六成',38,155,644,37,21,MUTED,this.page,true);
     this.rect('Moves shadow',40,206,112,107,'#cfb98e',this.page,20);
     this.rect('Moves card',40,198,112,107,'#728467',this.page,20,'#c6b681');
     this.movesLabel=this.text(String(s.moves),45,198,102,67,43,PAPER,this.page,true);
@@ -1742,7 +1749,12 @@ export class AtelierGame extends Component {
       this.polygon('Cabinet pane',[[438,y],[538,y+40],[538,y+82],[438,y+42]],displayTier?'#d1d9c7':'#bdac8d');
       if(displayTier){this.image('bead-'+i,454,y+5,23,23);this.image('charm-daisy',500,y+26,23,23);}
     }
-    if(displayTier===2)this.polygon('Cabinet crown',[[424,357],[485,368],[552,406],[552,415],[424,363]],'#d4bd83');
+    if(displayTier>=2)this.polygon('Cabinet crown',[[424,357],[485,368],[552,406],[552,415],[424,363]],'#d4bd83');
+    if(displayTier===3){
+      this.polygon('Cabinet gilded trim',[[435,369],[541,412],[541,527],[435,484]],'#00000000',this.page,'#c8a454');
+      this.ellipse('Cabinet gold handle',531,472,4,6,'#d6b66a');
+      this.image('charm-star',478,437,24,27);
+    }
     this.ellipse('Desk shadow',300,567,107,30,'#6a59302a');
     for(const [x,y] of [[213,509],[299,546],[384,513]])this.polygon('Desk leg',[[x,y],[x+10,y+4],[x+8,y+72],[x,y+68]],'#9d805e');
     this.polygon('Desk front',[[194,494],[302,538],[302,554],[194,510]],'#b29570');
@@ -1753,9 +1765,19 @@ export class AtelierGame extends Component {
       this.ellipse('Desk bracelet',291,495,25,11,'#c7bd9e',this.page,'#9c956f');
       this.image('bead-0',268,480,21,21);this.image('bead-3',300,488,20,20);
     }
-    if(deskTier===2){this.image('charm-moon',342,492,22,26);this.polygon('Sketchbook',[[218,491],[244,481],[264,489],[238,500]],'#fcf5e6');}
+    if(deskTier>=2){this.image('charm-moon',342,492,22,26);this.polygon('Sketchbook',[[218,491],[244,481],[264,489],[238,500]],'#fcf5e6');}
+    if(deskTier===3){
+      this.ellipse('Desk lamp glow',361,483,30,14,'#ffe1a04d');
+      this.ellipse('Desk lamp base',366,487,14,6,'#c6a464');
+      this.rect('Desk lamp stem',363,449,5,37,'#b7965a');
+      this.polygon('Desk lamp shade',[[355,432],[376,440],[385,460],[344,445]],'#f5ddb0');
+    }
     this.ellipse('Chair shadow',168,586,49,17,'#66543025');
     this.image(FURNITURE[0].art[this.save.upgrades.chair],121,465,104,151);
+    if(this.save.upgrades.chair===3){
+      this.ellipse('Chair embroidered cushion',171,553,24,11,'#eee4cc',this.page,'#c7ab78');
+      this.image('charm-daisy',160,541,22,22);
+    }
     const spotPositions:Record<string,number[]>={
       'box-left':[148,585],'box-right':[531,585],'papers':[371,630],
       'glass-1':[195,391],'glass-2':[259,366],'glass-3':[195,436],'glass-4':[259,411],
@@ -1793,10 +1815,10 @@ export class AtelierGame extends Component {
       this.rect('Furniture '+f.id,38,y,644,89,'#fffaf0',this.page,14,'#dfd1b6');
       this.text(f.title,58,y+6,400,34,26);
       this.text(f.names[tier],58,y+45,392,30,20,MUTED);
-      this.button(tier===2?'已升满':'升级 '+f.prices[tier+1]+' 金',484,y+20,178,50,()=>{
+      this.button(tier===f.prices.length-1?'已升满':'升级 '+f.prices[tier+1]+' 金',484,y+20,178,50,()=>{
         const next=rules.purchase(this.save,f.id,tier+1);if(!next)return this.toast(!rules.isShopClean(this.save)?'先打扫干净，再把新家具请进来。':'金币不足，去售卖一件作品吧。');
         this.revealRenovation(next,f.id);
-      },this.page,true,tier<2);
+      },this.page,true,tier<f.prices.length-1);
     });
     this.button('查看生活支线',488,212,194,54,()=>this.navigate('journal'));
   }
@@ -2167,7 +2189,7 @@ export class AtelierGame extends Component {
   }
   private closeModal() { this.stopVideo();this.clear(this.overlay);this.modal='';this.musicFromPause=false;this.dialogueState=null;this.recordReturn=null;this.selectedCollection=null;this.accessibility?.closeDialog(); }
   private dismiss() {
-    if(this.modal==='first-order'){this.save=rules.recordFirstStep(this.save,'craft');this.persist();this.navigate('craft');return;}
+    if(this.modal==='welcome-diy'||this.modal==='first-order'){this.leaveWelcome();return;}
     if(this.modal==='pause-restart'||this.modal==='pause-leave'||this.modal==='music'&&this.musicFromPause){this.pauseMatch();return;}
     if(this.modal==='dialogue-record'&&this.recordReturn){const resume=this.recordReturn;this.recordReturn=null;resume();return;}
     if((this.modal==='collection-story'||this.modal==='collection-remake')&&this.selectedCollection){this.collectionPreview(this.selectedCollection.id,this.selectedCollection.repeat);return;}
@@ -2193,7 +2215,7 @@ export class AtelierGame extends Component {
     this.button('操作音效  '+(this.save.sound?'开启':'关闭'),110,425,500,64,()=>{this.save.sound=!this.save.sound;this.persist();this.settings();},this.overlay);
     this.button('减少动态效果  '+(this.save.reduced?'开启':'关闭'),110,505,500,64,()=>{this.save.reduced=!this.save.reduced;this.persist();this.settings();},this.overlay);
     this.button('导出 / 导入存档',110,585,500,64,()=>this.saveDialog(),this.overlay);
-    this.button('玩法说明',110,665,500,64,()=>this.info('小店的日常','采珠：交换相邻珠子，三连或 2×2 同色方块可消。通关或步数用完时，获得3～4种珠材，共13～14颗，优先发放本关消除最多的材质。提前退出或重开不发本关奖励。\n手作：珠子种类和数量自由搭配，保存时按实际用料扣除。\n定制：顾客随机来访，接单后按风格制作；达标后交付并收款，也可交付已有成品。\n售珠：作品上架橱窗，定价越高等候越久，售出后到「已售」点击收钱。\n音乐：设置中点选切歌，拖动音量条调节。\n装修：先免费打扫，再用金币修屋与添置家具。\n故事：累计售出作品推进主线，家具解锁支线。\n电脑：Esc 返回，F 全屏；方向键、空格操作棋盘。'),this.overlay);
+    this.button('玩法说明',110,665,500,64,()=>this.info('小店的日常','采珠：交换相邻珠子，三连或 2×2 同色方块可消。通关按阶段得13～18颗珠材，未过关保留六成（向下取整），每次3～4种，优先发放消除最多的材质。提前退出或重开不发本关奖励。\n手作：珠子种类和数量自由搭配，保存时按实际用料扣除。\n定制：顾客随机来访，接单后按风格制作；达标后交付并收款，也可交付已有成品。\n售珠：作品上架橱窗，初始最高可定建议价的120%，每10口碑多1%，300口碑达150%；定价越高等候越久。售出后到「已售」点击收钱。\n音乐：设置中点选切歌，拖动音量条调节。\n装修：先免费打扫，再用金币修屋与添置家具，每件家具可升至3级。\n故事：累计售出作品推进主线，家具解锁支线。\n电脑：Esc 返回，F 全屏；方向键、空格操作棋盘。'),this.overlay);
     this.button('我们的故事',110,745,500,64,()=>this.navigate('journal'),this.overlay);
     this.button('重新开始',110,871,500,60,()=>this.resetDialog(),this.overlay);
     this.text('Cocos 原生版 · 本地自动存档\n原网页存档可通过 JSON 导入继续',110,952,500,66,20,MUTED,this.overlay,true);

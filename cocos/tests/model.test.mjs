@@ -210,7 +210,7 @@ test("malformed saves are bounded and energy recovery respects time", () => {
   assert.deepEqual(s.inventory, [0, 0, 0, 8, 0, 0,...Array(42).fill(0)]);
   assert.deepEqual(s.completed, ["daisy"]);
   assert.equal(s.draft[0], null);
-  assert.equal(s.upgrades.chair, 2);
+  assert.equal(s.upgrades.chair, 3);
   assert.deepEqual(
     normalizeSave({ ...s, collection: [null, 7, { id: "daisy" }] }).collection,
     [],

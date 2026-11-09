@@ -291,11 +291,11 @@ test('competition board connects native craft, isolated undo, one-time awards an
   actions.get('撤销')();assert.equal(game.save.competitions.draft.beads[0],3);
   assert.deepEqual(game.save.draft,commission);assert.equal(game.save.charm,'heart');assert.deepEqual(game.save.inventory,stock);
   actions.get('提交参赛作品')();assert.equal(game.modal,'contest-submit');
-  actions.get('提交评审')();assert.equal(game.modal,'contest-result');assert.equal(game.save.coins,coins+60);
-  actions.get('收好这份纪念')();game.render();actions.get('查看参赛作品')();assert.equal(game.save.coins,coins+60);
+  actions.get('提交评审')();assert.equal(game.modal,'contest-result');assert.equal(game.save.coins,coins+84);
+  actions.get('收好这份纪念')();game.render();actions.get('查看参赛作品')();assert.equal(game.save.coins,coins+84);
   game.save=rules.normalizeSave(JSON.parse(JSON.stringify(game.save)));
   game.navigate('craft');assert.deepEqual(Array.from(game.workingDraft),[0,47,...Array(10).fill(null)]);assert.equal(game.workingCharm,'none');assert.deepEqual(game.save.inventory,stock);
-  assert.equal(game.save.competitions.entries[0].medal,'金色灵感奖');
+  assert.equal(game.save.competitions.entries[0].medal,'银色巧思奖');
 });
 
 test('old completed saves retain their archive and can freely make, list and sell new works',()=>{
@@ -533,6 +533,51 @@ test('enlarged collection keeps actual materials and archive stories read-only, 
  assert.equal(JSON.stringify(game.save.inventory),JSON.stringify(JSON.parse(before).inventory));assert.equal(Object.values(rules.checkOrder(game.save)).every(Boolean),false);
  actions.get('撤销')();assert.deepEqual(JSON.parse(JSON.stringify(game.save)),ringSave(JSON.parse(before)));
  game.collectionPreview('missing');assert.equal(game.modal,'info');assert.equal(game.snapshot().collectionDetail,null);assert.deepEqual(JSON.parse(JSON.stringify(game.save)),ringSave(JSON.parse(before)));
+});
+
+test('welcome close and free-craft actions persist the first craft milestone once, including the legacy dialog id',()=>{
+ for(const route of ['close','free','legacy'])for(const timestamp of [undefined,100]){
+  const {game,actions}=pausedGame('home');game.node=new Node('AtelierGame');
+  game.save.firstSteps=timestamp?{craft:timestamp}:{};const before=JSON.stringify(game.save);let persisted;
+  game.persist=()=>{persisted=JSON.stringify(game.save);};game.firstOrder();
+  assert.equal(game.modal,'welcome-diy');
+  if(route==='legacy')game.modal='first-order';
+  if(route==='free')actions.get('自由做一条')();else actions.get('×')();
+  assert.equal(game.screen,'craft');assert.equal(game.modal,'');assert.ok(game.save.firstSteps.craft);
+  if(timestamp)assert.equal(game.save.firstSteps.craft,timestamp);
+  assert.equal(persisted,JSON.stringify(game.save));assert.equal(game.save.firstSteps.secondOrder,undefined);
+  assert.deepEqual({...JSON.parse(persisted),firstSteps:{}},{...JSON.parse(before),firstSteps:{}});
+  const first=game.save.firstSteps.craft;game.firstOrder();game.dismiss();assert.equal(game.save.firstSteps.craft,first);
+ }
+});
+
+test('busy welcome exits leave both save and modal untouched until navigation is available',()=>{
+ for(const route of ['close','free']){
+  const {game,actions}=pausedGame('home');game.node=new Node('AtelierGame');game.firstOrder();
+  const before=JSON.stringify(game.save);let writes=0;game.persist=()=>{writes++;};game.busy=true;
+  if(route==='free')actions.get('自由做一条')();else game.dismiss();
+  assert.equal(JSON.stringify(game.save),before);assert.equal(writes,0);assert.equal(game.modal,'welcome-diy');assert.equal(game.screen,'home');
+  game.busy=false;game.dismiss();assert.equal(game.screen,'craft');assert.ok(game.save.firstSteps.craft);assert.equal(writes,1);
+ }
+ const {game}=pausedGame('home');game.info('普通提示','保持普通关闭行为');game.dismiss();assert.equal(game.screen,'home');assert.equal(game.modal,'');assert.equal(game.save.firstSteps.craft,undefined);
+});
+
+test('starting and restarting gathering preserve partial energy recovery and restart the clock only from full',()=>{
+ const {game}=pausedGame('home');game.node=new Node('AtelierGame');game.save.energy=5;
+ const clock=Date.now()-120000;game.save.energyAt=clock;game.startMatch();
+ assert.equal(game.save.energy,4);assert.equal(game.save.energyAt,clock);
+ assert.equal(rules.refreshEnergy(game.save,clock+180000).energy,5);
+ game.startMatch();assert.equal(game.save.energy,3);assert.equal(game.save.energyAt,clock);
+ game.save.energy=10;game.save.energyAt=clock;const now=Date.now();game.startMatch();
+ assert.equal(game.save.energy,9);assert.ok(game.save.energyAt>=now);
+});
+
+test('third furniture tiers expose their native room decorations and disable further upgrades',()=>{
+ const {game,actions}=pausedGame('decor');game.node=new Node('AtelierGame');
+ game.textures.set('pencil-floor',{name:'pencil-floor'});
+ game.save.upgrades={chair:3,display:3,desk:3};game.render();
+ for(const name of ['Cabinet gilded trim','Desk lamp shade','Chair embroidered cushion'])assert.ok(game.page.children.some(n=>n.name===name));
+ assert.equal(actions.has('升级 undefined 金'),false);assert.equal(actions.has('已升满'),false);
 });
 
 test('early failed gathering banks every collected color once through result, Escape and reload; first order opens without a long story',()=>{

@@ -2,21 +2,22 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import {freshSave,newSession,bankEarlyCollection,gatheredMaterials,sessionRewards,goalProgress,normalizeSave,total} from '../assets/scripts/model.ts';
 
-test('every finished round awards exactly 3–4 kinds and 13–14 pieces, mapped to actual materials once',()=>{
+test('finished rounds award 3–4 actual material kinds with level bonuses and partial failure rewards once',()=>{
  const combinations=new Set();
  for(let seed=1;seed<=100;seed++)for(const level of [1,4,12,19,100])for(const status of ['won','lost']){
   const session={...newSession(seed,level),status,moves:0,collected:[9,10,19,20,29,30]},before=structuredClone(session);
   const reward=gatheredMaterials(session),kinds=reward.filter(Boolean).length,quantity=total(reward);
-  assert.ok(kinds===3||kinds===4);assert.ok(quantity===13||quantity===14);combinations.add(kinds+'/'+quantity);
+  assert.ok(kinds===3||kinds===4);const bonus=Math.floor(((level-1)%15)/5)*2,base=13+Math.floor(seed/2)%2+bonus;
+  assert.equal(quantity,status==='won'?base:Math.floor(base*.6));combinations.add(kinds+'/'+quantity);
   assert.equal(reward[0],0);assert.equal(reward[1],0);assert.ok(reward[5]>=reward[4]&&reward[4]>=reward[3]&&reward[3]>0);
   const bank=bankEarlyCollection(freshSave(),session);
   session.materialTypes.forEach((type,i)=>{assert.equal(bank.save.inventory[type],reward[i]);assert.equal(bank.save.gatheredStock[type],reward[i]);assert.equal(bank.save.materialUnlocked[type],reward[i]>0);});
   assert.deepEqual(session,before);assert.deepEqual(gatheredMaterials(session),reward);
   assert.deepEqual(bankEarlyCollection(bank.save,bank.session),bank);
-  assert.deepEqual(sessionRewards({...session,status:'won'}),reward);
+  assert.deepEqual(sessionRewards({...session,status:'won'}),gatheredMaterials({...session,status:'won'}));
   assert.deepEqual(normalizeSave(JSON.parse(JSON.stringify(bank.save))),bank.save);
  }
- assert.equal(combinations.size,4);
+ assert.ok(combinations.size>=12);
 });
 
 test('playing, empty and abandoned rounds award nothing; complete sparse rounds still meet the budget',()=>{
@@ -35,5 +36,5 @@ test('old property survives, repeat banking cannot duplicate, and a fresh run ha
  assert.equal(total(bank.save.gatheredStock)-total(original.gatheredStock),14);assert.deepEqual(bank.save.materialUnlocked,original.materialUnlocked);
  assert.deepEqual(bankEarlyCollection(bank.save,bank.session),bank);
  const next={...newSession(44,19),status:'lost',moves:0,collected:[1,1,1,1,1,1]};
- assert.equal(total(bankEarlyCollection(bank.save,next).save.inventory)-total(bank.save.inventory),13);
+ assert.equal(total(bankEarlyCollection(bank.save,next).save.inventory)-total(bank.save.inventory),7);
 });

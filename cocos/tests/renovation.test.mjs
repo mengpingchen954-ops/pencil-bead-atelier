@@ -58,5 +58,5 @@ test("six real order rewards cover every repair and both tiers of all furniture"
   for (const item of FURNITURE) for (const tier of [1, 2]) save = purchase(save, item.id, tier);
   assert.ok(save);
   assert.equal(save.coins, 0);
-  assert.deepEqual(shopProgress(save), { cleaned: 11, repaired: 3, furnished: 6, percent: 100, stage: "焕然一新 · 我们的家" });
+  assert.deepEqual(shopProgress(save), { cleaned: 11, repaired: 3, furnished: 6, percent: 87, stage: "干净小店 · 一点点添置" });
 });

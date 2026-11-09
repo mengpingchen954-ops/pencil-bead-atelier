@@ -56,7 +56,7 @@ test('all gathering levels bank the final reward exactly once',()=>{
     assert.deepEqual(bankEarlyCollection(save,result.session).save,save);
     const completed={...result.session,status:'lost',moves:0},reward=gatheredMaterials(completed),bank=bankEarlyCollection(save,completed),again=bankEarlyCollection(bank.save,bank.session);
     assert.deepEqual(bank.save.inventory,save.inventory.map((n,i)=>n+(reward[result.session.materialTypes.indexOf(i)]||0)));assert.deepEqual(again.save.inventory,bank.save.inventory);
-    assert.deepEqual(sessionRewards({...bank.session,status:'won'},bank.save),reward);
+    assert.deepEqual(sessionRewards({...bank.session,status:'won'},bank.save),gatheredMaterials({...completed,status:'won'}));
   }
 });
 test('sold work unlocks story and competitions without creating fake legacy commissions',()=>{

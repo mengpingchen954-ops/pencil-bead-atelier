@@ -85,6 +85,6 @@ test('wood-era and later levels always contain all four categories and bank thei
   const session=newSession(19,level);assert.deepEqual([...new Set(session.board.map(t=>MATERIALS[session.materialTypes[t]].category))].sort(),[0,1,2,3]);
   const collected=[30,40,50,60,70,80],completed={...session,collected,status:'lost',moves:0},reward=gatheredMaterials(completed),bank=bankEarlyCollection(freshSave(),completed).save;
   session.materialTypes.forEach((type,i)=>{assert.equal(bank.inventory[type],reward[i]);assert.equal(bank.gatheredStock[type],reward[i]);assert.equal(bank.materialUnlocked[type],reward[i]>0);});
-  assert.equal(bank.inventory.reduce((n,m)=>n+m,0),14);
+  assert.equal(bank.inventory.reduce((n,m)=>n+m,0),reward.reduce((n,m)=>n+m,0));
  }
 });

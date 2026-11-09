@@ -51,7 +51,7 @@ try{
    const pair=findMove(s.session.board,s.session.specials,s.session.obstacles);assert.ok(pair);for(const i of pair)await ui.tap(48+i%8*78+36,340+Math.floor(i/8)*78+36);
    await ui.page.waitForFunction(()=>!JSON.parse(window.render_game_to_text()).busy,{},{timeout:12000});
   }
-  s=await ui.state();assert.equal(s.modal,'result');assert.ok([13,14].includes(total(s.save.inventory)));assert.ok([3,4].includes(s.save.inventory.filter(Boolean).length));const expected=Array(48).fill(0);gatheredMaterials(s.session).forEach((n,i)=>expected[s.session.materialTypes[i]]=n);
+  s=await ui.state();assert.equal(s.modal,'result');assert.equal(total(s.save.inventory),total(gatheredMaterials(s.session)));assert.ok([3,4].includes(s.save.inventory.filter(Boolean).length));const expected=Array(48).fill(0);gatheredMaterials(s.session).forEach((n,i)=>expected[s.session.materialTypes[i]]=n);
   assert.deepEqual(s.save.inventory,expected);assert.deepEqual(s.save.gatheredStock,expected);assert.ok(expected.every((n,i)=>n===0||s.session.materialTypes.includes(i)));
   if(s.modal==='result')await ui.escape();else{await ui.button('暂停');await ui.button('返回店铺');await ui.button('确认返回店铺');}
   if((await ui.state()).screen!=='craft')await ui.button('自由 DIY');

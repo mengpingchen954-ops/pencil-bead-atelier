@@ -2,9 +2,9 @@ import { salesProgress } from "./commerce.ts";
 import { BEADS, CHARMS } from './content.ts';
 import { normalizeBeadSizes } from './materials.ts';
 export const COMPETITIONS = [
-  { id:'spring', title:'街角花园灵感赛', theme:'把春天留在手腕上', description:'用绿玉与花珠，做一条像街角小花园的手串。', unlock:1, main:3, accent:5, charm:'daisy', reward:60 },
-  { id:'sea', title:'海风配色交流赛', theme:'天刚亮时的海', description:'用蓝晶与珍珠，留住海面初亮时的一点宁静。', unlock:3, main:2, accent:0, charm:'moon', reward:80 },
-  { id:'light', title:'小城星光手作赛', theme:'为普通日子留一束光', description:'用金星与红心，给平凡的一天添上一点闪光。', unlock:5, main:4, accent:1, charm:'heart', reward:100 },
+  { id:'spring', title:'街角花园灵感赛', theme:'把春天留在手腕上', description:'用绿玉与花珠，做一条像街角小花园的手串。', unlock:1, main:3, accent:5, charm:'daisy', reward:120 },
+  { id:'sea', title:'海风配色交流赛', theme:'天刚亮时的海', description:'用蓝晶与珍珠，留住海面初亮时的一点宁静。', unlock:3, main:2, accent:0, charm:'moon', reward:160 },
+  { id:'light', title:'小城星光手作赛', theme:'为普通日子留一束光', description:'用金星与红心，给平凡的一天添上一点闪光。', unlock:5, main:4, accent:1, charm:'heart', reward:200 },
 ];
 export const CONTEST_CHARMS = Object.keys(CHARMS);
 export function freshCompetitions() { return { draft:null, entries:[] }; }
@@ -27,7 +27,8 @@ export function normalizeCompetitions(raw:any, completed:string[]) {
   for(const event of COMPETITIONS) {
     const entry=Array.isArray(raw?.entries)?raw.entries.find((x:any)=>x?.id===event.id):null;
     const result=entry&&completed.length>=event.unlock?evaluateCompetition(event.id,entry.beads,entry.charm):null;
-    if(result)entries.push({id:event.id,beads:entry.beads.slice(),beadSizes:normalizeBeadSizes(entry.beads,entry.beadSizes),charm:entry.charm,...result});
+    // Completed contests retain the old paid amount; upgrades never pay them again.
+    if(result)entries.push({id:event.id,beads:entry.beads.slice(),beadSizes:normalizeBeadSizes(entry.beads,entry.beadSizes),charm:entry.charm,...result,reward:entry.reward===result.reward/2?entry.reward:result.reward});
   }
   const event=COMPETITIONS.find(e=>e.id===raw?.draft?.id);
   const draft=event&&completed.length>=event.unlock&&!entries.some(e=>e.id===event.id)&&validBeads(raw.draft.beads,true)&&CONTEST_CHARMS.includes(raw.draft.charm)
@@ -52,5 +53,5 @@ export function submitCompetition(save:any) {
 }
 export function competitionPalette(id:string) {
   const event=COMPETITIONS.find(e=>e.id===id);
-  return event?Array.from({length:12},(_,i)=>i%2?event.accent:event.main):null;
+  return event?[...Array(6).fill(event.main),event.main,event.main,event.accent,event.accent,event.accent,event.accent]:null;
 }

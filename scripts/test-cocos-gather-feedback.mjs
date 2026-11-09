@@ -54,7 +54,7 @@ async function finish(ui,reduced=false){
   assert.equal(final.amount,0);assert.equal(total(final.after.save.inventory),0);
  }
  const {after,amount,effects}=final,kinds=after.save.inventory.filter(Boolean).length;
- assert.equal(after.modal,'result');assert.ok([13,14].includes(amount));assert.ok([3,4].includes(kinds));
+ assert.equal(after.modal,'result');assert.equal(amount,total(gatheredMaterials(after.session)));assert.ok([3,4].includes(kinds));
  assert.ok(effects.result.some(t=>t.startsWith('本关获得 '+kinds+' 种珠材，共 '+amount+' 颗')));
  assert.equal(effects.result.filter(t=>/^\+[1-9]\d*$/.test(t)).length,kinds);assert.ok(!effects.result.includes('+0'));
  return final;
@@ -91,5 +91,5 @@ try{
  const ui=await fixture(390,844,true),final=await finish(ui,true);results.push({reduced:true,total:final.amount,kinds:final.after.save.inventory.filter(Boolean).length});
  await ui.page.screenshot({path:dir+'/result-reduced.png'});await ui.button(final.after.session.status==='won'?'收好珠材 · 回工坊':'带着珠材回制作');assert.equal(total((await ui.state()).save.inventory),final.amount);assert.deepEqual((await ui.effects()).text,[]);await ui.context.close();
  assert.deepEqual(errors,[]);fs.writeFileSync(dir+'/report.json',JSON.stringify({base,results,nativeTouchAndMouse:true,actualSprites:true,upwardFlights:true,cappedParticles:true,terminalBudget:true,noMidRunRewards:true,toolsAndInvalidAndShuffle:true,restartAndEarlyExit:true,reducedMotion:true,cleanup:true,reloadPreservesStock:true,noDuplicateStock:true,errors},null,2));
- console.log('Gather feedback passed: final 3–4 kinds/13–14 pieces, end-only inventory/flights, touch/mouse, restart/exit, reduced motion, result and reload without duplicates.');
+ console.log('Gather feedback passed: final level-scaled win/loss rewards, end-only inventory/flights, touch/mouse, restart/exit, reduced motion, result and reload without duplicates.');
 }finally{await browser.close();}
