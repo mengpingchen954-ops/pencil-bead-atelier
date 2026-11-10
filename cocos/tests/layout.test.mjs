@@ -56,7 +56,7 @@ test('entry scene contains eighteen real editable layouts, visible home art, lab
 
 test('header music distinguishes single and double taps, cancels abandoned gestures and preserves game progress',()=>{
   const {game,actions}=pausedGame('home'),scheduled=new Set();
-  game.scheduleOnce=fn=>scheduled.add(fn);game.unschedule=fn=>scheduled.delete(fn);
+  game.scheduleOnce=(fn,delay)=>{if(delay!==0)scheduled.add(fn);};game.unschedule=fn=>scheduled.delete(fn);
   game.save.sound=false;game.render();const before=JSON.stringify({...game.save,music:null});
   const event=(x=674)=>({getUILocation:()=>({x,y:1238})});
   const tap=()=>{const n=game.page.children.find(n=>n.name==='Music shortcut');n.events.start(event());n.events.end(event());};
@@ -242,8 +242,8 @@ test('restart and leaving a paused match require their explicit choice and never
 
 test('craft restart is undoable and contest restart never changes the customer draft',()=>{
   const {game,actions}=pausedGame('craft'),draft=JSON.stringify(game.save.draft),energy=game.save.energy;
-  game.pauseMatch();actions.get('重新开始')();actions.get('重新制作本件')();assert.ok(game.save.draft.every(n=>n===null));actions.get('撤销')();assert.equal(JSON.stringify(game.save.draft),draft);
-  game.save.competitions.draft={id:'spring',beads:[3,...Array(11).fill(null)],charm:'moon'};game.screen='contestCraft';game.pauseMatch();actions.get('重新开始')();actions.get('重新制作本件')();assert.ok(game.save.competitions.draft.beads.every(n=>n===null));assert.equal(JSON.stringify(game.save.draft),draft);assert.equal(game.save.energy,energy);
+  game.pauseMatch();actions.get('清空本件')();actions.get('清空本件')();assert.ok(game.save.draft.every(n=>n===null));actions.get('撤销')();assert.equal(JSON.stringify(game.save.draft),draft);
+  game.save.competitions.draft={id:'spring',beads:[3,...Array(11).fill(null)],charm:'moon'};game.screen='contestCraft';game.pauseMatch();actions.get('清空本件')();actions.get('清空本件')();assert.ok(game.save.competitions.draft.beads.every(n=>n===null));assert.equal(JSON.stringify(game.save.draft),draft);assert.equal(game.save.energy,energy);
   game.pauseMatch();actions.get('返回店铺')();assert.equal(game.screen,'home');assert.equal(game.save.competitions.draft.charm,'moon');assert.equal(JSON.stringify(game.save.draft),draft);
 });
 
@@ -424,9 +424,9 @@ test('dialogue records only reveal read lines and returning or dismissing keeps 
   for(let i=0;i<4;i++)actions.get('下一句  →')();
   assert.equal(game.storyLine,4);assert.equal(game.dialogueState.speaker,'奶奶');
   actions.get('记录')();assert.equal(game.modal,'dialogue-record');
-  const strings=n=>[...n.components.filter(c=>c instanceof Label).map(c=>c.string),...n.children.flatMap(strings)];
-  assert.ok(strings(game.overlay).includes(story.lines[4][1]));assert.equal(strings(game.overlay).includes(story.lines[5][1]),false);
-  actions.get('上一页')();assert.ok(strings(game.overlay).includes(story.lines[2][1]));
+  const strings=n=>[...n.components.filter(c=>c instanceof Label).map(c=>c.string.replace(/\n/g,'')),...n.children.flatMap(strings)];
+  assert.ok(strings(game.overlay).includes(story.lines[4][1].replace(/\n/g,'')));assert.equal(strings(game.overlay).includes(story.lines[5][1].replace(/\n/g,'')),false);
+  actions.get('上一页')();assert.ok(strings(game.overlay).includes(story.lines[2][1].replace(/\n/g,'')));
   game.dismiss();assert.equal(game.modal,'story');assert.equal(game.storyLine,4);
   actions.get('记录')();actions.get('返回对话')();assert.equal(game.storyLine,4);
   game.dismiss();assert.equal(game.modal,'');assert.equal(game.save.seenStories.length,0);
@@ -640,3 +640,4 @@ test('native daily entry previews seven days, claims once, preserves materials a
  assert.equal(actions.has('领取今日奖励'),false);assert.ok(game.page.children.some(n=>n.name==='Button: 今日已签到'));assert.equal(JSON.stringify([game.save.inventory,game.save.gatheredStock,game.save.materialUnlocked]),stock);
  game.dismiss();game.render();actions.get('今日已签到')();assert.equal(game.modal,'daily');assert.equal(game.save.coins,coins+30);
 });
+

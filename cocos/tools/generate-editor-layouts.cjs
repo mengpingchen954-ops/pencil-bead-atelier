@@ -43,6 +43,7 @@ class Label {}
 Label.Overflow={SHRINK:2};Label.HorizontalAlign={LEFT:0,CENTER:1};Label.VerticalAlign={TOP:0,CENTER:1};
 class Sprite {}
 class Mask {}
+Mask.Type={GRAPHICS_STENCIL:2};
 class UIOpacity {}
 class EditBox {}
 EditBox.InputMode={ANY:0,SINGLE_LINE:6};EditBox.EventType={TEXT_CHANGED:'text-changed',EDITING_RETURN:'editing-return'};
