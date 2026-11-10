@@ -973,7 +973,6 @@ export class AtelierGame extends Component {
     });
     if(!event){
       if(!placed)this.text('点下方珠材，串到线上',200,374,320,70,25,MUTED,this.page,true);
-      this.text(ready?'已可完成 · 保存时按实际用料扣除':!placed?'自由手作 · 至少放入1件珠材':!checks.stock?'当前珠材不足 · 移除缺料或去采珠':'检查饰品库存后即可完成',82,604,556,37,21,ready?SAGE:MUTED,this.page,true);
       if(!this.availableMaterials)this.button('去三消采珠吧',220,650,280,48,()=>this.matchIntro(),this.page,true);
     }
     this.hitButton('前一材料分类',57,714,48,51,()=>{this.craftCategory=(this.craftCategory+3)%4;this.render();});
@@ -1121,7 +1120,13 @@ export class AtelierGame extends Component {
     if(index===this.workingDraft.length)this.clearCraftFlights();else this.clearCraftFlight(index);
     this.remember();const sizes=this.workingSizes,facings=this.workingFacings;if(this.workingDraft[index]==null){sizes[index]=8;facings[index]='out';}this.workingDraft[index]=type;this.workingSizes=sizes;this.workingFacings=facings;this.slot=-1;this.persist();
     if(dropTarget===undefined&&!this.save.reduced)this.launchCraftBead(index,type);
-    this.render();this.play();
+    else this.playBeadImpact(type);
+    this.render();
+  }
+  private playBeadImpact(type:number,volume=.55) {
+    const material=MATERIALS[type];if(!material)return;
+    const kind=material.category===2?'wood':material.category===3?'metal':'glass';
+    this.play('bead-'+kind+'-'+(kind==='glass'?1+Math.floor(Math.random()*3):1),volume);
   }
   private clearCraftFlight(index:number) {
     const flight=this.craftFlights.get(index);if(!flight)return;
@@ -1136,9 +1141,10 @@ export class AtelierGame extends Component {
     const position=this.slotPos(index),diameter=this.craftDiameter(index),p=new Vec3(position.x-diameter/2,diameter/2-position.y,0);
     const center=new Vec3(319,-369,0),radius=Vec3.distance(center,p);let touched=false;
     tween(n).to(.22,{position:center,scale:Vec3.ONE},{easing:'quadOut'})
+      .call(()=>this.playBeadImpact(type))
       .delay(.035)
       .to(.64,{position:p,scale:new Vec3(diameter/82,diameter/82,1)},{easing:craftSpring,onUpdate:()=>{
-        if(!touched&&Vec3.distance(center,n.position)>=radius){touched=true;this.bumpCraftNeighbors(index);this.play('land',.35);}
+        if(!touched&&Vec3.distance(center,n.position)>=radius){touched=true;this.bumpCraftNeighbors(index);this.playBeadImpact(type,.2);}
       }})
       .call(()=>{
         if(this.craftFlights.get(index)?.node!==n)return;this.clearCraftFlight(index);
@@ -1208,7 +1214,7 @@ export class AtelierGame extends Component {
         if(facing){if(facing!==baseFacing){this.remember();const facings=this.workingFacings;facings[index]=facing;this.workingFacings=facings;this.persist();}this.slot=index;start=null;this.render();return;}
       }
       if(dragged){const half=n.getComponent(UITransform)?.contentSize.width/2||46,p={x:n.position.x+half,y:n.position.y-half};let target=-1,nearest=Math.min(95,Math.hypot(original.x+half-p.x,original.y-half-p.y));for(let i=0;i<this.slotNodes.length;i++){if(i===index)continue;const s=this.slotNodes[i].position,half=this.slotNodes[i].getComponent(UITransform)?.contentSize.width/2||46,d=Math.hypot(s.x+half-p.x,s.y-half-p.y);if(d<nearest){target=i;nearest=d;}}
-        if(target>=0&&target!==index){this.remember();const sizes=this.workingSizes,facings=this.workingFacings;[sizes[index],sizes[target]]=[sizes[target],sizes[index]];[facings[index],facings[target]]=[facings[target],facings[index]];[this.workingDraft[index],this.workingDraft[target]]=[this.workingDraft[target],this.workingDraft[index]];this.workingSizes=sizes;this.workingFacings=facings;this.slot=target;this.persist();this.play('land');}
+        if(target>=0&&target!==index){this.remember();const sizes=this.workingSizes,facings=this.workingFacings;[sizes[index],sizes[target]]=[sizes[target],sizes[index]];[facings[index],facings[target]]=[facings[target],facings[index]];[this.workingDraft[index],this.workingDraft[target]]=[this.workingDraft[target],this.workingDraft[index]];this.workingSizes=sizes;this.workingFacings=facings;this.slot=target;this.persist();this.playBeadImpact(this.workingDraft[target]);}
       }else{start=null;this.selectCraftSlot(index);return;}
       start=null;this.render();
     };

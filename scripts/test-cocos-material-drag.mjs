@@ -8,6 +8,7 @@ fs.mkdirSync(dir,{recursive:true});const browser=await chromium.launch({headless
 const report={base,nativeInput:true},cancelling=new WeakSet(),cancellationWarnings=[];
 async function fixture(save,viewport={width:390,height:844}){
  const context=await browser.newContext({viewport,isMobile:true,hasTouch:true}),page=await context.newPage();
+ await page.clock.setFixedTime(new Date());
  page.on('pageerror',e=>errors.push(e.message));page.on('console',m=>{if(m.type()==='error'){if(cancelling.has(page)&&m.text().startsWith('Ignored attempt to cancel a touchcancel event with cancelable=false'))cancellationWarnings.push(m.text());else errors.push(m.text());}});page.on('response',r=>{if(r.status()>=400)errors.push(r.status()+' '+r.url());});
  await page.addInitScript(save=>{if(!localStorage.getItem('pencil-bead-atelier-v1'))localStorage.setItem('pencil-bead-atelier-v1',JSON.stringify(save));},save);
  const state=async()=>JSON.parse(await page.evaluate(()=>window.render_game_to_text()));

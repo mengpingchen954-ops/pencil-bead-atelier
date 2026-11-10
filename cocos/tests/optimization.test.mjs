@@ -1,3 +1,4 @@
+import fs from 'node:fs';
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import {createRequire} from 'node:module';
@@ -111,4 +112,15 @@ test('the final customer work page compacts around actual cards and returns to t
  g.save={...save,customers:{nextId:2,nextAt:0,lastStyle:'',active:{id:1,style:'jewelry',buyer:'许老师',status:'accepted',createdAt:1}}};
  g.customerWorks(1);flush();assert.ok(g.overlay.getChildByName('Dialog paper').getComponent(UITransform).contentSize.height<600);
  assert.ok(actions.has('上一批'));actions.get('上一批')();assert.equal(g.overlay.children.filter(n=>n.name.startsWith('Custom work ')).length,3);
+});
+
+test('bead impacts use short licensed material clips and respect the sound switch',()=>{
+ const g=new AtelierGame(),played=[];g.save=rules.freshSave();g.sound={playOneShot:(clip,volume)=>played.push({name:clip.name,volume})};
+ const names=['bead-glass-1','bead-glass-2','bead-glass-3','bead-wood-1','bead-metal-1'];g.sounds=new Map(names.map(name=>[name,{name}]));
+ for(const type of [0,12,24,36])g.playBeadImpact(type);assert.ok(played.slice(0,2).every(p=>p.name.startsWith('bead-glass-')));assert.equal(played[2].name,'bead-wood-1');assert.equal(played[3].name,'bead-metal-1');
+ g.save.sound=false;g.playBeadImpact(0);assert.equal(played.length,4);
+ for(const name of names){const wav=fs.readFileSync(root+'/assets/resources/audio/'+name+'.wav');assert.equal(wav.toString('ascii',0,4),'RIFF');let offset=12,data=null,rate=0;
+  while(offset+8<=wav.length){const key=wav.toString('ascii',offset,offset+4),size=wav.readUInt32LE(offset+4);if(key==='fmt ')rate=wav.readUInt32LE(offset+12);if(key==='data')data=wav.subarray(offset+8,offset+8+size);offset+=8+size+(size%2);}
+  assert.ok(data&&rate===44100);assert.ok(data.length/2/rate>.05&&data.length/2/rate<.5);let peak=0;for(let i=0;i<data.length;i+=2)peak=Math.max(peak,Math.abs(data.readInt16LE(i)));assert.ok(peak>500&&peak<32768);
+ }
 });
