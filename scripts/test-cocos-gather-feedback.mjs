@@ -79,7 +79,7 @@ try{
   await page.waitForFunction(async()=>{const cc=await System.import('cc'),g=cc.director.getScene().getChildByName('AtelierGame').getComponent('AtelierGame');return g.gatherEffects.children.some(n=>n.name.startsWith('Gather bead ')&&-n.position.y<150);},{},{timeout:2000});
   await page.screenshot({path:dir+'/flight-header-'+width+'.png'});await page.waitForTimeout(1350);assert.deepEqual((await effects()).beads,[]);assert.deepEqual((await effects()).text,[]);
   await page.screenshot({path:dir+'/result-'+width+'.png'});
-  const inventory=final.after.save.inventory;await button(final.after.session.status==='won'?'收好珠材 · 回工坊':'带着珠材回制作');assert.deepEqual((await state()).save.inventory,inventory);
+  const inventory=final.after.save.inventory;await button(final.after.session.status==='won'?'去串手串':'带着珠材回制作');assert.deepEqual((await state()).save.inventory,inventory);
   // Exiting the next unfinished run preserves only previously earned property.
   if((await state()).screen==='craft')await button('返回售珠');await ui.tap(72,1210);
   await button('消除采珠');await button(await page.getByRole('button',{name:/^开始采珠 · /}).textContent());
@@ -89,7 +89,7 @@ try{
   await page.reload({waitUntil:'networkidle'});await page.waitForFunction(()=>typeof window.render_game_to_text==='function');assert.deepEqual((await state()).save.inventory,inventory);await ui.context.close();
  }
  const ui=await fixture(390,844,true),final=await finish(ui,true);results.push({reduced:true,total:final.amount,kinds:final.after.save.inventory.filter(Boolean).length});
- await ui.page.screenshot({path:dir+'/result-reduced.png'});await ui.button(final.after.session.status==='won'?'收好珠材 · 回工坊':'带着珠材回制作');assert.equal(total((await ui.state()).save.inventory),final.amount);assert.deepEqual((await ui.effects()).text,[]);await ui.context.close();
+ await ui.page.screenshot({path:dir+'/result-reduced.png'});await ui.button(final.after.session.status==='won'?'去串手串':'带着珠材回制作');assert.equal(total((await ui.state()).save.inventory),final.amount);assert.deepEqual((await ui.effects()).text,[]);await ui.context.close();
  assert.deepEqual(errors,[]);fs.writeFileSync(dir+'/report.json',JSON.stringify({base,results,nativeTouchAndMouse:true,actualSprites:true,upwardFlights:true,cappedParticles:true,terminalBudget:true,noMidRunRewards:true,toolsAndInvalidAndShuffle:true,restartAndEarlyExit:true,reducedMotion:true,cleanup:true,reloadPreservesStock:true,noDuplicateStock:true,errors},null,2));
  console.log('Gather feedback passed: final level-scaled win/loss rewards, end-only inventory/flights, touch/mouse, restart/exit, reduced motion, result and reload without duplicates.');
 }finally{await browser.close();}

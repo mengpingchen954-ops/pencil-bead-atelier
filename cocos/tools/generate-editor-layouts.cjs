@@ -57,6 +57,7 @@ class Node {
   setRotation(r){this.rotation={...r};}
   addComponent(Type){const c=new Type();c.node=this;this.components.push(c);return c;}
   getComponent(Type){return this.components.find(c=>c instanceof Type)||null;}
+  getChildByName(name){return this.children.find(n=>n.name===name)||null;}
   getComponentsInChildren(Type){return [...this.components.filter(c=>c instanceof Type),...this.children.flatMap(n=>n.getComponentsInChildren(Type))];}
   on(event,fn){(this.events ||= {})[event]=fn;}
   setSiblingIndex(){}

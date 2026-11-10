@@ -105,7 +105,7 @@ test('all persistent navigation uses the home dimensions and five destinations w
 test('home shows the real display window and opens free DIY without a recipe',()=>{
   const {game,actions}=pausedGame('home'),before=JSON.stringify(game.save);game.render();
   const labels=game.page.getComponentsInChildren(Label).map(l=>l.string);
-  assert.ok(labels.includes('待上架 0 件 · 在售 0 件 · 已售 0 件'));assert.ok(actions.has('查看售珠橱窗'));
+  assert.ok(labels.includes('第一件作品，等你来设计'));assert.ok(actions.has('查看售珠橱窗'));
   actions.get('自由 DIY')();assert.equal(game.screen,'craft');assert.equal(JSON.stringify(game.save),before);
 });
 

@@ -8,7 +8,7 @@ export function characterMemories(save:any) {
     {id:'grandma',name:'奶奶',portrait:'grandma',unlock:true,base:'奶奶陪阿禾长大，如今也陪着她经营这间手串小店。',orders:['promise'],stages:['家人相伴','一起经营','彼此支撑','安心陪伴']},
     {id:'ahe',name:'阿禾',portrait:'girl',unlock:true,base:'阿禾想靠自己的手艺，把小店和往后的生活一点点做起来。',orders:ORDERS.map(o=>o.id),stages:['从今天开始','留下自己的名字','学着站稳','自己决定明天']},
     {id:'xiaoman',name:'小满',portrait:'',unlock:(save.completed.includes('daisy')||salesProgress(save)>=1),base:'花店小满来到小店，想把天刚亮时的海戴在手上。',orders:['sea','violet'],stages:['初次来店','听见心意','渐渐熟悉','带着故事回来']},
-    {id:'lin',name:'林阿姨',portrait:'',unlock:(save.completed.includes('daisy')||salesProgress(save)>=1),base:'林阿姨常来橱窗挑选礼物，也认真珍惜着阿禾的手作。',orders:['daisy','forest'],stages:['第一份相遇','记住她的心意','老客的信任','日常里的陪伴']},
+    {id:'lin',name:'林阿姨',portrait:'pencil-dialogue-lin',unlock:(save.completed.includes('daisy')||salesProgress(save)>=1),base:'林阿姨常来橱窗挑选礼物，也认真珍惜着阿禾的手作。',orders:['daisy','forest'],stages:['第一份相遇','记住她的心意','老客的信任','日常里的陪伴']},
     {id:'teacher',name:'许老师',portrait:'',unlock:(save.completed.includes('sea')||salesProgress(save)>=2),base:'许老师喜欢来店里挑选手作，把一份鼓励送给学生。',orders:['rose'],stages:['初次来店','认真听见','彼此信任','温柔也有力量']},
   ];
   return profiles.map(person=>{
@@ -19,7 +19,10 @@ export function characterMemories(save:any) {
       if(save.seaHeart.visited)known.push({title:'小满的旅行回访',text:'小满第一次独自看了海边日出，带回留影和旅行纪念挂件。',storyId:''});
     }
     const orders=person.unlock?ORDERS.filter(o=>person.orders.includes(o.id)&&(save.completed.includes(o.id)||o.id===save.orderId)).map(o=>({...o,work:save.collection.find((w:any)=>w.id===o.id)||null})):[];
-    const steps=person.unlock?Math.min(person.id==='xiaoman'&&!save.seaHeart.visited?3:4,known.length+orders.filter(o=>o.work).length):0;
+    const delivered=orders.some(o=>o.work)||save.commerce.works.some(w=>w.status==='sold'&&(w.buyer===person.name||person.id==='xiaoman'&&w.buyer==='花店小满'));
+    const shared=scenes.length>0||(person.id==='xiaoman'&&save.seaHeart.facts.length>=2);
+    const settled=person.id==='xiaoman'?save.seaHeart.visited:person.orders.every(id=>save.completed.includes(id))&&scenes.length>0;
+    const steps=person.unlock?1+Number(delivered)+Number(shared)+Number(settled):0;
     return {...person,known,orders,steps,stage:person.stages[Math.max(0,steps-1)]};
   });
 }

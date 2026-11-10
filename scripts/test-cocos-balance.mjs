@@ -59,10 +59,14 @@ try{
   await ui.page.waitForFunction(()=>{const s=JSON.parse(window.render_game_to_text());return !s.busy&&s.modal==='result';});s=await ui.state();assert.equal(s.session.status,status);
   const reward=gatheredMaterials(s.session),expected=Array(48).fill(0);reward.forEach((n,i)=>expected[s.session.materialTypes[i]]=n);assert.deepEqual(s.save.inventory,expected);
   assert.ok(status==='won'?[15,16].includes(total(reward)):[10].includes(total(reward)));
-  await ui.page.screenshot({path:`${dir}/reward-${status}.png`});await ui.button(status==='won'?'收好珠材 · 回工坊':'带着珠材回制作');
+  await ui.page.screenshot({path:`${dir}/reward-${status}.png`});await ui.button(status==='won'?'去串手串':'带着珠材回制作');
   assert.deepEqual((await ui.state()).save.inventory,expected);await ui.page.reload({waitUntil:'networkidle'});await ui.ready();assert.deepEqual((await ui.state()).save.inventory,expected);await ui.context.close();
  }
- const contest=await fixture({...defaults(),completed:[ORDERS[0].id]});await contest.button('参加比赛');await contest.button('报名参加');await contest.button('参考配色');await contest.button('以此为起点排珠');await contest.button('提交参赛作品');await contest.button('提交评审');
+ const contest=await fixture({...defaults(),completed:[ORDERS[0].id]});await contest.button('参加比赛');await contest.button('报名参加');await contest.button('参考配色');await contest.button('显示参考虚影');
+ for(let i=0;i<12;i++)for(const name of ['Slot '+i,'Bead material '+(i<8?3:5)]){
+  const point=await contest.page.evaluate(async name=>{const cc=await System.import('cc'),g=cc.director.getScene().getChildByName('AtelierGame').getComponent('AtelierGame');const walk=n=>{if(!n.active)return null;if(n.name===name)return n;for(const c of n.children){const f=walk(c);if(f)return f;}return null;};const n=walk(g.page);if(!n)throw Error(name);const t=n.getComponent(cc.UITransform),p=t.convertToWorldSpaceAR(new cc.Vec3(t.width/2,-t.height/2));return{x:p.x+360,y:640-p.y};},name);await contest.tap(point.x,point.y);
+ }
+ await contest.button('提交参赛作品');await contest.button('提交评审');
  const awarded=await contest.state();assert.equal(awarded.save.competitions.entries[0].score,83);assert.equal(awarded.save.coins,164);await contest.page.screenshot({path:dir+'/silver-contest.png'});
  await contest.page.reload({waitUntil:'networkidle'});await contest.ready();assert.equal((await contest.state()).save.coins,164);assert.equal((await contest.state()).save.competitions.entries[0].reward,84);await contest.context.close();
  assert.deepEqual(errors,[]);fs.writeFileSync(dir+'/report.json',JSON.stringify({base,cases,legacyListingPreserved:true,thirdFurnitureTiers:true,actualRewardBanking:true,energyClockPreserved:true,silverReferenceAndNoDoubleAward:true,errors},null,2));console.log('Balance browser passed: reputation pricing, cubic waits, old listing, level win/loss rewards, tools, energy clock, third furniture tiers and silver reference with persistent one-time rewards.');

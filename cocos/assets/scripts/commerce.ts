@@ -24,9 +24,12 @@ export function workName(value:any, fallback='') {
   return (typeof value==='string'?Array.from(value.replace(/[\u0000-\u001f\u007f]/g,' ').trim()).slice(0,24).join(''):'') || fallback;
 }
 const workNames=['春日花信','月光入怀','星河微澜','海盐晴空','蔷薇小梦','林间晨露','琉璃拾光','云边来信','落日余温','花间漫步','清风有约','一串欢喜'];
-export function randomWorkName(current='') {
-  const choices=workNames.filter(name=>name!==current);
-  return choices[Math.floor(Math.random()*choices.length)];
+export function randomWorkName(current='',existing:string[]=[]) {
+  const used=new Set([current,...existing]),choices=workNames.filter(name=>!used.has(name));
+  if(choices.length)return choices[Math.floor(Math.random()*choices.length)];
+  const stem=workNames[Math.floor(Math.random()*workNames.length)];let number=2;
+  while(used.has(stem+' '+number))number++;
+  return stem+' '+number;
 }
 export function renameWork(save:any,id:number,name:string) {
   const value=workName(name);
@@ -110,6 +113,11 @@ export function collectSale(save:any,id:number) {
   if(!work||work.status!=='sold'||work.claimed!==false)return null;
   return {...save,coins:save.coins+work.price,commerce:{...save.commerce,
     works:save.commerce.works.map((w:any)=>w.id===id?{...w,claimed:true}:w)}};
+}
+export function collectAllSales(save:any) {
+  let next=save;
+  for(const work of save.commerce?.works||[])if(work.status==='sold'&&work.claimed===false)next=collectSale(next,work.id)!;
+  return next===save?null:next;
 }
 export function salesProgress(save:any) {
   return (save.completed?.length||0)+(save.commerce?.works.filter((w:any)=>w.status==='sold').length||0);

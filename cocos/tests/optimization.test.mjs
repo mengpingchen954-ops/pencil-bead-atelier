@@ -76,3 +76,39 @@ test('story uses the five shared destinations and cleanup counts for thirty perc
  const {g}=fixture();g.navigate('storyMap');assert.ok(g.page.children.find(n=>n.name==='Navigation'));
  let save=rules.freshSave();const {CLEAN_SPOTS}=load(root+'/assets/scripts/content.ts');for(const spot of CLEAN_SPOTS)save=rules.cleanSpot(save,spot.id);assert.equal(rules.shopProgress(save).percent,30);
 });
+test('collect all pays only unclaimed sales once and controller restores the transaction on storage failure',()=>{
+ const trade=load(root+'/assets/scripts/commerce.ts');let save={...rules.freshSave(),inventory:Array(48).fill(20),gatheredStock:Array(48).fill(20)};
+ for(let i=0;i<4;i++){save=trade.finishWork({...save,draft:[0]},1000+i);save=trade.listWork(save,i+1,42,2000);}
+ save=trade.settleSales(save,100000);save=trade.collectSale(save,1);
+ const before=JSON.stringify(save),next=trade.collectAllSales(save);assert.equal(next.coins,save.coins+126);assert.equal(JSON.stringify(save),before);assert.equal(trade.collectAllSales(next),null);
+ const {g}=fixture();g.save=save;g.screen='orders';g.salesTab='sold';g.toast=()=>{};g.persist=()=>{g.storageFailed=true;};g.collectReceipts();assert.equal(g.save,save);
+ g.persist=()=>{g.storageFailed=false;};g.save.reduced=true;g.collectReceipts();assert.equal(g.save.coins,next.coins);const paid=g.save;g.collectReceipts();assert.equal(g.save,paid);
+});
+test('random names exclude all existing names even after the original suggestion pool is exhausted',()=>{
+ const {randomWorkName}=load(root+'/assets/scripts/commerce.ts'),used=[];
+ for(let i=0;i<100;i++){const name=randomWorkName('',used);assert.ok(name.length<=24);assert.equal(used.includes(name),false);used.push(name);}
+});
+test('price presets update the displayed waiting time and commit the selected slider price',()=>{
+ const trade=load(root+'/assets/scripts/commerce.ts'),{g,actions}=fixture();g.save=trade.finishWork({...g.save,inventory:Array(48).fill(20),gatheredStock:Array(48).fill(20),draft:[0,0,0]},1000);
+ const bounds=trade.priceBounds([0,0,0],0);g.listingDialog(1,bounds.min);
+ actions.get('高价')();assert.ok(g.overlay.getComponentsInChildren(Label).some(l=>l.string==='售价 '+bounds.max+' 金币'));
+ actions.get('降价 10')();assert.ok(g.overlay.getComponentsInChildren(Label).some(l=>l.string==='售价 '+(bounds.max-10)+' 金币'));actions.get('快卖')();actions.get('确认上架')();assert.equal(g.save.commerce.works[0].price,bounds.min);assert.equal(g.save.commerce.works[0].sellAt-g.save.commerce.works[0].listedAt,trade.saleDuration([0,0,0],bounds.min));
+});
+test('character progress uses distinct experiences and does not fill from several quotes in one story',()=>{
+ const {characterMemories}=load(root+'/assets/scripts/memories.ts'),save=rules.freshSave();save.seenStories=['old-table','first-receipt'];
+ const grandma=characterMemories(save).find(p=>p.id==='grandma');assert.equal(grandma.steps,2);assert.ok(grandma.steps<4);
+ save.completed=['daisy'];save.commerce.works=[{status:'sold',buyer:'花店小满'}];assert.equal(characterMemories(save).find(p=>p.id==='xiaoman').steps,2);
+});
+test('empty state drawings are distinct and reputation upgrade reports the actual cap',()=>{
+ const {g}=fixture();for(const kind of ['showcase','album','journal','customer'])g.emptyArt(kind,0,0,160);
+ assert.equal(new Set(g.page.children.map(n=>n.name)).size,4);
+ g.save.rep=50;assert.match(g.reputationMessage(40),/125%/);assert.equal(g.reputationMessage(50),'');g.save.rep=999;assert.equal(g.reputationMessage(300),'');
+});
+
+test('the final customer work page compacts around actual cards and returns to the first page',()=>{
+ const trade=load(root+'/assets/scripts/commerce.ts'),{g,actions,flush}=fixture();let save={...g.save,inventory:Array(48).fill(30),gatheredStock:Array(48).fill(30)};
+ for(let i=0;i<4;i++)save=trade.finishWork({...save,draft:Array(6).fill(0)},1000+i);
+ g.save={...save,customers:{nextId:2,nextAt:0,lastStyle:'',active:{id:1,style:'jewelry',buyer:'许老师',status:'accepted',createdAt:1}}};
+ g.customerWorks(1);flush();assert.ok(g.overlay.getChildByName('Dialog paper').getComponent(UITransform).contentSize.height<600);
+ assert.ok(actions.has('上一批'));actions.get('上一批')();assert.equal(g.overlay.children.filter(n=>n.name.startsWith('Custom work ')).length,3);
+});
