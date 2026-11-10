@@ -18,6 +18,7 @@ async function fixture(save,width=390){
  const ready=()=>page.waitForFunction(()=>typeof window.render_game_to_text==='function');
  const state=async()=>JSON.parse(await page.evaluate(()=>window.render_game_to_text()));
  const button=async name=>{
+  await page.evaluate(()=>new Promise(resolve=>requestAnimationFrame(()=>requestAnimationFrame(resolve))));
   const p=await page.evaluate(async name=>{
    const cc=await System.import('cc'),g=cc.director.getScene().getChildByName('AtelierGame').getComponent('AtelierGame');
    const find=n=>{if(!n.active)return null;if(n.name==='Button: '+name)return n;for(const child of n.children){const result=find(child);if(result)return result;}return null;};
