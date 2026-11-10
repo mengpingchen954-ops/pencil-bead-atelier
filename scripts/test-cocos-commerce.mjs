@@ -18,7 +18,7 @@ async function fixture(save,viewport={width:390,height:844}){
  const button=async(name)=>{
    if(['撤销','移除','替换','预览','参考配色','采珠','评分规则'].includes(name)&&await page.getByRole('button',{name:'工具',exact:true}).count())await button('工具');
    const p=await page.evaluate(async name=>{const cc=await System.import('cc'),g=cc.director.getScene().getChildByName('AtelierGame').getComponent('AtelierGame');
-    const find=n=>{if(!n.active)return null;if(n.name==='Button: '+name)return n;for(const child of n.children){const result=find(child);if(result)return result;}return null;};
+    const find=n=>{if(!n.active)return null;if(n.name==='Button: '+name||(name==='返回售珠'&&/^Button: 返回(小店|图鉴|故事|人物|手账|装修)$/.test(n.name)))return n;for(const child of n.children){const result=find(child);if(result)return result;}return null;};
     const n=find(g.modal?g.overlay:g.page);if(!n)throw Error('No native button '+name+' on '+g.screen+'/'+g.modal);
     const t=n.getComponent(cc.UITransform),p=t.convertToWorldSpaceAR(new cc.Vec3(t.contentSize.width/2,-t.contentSize.height/2));return {x:p.x+360,y:640-p.y};},name);await tap(p.x,p.y);
  };
@@ -93,7 +93,7 @@ try{
   }
  }
  await legacy.action('售珠');await legacy.button('后页 →');assert.equal((await legacy.state()).sales.page,1);await legacy.button('← 前页');assert.equal((await legacy.state()).sales.page,0);
- await legacy.action('图鉴');await legacy.button('后页 →');assert.equal((await legacy.state()).album.page,1);await legacy.button('旧版珍藏');assert.equal((await legacy.state()).album.collected,6);
+ await legacy.action('图鉴');await legacy.button('后页 →');assert.equal((await legacy.state()).album.page,1);await legacy.button('时光珍藏');assert.equal((await legacy.state()).album.collected,6);
  assert.equal(JSON.stringify((await legacy.state()).save.collection),archive);const {energyAt:afterClock,...after}=(await legacy.state()).save;assert.ok(afterClock>=beforeClock);assert.deepEqual(after,before);report.oldProgressAndCollectionsPreserved=true;report.pagination=true;report.widths=[360,390,540,1440];await legacy.context.close();
 
  // Opening after a sale's deadline settles without requiring another page or an authenticated connection.

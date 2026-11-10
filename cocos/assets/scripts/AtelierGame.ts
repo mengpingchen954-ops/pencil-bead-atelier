@@ -42,6 +42,8 @@ export class AtelierGame extends Component {
   private screen: Page = 'cover';
   private returnScreen: Page = 'home';
   private craftFrom: Page = 'home';
+  private contestGhost = false;
+  private guideNode: Node | null = null;
   private textures = new Map<string, SpriteFrame>();
   private sounds = new Map<string, AudioClip>();
   private sound: AudioSource;
@@ -410,7 +412,7 @@ export class AtelierGame extends Component {
     if (this.busy) return;
     if (page === 'match') { this.matchIntro(); return; }
     if (page === 'orderArrival') page='craft';
-    if(page==='craft'&&!['craft','packing','contestCraft'].includes(this.screen))this.craftFrom=this.screen==='cover'?'home':this.screen;
+    if(page==='craft'&&['home','orders','album','storyMap','memories','journal','decor','contest'].includes(this.screen))this.craftFrom=this.screen;
     this.clear(this.notices);this.toastGeneration++;
     if(page==='craft'&&this.migrateDraftCharm())this.persist();
     this.clearCraftFlights();if(this.coinEffects)this.clear(this.coinEffects);this.craftToolsOpen=false;
@@ -421,6 +423,7 @@ export class AtelierGame extends Component {
     this.closeModal(); this.screen = page; this.slot = -1; this.craftTap=null; this.selected = -1; this.hint = []; this.render();
   }
   private render() {
+    if(this.guideNode){if(this.guideNode.parent)this.guideNode.removeFromParent();this.guideNode.destroy();this.guideNode=null;}
     this.cancelMusicTap();
     this.craftFlights.forEach((flight,index)=>{if(!['craft','contestCraft'].includes(this.screen)||this.save.reduced||this.workingDraft[index]!==flight.type)this.clearCraftFlight(index);});
     this.layoutCounts.clear(); this.layoutKeys.clear();
@@ -456,13 +459,46 @@ export class AtelierGame extends Component {
       const source=this.layouts.get(key)?.getComponent(AtelierLayout), drawing=node.getComponent(Graphics);
       if(source && drawing && source.drawing !== source.originalDrawing) source.redraw(drawing);
     });
+    this.firstGuide();
   }
+  private guide(target:Node|undefined,message:string) {
+    if(!target||this.modal)return;
+    let x=target.position.x,y=-target.position.y;
+    const t=target.getComponent(UITransform)!,size=t.contentSize;
+    if(t.getBoundingBoxToWorld){
+      const bounds=t.getBoundingBoxToWorld(),point=this.overlay.getComponent(UITransform)!.convertToNodeSpaceAR(new Vec3(bounds.x,bounds.y+bounds.height));x=point.x;y=-point.y;
+    }
+    const stage=this.container('First steps guide',this.overlay);this.guideNode=stage;
+    this.rect('Guide outline',x-5,y-5,size.width+10,size.height+10,'#00000000',stage,16,'#a16d2c');
+    const top=y>650?Math.max(180,y-76):Math.min(1050,y+size.height+12);
+    this.rect('Guide note',70,top,580,60,'#fff5dcf5',stage,14,'#c49c58');this.text(message,85,top+4,550,52,22,INK,stage,true);
+    this.accessibility?.text(message,false);
+  }
+  private firstGuide() {
+    if(this.modal)return;
+    const find=(name:string)=>this.page.children.find(n=>n.name===name),steps=this.save.firstSteps||{};
+    if(this.screen==='home'&&!steps.firstGather&&!this.save.commerce.works.length&&this.availableMaterials<6)this.guide(find('Button: 消除采珠'),'先采一盒珠材，再做第一条手串。');
+    if(this.screen==='match'&&this.session?.level===1&&this.session.moves===rules.levelConfig(1).moves){const pair=rules.findMove(this.session.board);if(pair){this.hint=pair;this.guide(this.boardNodes[pair[0]],'交换这两颗相邻珠子，试试第一次消除。');}}
+    if(this.screen==='craft'&&!this.save.commerce.works.length){
+      if(this.workingDraft.every(t=>t===null))this.guide(find('Bead material '+MATERIALS.findIndex((m,i)=>m.category===this.craftCategory&&materialStock(this.save,i)>0)),this.availableMaterials?'点一颗珠材，把它串到线上。':'先去采珠，获得材料后就能开始。');
+      else this.guide(find('Button: 完成制作'),'搭配好了，就点完成制作，保存第一件作品。');
+    }
+    if(this.screen==='orders'&&this.save.commerce.works.length===1&&this.save.commerce.works[0].status==='ready')this.guide(find('Button: 上架橱窗 · '+this.save.commerce.works[0].id),'给作品设个价格，让第一位顾客看见它。');
+    if(this.screen==='decor'&&this.save.renovation.cleared.length<3){const spot=CLEAN_SPOTS.find(s=>!this.save.renovation.cleared.includes(s.id));if(spot)this.guide(find('Clean '+spot.id),'先收好三处杂物，再擦窗、扫灰。打扫免费。');}
+  }
+  private get availableMaterials() { return MATERIALS.reduce((sum,_,i)=>sum+materialStock(this.save,i),0); }
   private chrome() {
-    const names = { home:'珠光小店', orders:'售珠橱窗', craft:'手串工坊', match:'珠材花园', decor:'小店焕新', album:'作品图鉴', journal:'我们的故事', contest:'参加比赛', contestCraft:'参赛手作' };
+    const names = { home:'珠光小店', orders:'售珠橱窗', craft:'手串工坊', match:'珠材花园', decor:'小店焕新', album:'作品图鉴', journal:'我们的故事', contest:'参加比赛', contestCraft:'参赛手作',storyMap:'我们的故事' };
     this.image('pencil-ui-header',0,0,720,84);
+    if(this.screen==='match'){
+      this.button('暂停',24,16,100,50,()=>this.pauseMatch());
+      this.text('珠材花园',218,18,284,48,30,INK,this.page,true);
+      this.button('♪',620,16,76,50,()=>this.musicDialog());return;
+    }
     if(this.screen!=='home')this.button('‹',24,16,44,50,()=>this.screen==='match'?this.pauseMatch():this.navigate('home'));
     this.text(names[this.screen],78,18,178,48,28).isBold=true;
-    this.text(String(rules.total(this.save.inventory)),307,23,53,39,23,INK,this.page,true);
+    this.rect('Material resource label',266,18,99,48,'#f8f3e9',this.page,12);
+    this.text('珠材 '+this.availableMaterials,270,23,91,39,18,INK,this.page,true);
     this.text(String(this.save.coins),421,23,51,39,23,GOLD,this.page,true);
     this.accessibility?.text('金 '+this.save.coins,false);
     this.text(String(this.save.energy),532,23,30,39,23,INK,this.page,true);
@@ -535,11 +571,11 @@ export class AtelierGame extends Component {
     this.text('我的橱窗 · 自己设计，慢慢售卖',76,650,535,38,23,MUTED);
     this.text(listing?'有 '+listing+' 件作品等一位有缘人':'把喜欢的作品，摆进橱窗',76,694,535,57,33).isBold=true;
     this.text('待上架 '+ready+' 件 · 在售 '+listing+' 件 · 已售 '+sold+' 件',76,758,535,36,22,SAGE);
-    this.button('自由 DIY',72,821,276,72,()=>this.navigate('craft'),this.page,true,true,'leading-craft');
-    this.button('消除采珠',369,821,284,72,()=>this.matchIntro(),this.page,false,true,'leading-bag');
+    this.button('自由 DIY',72,821,276,72,()=>this.navigate('craft'),this.page,this.availableMaterials>=6,true,'leading-craft');
+    this.button('消除采珠',369,821,284,72,()=>this.matchIntro(),this.page,this.availableMaterials<6,true,'leading-bag');
 
     const pending=pendingStory(this.save);
-    this.text(chapter.title,45,934,438,40,22,INK);
+    this.text(pending?pending.title:chapter.title,45,934,480,40,22,INK);
     const storyLabel=seaVisitReady(this.save)?'小满回来了 · 看旅行留影':this.save.orderId==='sea'&&!this.save.completed.includes('sea')?'听听她的故事 · 小满的第一次旅行':pending?'继续剧情 · '+pending.title:'翻阅我们的故事';
     const storyAction=()=>seaVisitReady(this.save)?this.seaVisit():this.save.orderId==='sea'&&!this.save.completed.includes('sea')?this.seaChat():pending?this.startStory(STORIES.indexOf(pending)):this.navigate('journal');
     const story=this.box('Story invitation',43,928,640,48);
@@ -604,8 +640,8 @@ export class AtelierGame extends Component {
       this.image('pencil-album-flower',290,421,140,140);
       this.text(this.salesTab==='ready'?'先做一条，属于你的手串':this.salesTab==='listing'?'橱窗正等着你的作品':'第一位顾客，也许就在下一刻',75,620,570,65,31,INK,this.page,true);
       this.text(this.salesTab==='ready'?'采到什么，就搭配什么。\n种类和颗数自由决定，保存后就能上架。':this.salesTab==='listing'?'在「待上架」选择作品，设好售价放入橱窗。':'上架后顾客会来选购，售出后在这里点击收钱。',90,711,540,93,25,MUTED,this.page,true);
-      this.button('去自由 DIY',150,869,420,70,()=>this.navigate('craft'),this.page,true);
-      this.button('去三消采珠',150,962,420,56,()=>this.matchIntro(),this.page);
+      this.button('去自由 DIY',150,869,420,70,()=>this.navigate('craft'),this.page,this.availableMaterials>=6);
+      this.button('去三消采珠',150,962,420,56,()=>this.matchIntro(),this.page,this.availableMaterials<6);
     }
     works.slice(this.ordersPage*3,this.ordersPage*3+3).forEach((work,i)=>{
       const y=356+i*221,n=this.rect('Sale work '+work.id,40,y,640,204,'#fffaf0e8',this.page,20,'#d8c7ae');
@@ -857,8 +893,15 @@ export class AtelierGame extends Component {
       this.button('定制：'+style.name+' · 查看要求',155,102,410,43,()=>this.customerDialog(),this.page,true);
       this.text('至少6件 · 风格珠材 '+fit.matching+'/'+fit.required+' · '+(fit.ok?'已达标':'自由搭配中'),125,155,470,32,20,SAGE,this.page,true);
     }
-    if(event)this.text(event.theme,145,108,430,35,21,'#7c8d82',this.page,true);
-    if(event)this.text(placed+' / 12 颗 · 赛事练习珠材',191,155,338,30,19,'#a49184',this.page,true);
+    if(event){
+      const scored=evaluateCompetition(event.id,this.workingDraft.map(t=>t===null?35:t),this.workingCharm)!;
+      const main=this.workingDraft.filter(t=>t===event.main).length,accent=this.workingDraft.filter(t=>t===event.accent).length;
+      this.text(BEADS[event.main].short+' '+main+'/8 · '+BEADS[event.accent].short+' '+accent+'/3 · '+CHARMS[event.charm],95,108,530,35,20,SAGE,this.page,true);
+      this.text(placed+'/12 颗 · 预计 '+scored.score+' 分 · '+scored.medal,130,155,460,30,20,MUTED,this.page,true);
+      const echo=this.box('Opposing slot guide',0,0,720,1280).addComponent(Graphics);echo.strokeColor=color('#a28f7470');echo.lineWidth=1.5;
+      for(let i=0;i<6;i++){const a=this.slotPos(i),b=this.slotPos(i+6);for(let d=0;d<16;d+=2){echo.moveTo(a.x+(b.x-a.x)*d/16,-a.y-(b.y-a.y)*d/16);echo.lineTo(a.x+(b.x-a.x)*(d+1)/16,-a.y-(b.y-a.y)*(d+1)/16);}echo.stroke();}
+      if(this.contestGhost){const palette=competitionPalette(event.id)!;palette.forEach((type,i)=>{if(this.workingDraft[i]!==null)return;const p=this.slotPos(i);this.image(this.materialArt(type),p.x-26,p.y-26,52,52).addComponent(UIOpacity).opacity=75;});}
+    }
     if(this.contestEntry&&this.workingCharm!=='none')this.image('charm-'+this.workingCharm,339,467,42,42);
     if(!event)this.ellipse('Bracelet string',360,410,171,171,'#00000000',this.page,'#ae9678');
     this.workingDraft.forEach((type:number|null,i:number)=>{
@@ -867,6 +910,11 @@ export class AtelierGame extends Component {
       this.slotNodes.push(n);this.bindCraftDrag(n,i);
       this.accessibleButton('第'+(i+1)+'槽：'+(type===null?'空槽':MATERIALS[type].name),()=>this.selectCraftSlot(i));
     });
+    if(!event){
+      if(!placed)this.text('点下方珠材，串到线上',200,374,320,70,25,MUTED,this.page,true);
+      this.text(ready?'已可完成 · 保存时按实际用料扣除':!placed?'自由手作 · 至少放入1件珠材':!checks.stock?'当前珠材不足 · 移除缺料或去采珠':'检查饰品库存后即可完成',82,604,556,37,21,ready?SAGE:MUTED,this.page,true);
+      if(!this.availableMaterials)this.button('去三消采珠吧',220,650,280,48,()=>this.matchIntro(),this.page,true);
+    }
     this.hitButton('前一材料分类',57,714,48,51,()=>{this.craftCategory=(this.craftCategory+3)%4;this.render();});
     this.hitButton('后一材料分类',613,714,48,51,()=>{this.craftCategory=(this.craftCategory+1)%4;this.render();});
     labels.forEach((name,i)=>{
@@ -883,12 +931,13 @@ export class AtelierGame extends Component {
       const n=this.rect('Bead material '+i,x,y,128,88,selected?'#e9ded1':'#f0e8e1',this.page,9,selected?'#9aab99':'#f0e8e1');
       const art=this.image(this.materialArt(i),33,-1,62,62,n);
       if(!unlocked)art.addComponent(UIOpacity).opacity=85;
-      this.text(m.name,1,57,126,22,16,unlocked?'#59463c':'#93867b',n,true);
-      this.text(event?'练习':!unlocked?'未解锁':available>0?'×'+available:'已用尽',79,3,47,22,14,unlocked&&available>0?'#627968':'#95887c',n,true);
+      this.text(m.name,1,57,126,25,18,unlocked?'#59463c':'#93867b',n,true);
+      this.text(event?'练习':!unlocked?'未解锁':available>0?'×'+available:'已用尽',73,1,53,25,17,unlocked&&available>0?'#627968':'#95887c',n,true);
       const choose=()=>{if(!unlocked)return this.toast('未解锁：通过三消获得'+m.name+'后可使用。');if(event&&m.id)this.chooseCharm(m.id);else{this.craftMaterial=i;this.place(i);}};
       this.bindMaterialDrag(n,i,unlocked,choose);this.accessibleButton((m.id?'选择':'放入')+m.name,choose);
     });
-    this.rect('Size paper',83,1057,554,39,'#f7f2ec',this.page,12,'#e0d2c7');
+    const selected=this.slot>=0&&this.workingDraft[this.slot]!=null;
+    if(selected){this.rect('Size paper',83,1057,554,39,'#f7f2ec',this.page,12,'#e0d2c7');
     this.text('单珠',94,1060,61,33,22,INK);
     const resize=(value:number)=>{
       if(this.slot<0||this.workingDraft[this.slot]==null)return this.toast('先点选要调整尺寸的那颗珠子。');
@@ -896,7 +945,7 @@ export class AtelierGame extends Component {
       this.clearCraftFlights();this.remember();sizes[this.slot]=next;this.workingSizes=sizes;this.persist();this.render();
     };
     this.button('−',151,1057,42,39,()=>resize(this.workingSizes[this.slot]-1));
-    const selected=this.slot>=0&&this.workingDraft[this.slot]!=null,size=selected?this.workingSizes[this.slot]:8;
+    const size=this.workingSizes[this.slot];
     const meter=this.box('Single bead size slider',193,1055,313,44),readout=this.text(selected?size+' mm':'选珠',566,1059,73,34,22,INK,this.page,true);
     const drawSize=(value:number)=>{
       this.clear(meter);
@@ -927,6 +976,7 @@ export class AtelierGame extends Component {
     meter.on(Node.EventType.TOUCH_CANCEL,()=>{if(!before)return;this.workingSizes=before;before=null;this.render();});
     [6,7,8,9,10,11,12].forEach(value=>this.accessibleButton('选中珠子设为'+value+'毫米',()=>resize(value),this.page,selected));
     this.button('+',509,1057,42,39,()=>resize(this.workingSizes[this.slot]+1));
+    }
     if(!event&&selected&&MATERIALS[this.workingDraft[this.slot]]?.id){
       const facing=this.workingFacings[this.slot];
       for(const [i,value] of ['in','out'].entries())this.button(value==='in'?'朝内':'朝外',420+i*111,650,103,44,()=>{
@@ -938,7 +988,7 @@ export class AtelierGame extends Component {
     const tools=[['撤销',undo],['移除',()=>this.removeCraftBead()],['替换',()=>this.slot<0?this.toast('先点选要替换的珠子。'):this.place(this.craftMaterial)],['预览',()=>this.previewCraft()],['参考配色',()=>this.sample()],[event?'评分规则':'采珠',()=>event?this.contestRules():this.matchIntro()]];
     tools.forEach(([name,action],i)=>{
       const run=()=>{this.craftToolsOpen=false;this.render();(action as ()=>void)();};
-      if(this.craftToolsOpen)this.button(name as string,77+i*95,1104,90,38,run);
+      if(this.craftToolsOpen||i<2)this.button(name as string,77+i*95,1104,90,38,run,this.page,false,i===0?this.workingUndo.length>0:i===1?selected:true);
       else this.accessibleButton(name as string,run);
     });
     this.button(this.craftToolsOpen?'收起工具':'工具',554,1160,100,42,()=>{this.craftToolsOpen=!this.craftToolsOpen;this.render();});
@@ -1128,7 +1178,7 @@ export class AtelierGame extends Component {
       this.rect('Competition '+event.id,38,y,644,224,entry?'#edf0e3':'#fffaf0',this.page,18,'#d3bf9d');
       this.text('✦ '+event.title,58,y+12,604,44,29,entry?SAGE:INK);
       this.text(event.description,58,y+62,604,56,22,MUTED);
-      this.text(`${BEADS[event.main].short}≥6 · ${BEADS[event.accent].short}≥3 · ${CHARMS[event.charm]}`,58,y+122,604,32,21,SAGE);
+      this.text(`${BEADS[event.main].short}≥8 · ${BEADS[event.accent].short}≥3 · ${CHARMS[event.charm]}`,58,y+122,604,32,21,SAGE);
       this.text(entry?entry.medal+' · '+entry.score+' 分':unlocked?'邀请已送达 · 金奖 '+event.reward+' 金':'累计售出 '+event.unlock+' 件作品后邀请',58,y+170,370,36,21,MUTED);
       this.button(entry?'查看参赛作品':unlocked?resuming?'继续参赛':'报名参加':'等待下一次邀请',438,y+164,224,46,()=>entry?this.contestResult(event.id):this.enterCompetition(event.id),this.page,unlocked&&!entry,unlocked);
     });
@@ -1145,18 +1195,18 @@ export class AtelierGame extends Component {
       }
       return;
     }
-    if(old?.id!==id)this.contestUndo=[];
+    if(old?.id!==id){this.contestUndo=[];this.contestGhost=false;}
     this.save=next;this.persist();this.navigate('contestCraft');
   }
   private contestRules() {
-    this.info('街坊评审 · 100 分制','主题色：达到 6 颗得 45 分。\n辅助色：达到 3 颗得 20 分。\n主题吊坠：10 分。\n\n相对珠槽呼应：共 25 分。\n1 与 7、2 与 8，依次到 6 与 12；\n每对同色，增加一份呼应。\n\n90 分金奖，75 分银奖，60 分铜奖；\n其余作品也会获得参与纪念。');
+    this.info('街坊评审 · 100 分制','主题色：6颗得30分，8颗得45分。\n辅助色：3颗得20分。主题吊坠：10分。\n相对珠槽呼应：共25分。\n1与7、2与8，依次到6与12；每对同色加分。\n90分金奖、75分银奖、60分铜奖。\n金奖限定纪念挂饰会陈列在小店。\n已提交作品保留原评审成绩。');
   }
   private contestSample() {
     const event=COMPETITIONS.find(e=>e.id===this.contestEntry?.id);if(!event)return;
     const palette=competitionPalette(event.id)!;
     this.dialog('contest-sample','一点配色灵感');this.bracelet(palette,360,500,145,this.overlay);
     this.text('先从主题色与辅助色开始，\n再调整排列，寻找相对珠槽的呼应。\n这只是起点，也可以做自己的设计。',105,715,510,130,26,INK,this.overlay,true);
-    this.button('以此为起点排珠',135,918,450,62,()=>{this.remember();this.workingDraft=palette.slice();this.workingCharm=event.charm;this.slot=-1;this.persist();this.closeModal();this.render();},this.overlay,true);
+    this.button(this.contestGhost?'隐藏参考虚影':'显示参考虚影',135,918,450,62,()=>{this.contestGhost=!this.contestGhost;this.closeModal();this.render();},this.overlay,true);
   }
   private contestConfirm() {
     const draft=this.contestEntry,event=COMPETITIONS.find(e=>e.id===draft?.id);
@@ -1182,7 +1232,7 @@ export class AtelierGame extends Component {
     this.text('总分 '+entry.score+' / 100',105,706,510,44,29,INK,this.overlay,true);
     this.text(`主题色 ${entry.theme}/45 · 辅助色 ${entry.accent}/20\n吊坠 ${entry.detail}/10 · 珠槽呼应 ${entry.echo}/25`,105,759,510,82,24,MUTED,this.overlay,true);
     this.text(entry.score>=90?'“配色与细节都很完整，愿你继续做喜欢的作品。”':entry.score>=60?'“我们看见你的心意了，下次试试让相对珠子呼应。”':'“谢谢你把第一步交给我们，继续自由尝试吧。”',105,846,510,70,24,SAGE,this.overlay,true);
-    this.text('本场奖励 '+entry.reward+' 金币 · 已入账',105,921,510,32,22,GOLD,this.overlay,true);
+    this.text('本场奖励 '+entry.reward+' 金币 · 已入账'+(entry.score>=90?' · 限定挂饰已陈列':''),105,921,510,32,22,GOLD,this.overlay,true);
     this.button('收好这份纪念',135,970,450,56,()=>this.closeModal(),this.overlay,true);
   }
   private confirmDelivery() {
@@ -1418,6 +1468,7 @@ export class AtelierGame extends Component {
   }
   private match() {
     const s=this.session;if(!s){this.screen='home';this.home();return;}
+    if(s.level===1&&s.moves===rules.levelConfig(1).moves)this.hint=rules.findMove(s.board)||[];
     this.text(`第 ${s.level} 关 · ${s.title}`,38,105,644,46,30,INK,this.page,true);
     this.text('通关 '+rules.gatherRewardRange(s).min+'～'+rules.gatherRewardRange(s).max+' 颗 · 未过关保留六成',38,155,644,37,21,MUTED,this.page,true);
     this.rect('Moves shadow',40,206,112,107,'#cfb98e',this.page,20);
@@ -1431,7 +1482,7 @@ export class AtelierGame extends Component {
         const columns=goals.length>4?3:2,w=510/columns,x=167+(i%columns)*w,y=198+Math.floor(i/columns)*56;
         this.rect('Goal '+i,x,y,w-10,51,'#fffaf0',this.page,12,'#d6c6a5');
         if(g.kind==='color')this.image(this.materialArt(this.boardType(g.type)),x+5,y+7,34,34);
-        else this.text(g.kind==='paper'?'▧':'⌘',x+5,y+4,34,39,25,GOLD,this.page,true);
+        else if(g.kind==='total')this.text('✦',x+5,y+4,34,39,25,GOLD,this.page,true);else this.obstacleArt(g.kind,x+5,y+6,34,this.page);
         this.text(g.label,x+42,y+4,w-116,41,18,MUTED);
         this.goalLabels.push(this.text(`${Math.min(g.current,g.target)}/${g.target}`,x+w-73,y+4,60,41,21,g.current>=g.target?SAGE:INK,this.page,true));
         return;
@@ -1439,7 +1490,7 @@ export class AtelierGame extends Component {
       const x=167+i*width;
       this.rect('Goal '+i,x,198,width-10,107,'#fffaf0',this.page,17,'#d6c6a5');
       if(g.kind==='color')this.image(this.materialArt(this.boardType(g.type)),x+12,209,43,43);
-      else this.text(g.kind==='paper'?'▧':g.kind==='thread'?'⌘':'✦',x+10,207,47,45,31,GOLD,this.page,true);
+      else if(g.kind==='total')this.text('✦',x+10,207,47,45,31,GOLD,this.page,true);else this.obstacleArt(g.kind,x+10,207,47,this.page);
       this.text(g.label,x+60,209,width-78,39,20,MUTED);
       this.goalLabels.push(this.text(`${Math.min(g.current,g.target)} / ${g.target}`,x+8,252,width-26,44,28,g.current>=g.target?SAGE:INK,this.page,true));
     });
@@ -1451,19 +1502,21 @@ export class AtelierGame extends Component {
       this.accessibleButton(`${this.hint.includes(i)?'提示格 ':''}第${Math.floor(i/8)+1}行第${i%8+1}列 ${MATERIALS[this.boardType(type)].name}${special?' '+(special==='burst'?'花束珠':'丝线珠'):''}${obstacle?' '+(obstacle==='paper'?'纸袋':'线结'):''}`,()=>this.boardClick(i));
     });
     this.drawObstacles(s.obstacles);
-    s.collected.forEach((count: number,i: number)=>{this.image(this.materialArt(this.boardType(i)),44+i*109,991,43,43);this.text('消除\n'+count,88+i*109,988,53,51,17);});
+    s.collected.forEach((count: number,i: number)=>{this.image(this.materialArt(this.boardType(i)),44+i*109,991,43,43);this.text(String(count),88+i*109,989,53,49,25,INK,this.page,true);});
     ['hammer','bloom','shuffle','hint'].forEach((id,i)=>{
       const names=['小木槌','花开十字','重新排珠','灵感提示'];
       this.button(names[i]+(id==='hint'?'':` ${s.tools[id]}`),38+i*165,1063,149,64,()=>this.selectTool(id),this.page,this.tool===id,id==='hint'||s.tools[id]>0);
     });
     this.text(this.tool?this.tool==='hammer'?'点一颗珠子，使用小木槌':'点一颗珠子，收集整行整列':s.tip,38,1146,644,53,22,MUTED,this.page,true);
-    this.button('暂停',280,1212,160,46,()=>this.pauseMatch());
   }
   private makeBoardBead(i:number,type:number,special='',row?:number) {
     const p=this.boardPos(i,false),active=this.selected===i||this.hint.includes(i);
     const n=this.rect('Cell '+i,p.x,row===undefined?-p.y:BOARD_Y+row*CELL,72,72,active?'#f5dfa5':'#fff7e5',this.page,14,active?GOLD:'#cdb991');
     this.ellipse('Bead grounding',38,56,23,7,'#8e75422b',n);
     this.image(this.materialArt(this.boardType(type)),3,1,66,66,n);
+    const markings=['●','◆','▲','✦','■','♥'];
+    this.rect('Material marker',3,3,21,23,'#fff9e7e8',n,6);this.text(markings[type],3,3,21,23,17,['#997440','#9b6b92','#42859b','#497d57','#9a6743','#a26576'][type],n,true);
+    if(active){const g=n.getComponent(Graphics)!;g.strokeColor=color(GOLD);g.lineWidth=3;g.roundRect(3,-69,66,66,12);g.stroke();}
     if(special)this.drawSpecial(n,special);
     return n;
   }
@@ -1488,18 +1541,23 @@ export class AtelierGame extends Component {
     this.obstacleNodes.forEach(n=>{if(n?.isValid)n.destroy();});this.obstacleNodes=[];
     obstacles.forEach((kind,i)=>{
       if(!kind)return;
-      const p=this.boardPos(i),n=this.box('Obstacle '+i,p.x,-p.y,72,72),g=n.addComponent(Graphics);
+      const p=this.boardPos(i),n=this.obstacleArt(kind,p.x,-p.y,72,this.page);n.name='Obstacle '+i;
+      // Obstacles decorate a fixed board cell; gestures pass through to its bead.
+      this.obstacleNodes[i]=n;
+    });
+  }
+  private obstacleArt(kind:string,x:number,y:number,size:number,parent:Node) {
+    const n=this.box('Obstacle illustration '+kind,x,y,size,size,parent),g=n.addComponent(Graphics),scale=size/72;
+    n.getComponent(UITransform)!.setContentSize(72,72);n.setScale(scale,scale,1);
       if(kind==='paper'){
-        g.fillColor=color('#d9bd86ba');g.roundRect(5,-65,62,58,8);g.fill();
+        g.fillColor=color('#d9bd86');g.roundRect(5,-65,62,58,8);g.fill();
         g.strokeColor=color('#a3804e');g.lineWidth=2;g.roundRect(5,-65,62,58,8);g.stroke();
         g.moveTo(6,-21);g.lineTo(66,-21);g.moveTo(27,-21);g.bezierCurveTo(18,-7,38,-5,36,-20);g.bezierCurveTo(45,-4,57,-15,36,-21);g.stroke();
       }else{
         g.strokeColor=color('#a98456');g.lineWidth=4;g.moveTo(4,-15);g.bezierCurveTo(19,-63,53,-10,68,-57);g.moveTo(4,-57);g.bezierCurveTo(25,-7,50,-65,68,-15);g.stroke();
         g.strokeColor=color('#f9e4bd');g.lineWidth=1.5;g.ellipse(36,-36,10,7);g.stroke();
       }
-      // Obstacles decorate a fixed board cell; gestures pass through to its bead.
-      this.obstacleNodes[i]=n;
-    });
+    return n;
   }
   private bindBoard(n: Node,i: number) {
     let start: Vec3|null=null,didSwipe=false;
@@ -1652,17 +1710,18 @@ export class AtelierGame extends Component {
     const reward=rules.gatheredMaterials(this.session),types=reward.flatMap((n:number,i:number)=>n?[i]:[]);
     this.text('本关获得 '+types.length+' 种珠材，共 '+rules.total(reward)+' 颗 · 已保存\n累计消除 '+rules.total(this.session.collected)+' 个，回工坊自由搭配。',100,413,520,85,25,INK,this.overlay,true);
     types.forEach((type:number,i:number)=>{const columns=types.length===3?3:2,x=(columns===3?137:213)+(i%columns)*164,y=525+Math.floor(i/columns)*137;this.rect('Reward '+type,x-8,y-4,126,120,'#fff9ed',this.overlay,18,'#dfcfb1');this.image(this.materialArt(this.boardType(type)),x+10,y,80,80,this.overlay);this.text('+'+reward[type],x,y+80,100,36,25,SAGE,this.overlay,true);});
-    this.button(won?'收好珠材 · 回工坊':'带着珠材回制作',130,865,460,70,()=>won?this.claim():this.leaveGather(),this.overlay,true);
+    if(!won){const unfinished=rules.goalProgress(this.session).filter(g=>g.current<g.target).map(g=>g.label+' '+g.current+'/'+g.target).join(' · ');this.text(unfinished+'\n先处理目标格，试试特殊珠与道具。',100,798,520,60,20,MUTED,this.overlay,true);}
+    this.button(won?'去串手串':'带着珠材回制作',130,865,460,70,()=>won?this.claim():this.leaveGather(),this.overlay,true);
     if(!won)this.button('重新采珠 · 1 体力',130,958,460,56,()=>this.startMatch(),this.overlay);
   }
   private bankGather() {
     if(!this.session)return;
     const next=rules.bankEarlyCollection(this.save,this.session);this.save=next.save;this.session=next.session;this.persist();
   }
-  private leaveGather() {this.bankGather();this.session=null;this.navigate('craft');}
+  private leaveGather() {this.bankGather();this.session=null;this.save=rules.recordFirstStep(this.save,'craft');this.persist();this.navigate('craft');}
   private claim() {
     if(this.session?.status!=='won'||this.session.claimed)return;
-    this.bankGather();this.session.claimed=true;this.save.level++;this.persist();this.session=null;this.navigate('craft');this.toast('珠材已收好，自由做一条喜欢的手串吧。');
+    this.bankGather();this.session.claimed=true;this.save.level++;this.save=rules.recordFirstStep(this.save,'craft');this.persist();this.session=null;this.navigate('craft');this.toast('珠材已收好，自由做一条喜欢的手串吧。');
   }
 
   private pauseMatch() {
@@ -1791,6 +1850,11 @@ export class AtelierGame extends Component {
       this.ellipse('Chair embroidered cushion',171,553,24,11,'#eee4cc',this.page,'#c7ab78');
       this.image('charm-daisy',160,541,22,22);
     }
+    this.save.competitions.entries.filter(e=>e.score>=90).forEach((entry,i)=>{
+      const event=COMPETITIONS.find(e=>e.id===entry.id)!;
+      this.ellipse('Gold keepsake mount '+entry.id,475+i*44,354+i*18,20,24,'#f4e4b4',this.page,'#ae8544');
+      this.image('charm-'+event.charm,459+i*44,335+i*18,32,37);
+    });
     const spotPositions:Record<string,number[]>={
       'box-left':[148,585],'box-right':[531,585],'papers':[371,630],
       'glass-1':[195,391],'glass-2':[259,366],'glass-3':[195,436],'glass-4':[259,411],
@@ -1800,7 +1864,7 @@ export class AtelierGame extends Component {
       if(this.save.renovation.cleared.includes(spot.id))return;
       const [cx,cy]=spotPositions[spot.id],x=cx-31,y=cy-24;
       const n=this.rect('Clean '+spot.id,x,y,62,48,spot.kind==='clutter'?'#b89b6d':'#8d826797',this.page,spot.kind==='clutter'?4:23);
-      this.text(spot.kind==='clutter'?'▧':'✦',0,0,62,48,28,'#f8e7bb',n,true);
+      this.text(spot.kind==='clutter'?'收':'擦',0,0,62,48,28,'#f8e7bb',n,true);
       let elapsed=0,done=false;
       const clean=()=>{if(done||this.modal)return;done=true;const next=rules.cleanSpot(this.save,spot.id);if(next){this.save=next;this.persist();this.play('land');n.active=false;this.scheduleOnce(()=>this.render(),0);}};
       const scrub=()=>{elapsed+=.1;if(elapsed>=.55){this.unschedule(scrub);clean();}};
@@ -2063,13 +2127,10 @@ export class AtelierGame extends Component {
   private storyMap() {
     const route=storyRoute(this.save),current=route.stops.find(s=>s.id===route.currentId)!;
     this.image('pencil-route-frame',0,0,720,1280);
-    this.image('pencil-route-banner',70,55,568,126);
-    this.text('珠光小店 · 手作时光',157,76,408,60,35,'#69452e',this.page,true);
-    this.button('设置',20,18,68,56,()=>this.settings());
-    this.button('返回小店',101,22,136,46,()=>this.navigate('home'));
-    this.button('珠材 '+rules.total(this.save.inventory),455,20,117,46,()=>this.inventory());
-    this.rect('Route coins',578,20,118,46,'#fff8e8',this.page,18,'#b4976b');
-    this.text('金币 '+this.save.coins,582,22,110,42,20,INK,this.page,true);
+    this.chrome();
+    this.image('pencil-route-banner',70,85,568,100);
+    this.text('我们的故事',157,99,408,60,35,INK,this.page,true);
+    this.button('回忆手账',542,114,140,44,()=>this.navigate('journal'));
     const curves=[[[343,271],[449,244],[485,282],[520,360]],[[410,480],[361,487],[328,498],[313,543]],[[256,750],[271,801],[344,826],[411,827]],[[467,922],[430,958],[371,967],[337,970]]];
     const chain=this.box('Pearl story path',0,0,720,1280).addComponent(Graphics);
     curves.forEach((points,index)=>{
@@ -2101,13 +2162,8 @@ export class AtelierGame extends Component {
       this.accessibleButton((stop.unlocked?'查看章节 · ':'解锁条件 · ')+stop.name,open);
       if(active)this.button('制作手串',x+21,y+h+30,w-42,42,()=>this.navigate('craft'),this.page,true);
     });
-    this.button('背包',70,1114,106,69,()=>this.inventory());
-    this.button(route.nextStoryId?'继续故事':route.read===route.total?'继续营业':'制作手串 · 解锁故事',195,1112,330,78,()=>route.nextStoryId?this.startStory(STORIES.findIndex(s=>s.id===route.nextStoryId)):this.navigate(route.read===route.total?'home':'craft'),this.page,true);
-    this.button('图鉴',545,1114,106,69,()=>this.navigate('album'));
-    this.text('当前章节 · '+current.name+'  '+route.read+'/'+route.total,133,1197,454,34,24,INK,this.page,true);
-    this.rect('Story reading track',199,1234,322,13,'#d8c9ae',this.page,6,'#a78d67');
-    if(route.read)this.rect('Stories actually read',200,1235,320*route.read/route.total,11,SAGE,this.page,5);
-    this.button('回忆手账',278,18,146,46,()=>this.navigate('journal'));
+    this.text('当前章节 · '+current.name+' · 已读 '+route.read+'/'+route.total,70,1036,580,38,22,INK,this.page,true);
+    this.button(route.nextStoryId?'继续故事':route.read===route.total?'继续营业':'制作手串 · 解锁故事',130,1083,460,48,()=>route.nextStoryId?this.startStory(STORIES.findIndex(s=>s.id===route.nextStoryId)):this.navigate(route.read===route.total?'home':'craft'),this.page,true);
   }
   private routeChapter(id:string) {
     const stop=storyRoute(this.save).stops.find(s=>s.id===id);if(!stop?.unlocked)return;
@@ -2334,6 +2390,7 @@ export class AtelierGame extends Component {
     // Only the current speaker has a portrait. Narration and offscreen voices keep the empty scene.
     if(portrait)this.image(portrait,110,400,500,top-380,stage);
     this.text(title,218,240,284,66,25,PAPER,stage,true);
+    this.button('暂别',24,95,88,44,()=>{this.closeModal();this.render();},stage);
     this.image('icon-book',568,49,36,39,stage);
     this.button('记录',548,95,76,44,()=>this.dialogueRecord(title,records,resume),stage);
     const icon=this.box('Skip icon',650,53,40,34,stage).addComponent(Graphics);

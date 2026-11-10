@@ -51,7 +51,7 @@ test('reference designs earn silver, rearranged designs can earn gold, and histo
  for(const e of COMPETITIONS){
   const reference=evaluateCompetition(e.id,competitionPalette(e.id),e.charm);
   assert.equal(reference.score,83);assert.equal(reference.echo,8);assert.equal(reference.medal,'银色巧思奖');
-  const goldBeads=Array.from({length:12},(_,i)=>i%2?e.accent:e.main),gold=evaluateCompetition(e.id,goldBeads,e.charm);
+  const goldBeads=Array.from({length:12},(_,i)=>i%6<4?e.main:e.accent),gold=evaluateCompetition(e.id,goldBeads,e.charm);
   assert.equal(gold.score,100);assert.equal(gold.reward,e.reward);
   const base={...freshSave(),completed:ORDERS.map(o=>o.id),competitions:{draft:null,entries:[{id:e.id,beads:goldBeads,charm:e.charm,...gold,reward:e.reward/2}]}};
   const restored=normalizeSave(base);assert.equal(restored.competitions.entries[0].reward,e.reward/2);assert.equal(restored.coins,base.coins);

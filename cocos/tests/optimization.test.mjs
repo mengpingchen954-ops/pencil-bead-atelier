@@ -46,3 +46,33 @@ test('craft returns to its actual source and a one-page collection has no paging
  }
  const {g,actions}=fixture();g.navigate('album');assert.equal(actions.has('← 前页'),false);assert.equal(actions.has('后页 →'),false);
 });
+test('target colors get one and a half their original weight and six opening cells without free matches',()=>{
+ const {MATERIAL_DROPS}=load(root+'/assets/scripts/materials.ts');
+ for(let level=1;level<=30;level++)for(let seed=1;seed<=100;seed++){
+  const session=rules.newSession(seed,level),targets=session.objectives.filter(g=>g.kind==='color').map(g=>g.type);
+  for(let type=0;type<6;type++)assert.equal(session.dropPool.filter(t=>t===type).length,MATERIAL_DROPS.filter(t=>t===type).length*(targets.length?targets.includes(type)?3:2:1));
+  assert.equal(rules.matches(session.board).length,0);assert.ok(rules.findMove(session.board));
+  for(const type of targets)assert.ok(session.board.filter(t=>t===type).length>=6);
+ }
+ const first=rules.levelConfig(4),second=rules.levelConfig(19);assert.notDeepEqual(first.obstacles,second.obstacles);assert.match(second.title,/第2季/);
+});
+test('new contest rubric and ghost reference preserve earlier paid results and actual drafts',()=>{
+ const comp=load(root+'/assets/scripts/competition.ts');
+ const oldBeads=Array.from({length:12},(_,i)=>i%2?5:3),legacy=comp.evaluateCompetition('spring',oldBeads,'daisy',true);
+ assert.equal(legacy.score,100);assert.equal(comp.evaluateCompetition('spring',oldBeads,'daisy').score,85);
+ const save={...rules.freshSave(),completed:['daisy'],competitions:{draft:null,entries:[{id:'spring',beads:oldBeads,charm:'daisy',...legacy,reward:60}]}};
+ const restored=rules.normalizeSave(save);assert.equal(restored.competitions.entries[0].score,100);assert.equal(restored.competitions.entries[0].reward,60);assert.equal(restored.coins,save.coins);
+ const {g,actions}=fixture();g.save.completed=['daisy'];g.enterCompetition('spring');const before=JSON.stringify(g.save);
+ g.contestSample();actions.get('显示参考虚影')();assert.equal(g.contestGhost,true);assert.equal(JSON.stringify(g.save),before);assert.equal(g.workingUndo.length,0);
+ assert.ok(g.page.getComponentsInChildren(Label).some(l=>l.string.includes('预计')));
+});
+test('match exposes only pause and music in the header and returning after gathering keeps the craft origin',()=>{
+ const {g,actions}=fixture();g.navigate('craft');g.startMatch();
+ const top=g.page.children.filter(n=>n.name.startsWith('Button:')&&-n.position.y<85).map(n=>n.name);
+ assert.deepEqual(top,['Button: 暂停','Button: ♪']);assert.equal(g.craftFrom,'home');
+ g.session.status='lost';g.session.moves=0;g.session.collected=[10,10,10,10,10,10];g.leaveGather();assert.equal(g.craftFrom,'home');assert.ok(g.save.firstSteps.craft);actions.get('返回小店')();assert.equal(g.screen,'home');
+});
+test('story uses the five shared destinations and cleanup counts for thirty percent',()=>{
+ const {g}=fixture();g.navigate('storyMap');assert.ok(g.page.children.find(n=>n.name==='Navigation'));
+ let save=rules.freshSave();const {CLEAN_SPOTS}=load(root+'/assets/scripts/content.ts');for(const spot of CLEAN_SPOTS)save=rules.cleanSpot(save,spot.id);assert.equal(rules.shopProgress(save).percent,30);
+});

@@ -18,7 +18,7 @@ async function fixture(width,height,reduced=false){
  const cell=async i=>tap(48+i%8*78+36,340+Math.floor(i/8)*78+36);
  const button=async name=>{
   const p=await page.evaluate(async name=>{const cc=await System.import('cc'),g=cc.director.getScene().getChildByName('AtelierGame').getComponent('AtelierGame');
-   const find=n=>{if(!n.active)return null;if(n.name==='Button: '+name)return n;for(const child of n.children){const found=find(child);if(found)return found;}return null;};
+   const find=n=>{if(!n.active)return null;if(n.name==='Button: '+name||(name==='返回售珠'&&/^Button: 返回(小店|图鉴|故事|人物|手账|装修)$/.test(n.name)))return n;for(const child of n.children){const found=find(child);if(found)return found;}return null;};
    const n=find(g.modal?g.overlay:g.page);if(!n)throw Error('Missing button '+name);const t=n.getComponent(cc.UITransform),p=t.convertToWorldSpaceAR(new cc.Vec3(t.contentSize.width/2,-t.contentSize.height/2));return {x:p.x+360,y:640-p.y};
   },name);await tap(p.x,p.y);await page.waitForTimeout(40);
  };

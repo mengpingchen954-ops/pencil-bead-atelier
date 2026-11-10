@@ -9,11 +9,12 @@ export const COMPETITIONS = [
 export const CONTEST_CHARMS = Object.keys(CHARMS);
 export function freshCompetitions() { return { draft:null, entries:[] }; }
 const validBeads = (beads:any, partial=false) => Array.isArray(beads)&&beads.length===12&&Array.from(beads).every((n:any)=>(partial&&n===null)||(Number.isInteger(n)&&n>=0&&n<BEADS.length));
-export function evaluateCompetition(id:string, beads:any, charm:string) {
+export function evaluateCompetition(id:string, beads:any, charm:string,legacy=false) {
   const event=COMPETITIONS.find(e=>e.id===id);
   if(!event||!validBeads(beads)||!CONTEST_CHARMS.includes(charm))return null;
   const count=(type:number)=>beads.filter((n:number)=>n===type).length;
-  const theme=Math.round(Math.min(1,count(event.main)/6)*45);
+  const main=count(event.main);
+  const theme=legacy?Math.round(Math.min(1,main/6)*45):Math.round(main<=6?main*5:30+Math.min(2,main-6)*7.5);
   const accent=Math.round(Math.min(1,count(event.accent)/3)*20);
   const detail=charm===event.charm?10:0;
   const echo=Math.round(beads.slice(0,6).filter((n:number,i:number)=>n===beads[i+6]).length/6*25);
@@ -26,9 +27,9 @@ export function normalizeCompetitions(raw:any, completed:string[]) {
   const entries:any[]=[];
   for(const event of COMPETITIONS) {
     const entry=Array.isArray(raw?.entries)?raw.entries.find((x:any)=>x?.id===event.id):null;
-    const result=entry&&completed.length>=event.unlock?evaluateCompetition(event.id,entry.beads,entry.charm):null;
+    const result=entry&&completed.length>=event.unlock?evaluateCompetition(event.id,entry.beads,entry.charm,entry.scoringVersion!==2):null;
     // Completed contests retain the old paid amount; upgrades never pay them again.
-    if(result)entries.push({id:event.id,beads:entry.beads.slice(),beadSizes:normalizeBeadSizes(entry.beads,entry.beadSizes),charm:entry.charm,...result,reward:entry.reward===result.reward/2?entry.reward:result.reward});
+    if(result)entries.push({id:event.id,beads:entry.beads.slice(),beadSizes:normalizeBeadSizes(entry.beads,entry.beadSizes),charm:entry.charm,...result,reward:entry.reward===result.reward/2?entry.reward:result.reward,...(entry.scoringVersion===2?{scoringVersion:2}:{})});
   }
   const event=COMPETITIONS.find(e=>e.id===raw?.draft?.id);
   const draft=event&&completed.length>=event.unlock&&!entries.some(e=>e.id===event.id)&&validBeads(raw.draft.beads,true)&&CONTEST_CHARMS.includes(raw.draft.charm)
@@ -49,7 +50,7 @@ export function submitCompetition(save:any) {
   const result=evaluateCompetition(event.id,draft.beads,draft.charm);
   if(!result)return null;
   return {...save,coins:save.coins+result.reward,competitions:{draft:null,
-    entries:[...save.competitions.entries,{id:event.id,beads:draft.beads.slice(),beadSizes:normalizeBeadSizes(draft.beads,draft.beadSizes),charm:draft.charm,...result}]}};
+    entries:[...save.competitions.entries,{id:event.id,beads:draft.beads.slice(),beadSizes:normalizeBeadSizes(draft.beads,draft.beadSizes),charm:draft.charm,...result,scoringVersion:2}]}};
 }
 export function competitionPalette(id:string) {
   const event=COMPETITIONS.find(e=>e.id===id);

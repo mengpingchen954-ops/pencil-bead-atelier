@@ -285,7 +285,7 @@ test('competition board connects native craft, isolated undo, one-time awards an
   const commission=game.save.draft.slice(),stock=game.save.inventory.slice(),coins=game.save.coins;
   game.screen='home';game.render();actions.get('参加比赛')();assert.equal(game.screen,'contest');
   actions.get('报名参加')();assert.equal(game.screen,'contestCraft');
-  actions.get('参考配色')();actions.get('以此为起点排珠')();
+  actions.get('参考配色')();actions.get('显示参考虚影')();assert.ok(game.workingDraft.every(t=>t===null));game.workingDraft=load(root+'/assets/scripts/competition.ts').competitionPalette('spring');game.render();
   actions.get('放入珍珠')();actions.get('第1槽：翡翠')();actions.get('替换')();
   assert.equal(game.save.competitions.draft.beads[0],0);
   actions.get('撤销')();assert.equal(game.save.competitions.draft.beads[0],3);
@@ -358,9 +358,9 @@ test('DIY tools expand without changing progress and retain undo, preview and ga
  const {game,actions}=pausedGame('home');game.navigate('craft');
  const before=JSON.stringify(game.save),tools=['撤销','移除','替换','预览','参考配色','采珠'];
  const native=()=>game.page.children.filter(n=>n.name.startsWith('Button: ')).map(n=>n.name.slice(8));
- assert.ok(tools.every(name=>!native().includes(name)&&actions.has(name)));
+ assert.ok(tools.slice(2).every(name=>!native().includes(name)&&actions.has(name)));assert.ok(native().includes('撤销'));assert.ok(native().includes('移除'));
  actions.get('工具')();assert.ok(tools.every(name=>native().includes(name)));assert.equal(JSON.stringify(game.save),before);
- actions.get('收起工具')();assert.ok(tools.every(name=>!native().includes(name)));assert.equal(JSON.stringify(game.save),before);
+ actions.get('收起工具')();assert.ok(tools.slice(2).every(name=>!native().includes(name)));assert.equal(JSON.stringify(game.save),before);
  actions.get('工具')();actions.get('采珠')();assert.equal(game.modal,'intro');assert.equal(game.craftToolsOpen,false);assert.equal(JSON.stringify(game.save),before);
 });
 
@@ -375,7 +375,7 @@ test('native goal HUD supports four objectives and claiming a win grants the dis
   assert.ok(game.obstacleNodes.filter(Boolean).length>0);
   game.session.status='won';game.session.collected=[40,20,10,20,0,10];
   const before=game.save.inventory.slice(),reward=rules.sessionRewards(game.session,game.save),types=game.session.materialTypes.slice();
-  game.result();actions.get('收好珠材 · 回工坊')();
+  game.result();actions.get('去串手串')();
   assert.equal(game.screen,'craft');assert.equal(game.save.level,16);
   assert.deepEqual(game.save.inventory,before.map((n,i)=>n+(reward[types.indexOf(i)]||0)));
   game.claim();assert.deepEqual(game.save.inventory,before.map((n,i)=>n+(reward[types.indexOf(i)]||0)));

@@ -25,6 +25,7 @@ export const OPENING_LEVELS = [
 export function levelConfig(level = 1, order = null) {
   const n = Math.max(1, Number.isFinite(level) ? Math.floor(level) : 1);
   const source = OPENING_LEVELS[(n - 1) % OPENING_LEVELS.length];
+  const season=Math.floor((n-1)/15)+1;
   const main = Number.isInteger(order?.main) ? order.main : 0;
   const accent = Number.isInteger(order?.accent) ? order.accent : 3;
   const objectives = [];
@@ -34,8 +35,9 @@ export function levelConfig(level = 1, order = null) {
   if (source.paper.length) objectives.push({ kind: 'paper', target: source.paper.length });
   if (source.thread.length) objectives.push({ kind: 'thread', target: source.thread.length });
   const obstacles = Array(64).fill('');
-  source.paper.forEach(i => obstacles[i] = 'paper');
-  source.thread.forEach(i => obstacles[i] = 'thread');
-  return { level: n, title: source.title, moves: source.moves, target: source.total,
+  const position=i=>(i+8*((season-1)%8))%64;
+  source.paper.forEach(i => obstacles[position(i)] = 'paper');
+  source.thread.forEach(i => obstacles[position(i)] = 'thread');
+  return { level: n, title: (season>1?'第'+season+'季 · ':'')+source.title, moves: source.moves, target: source.total,
     objectives, obstacles, tip: source.tip, chapter: Math.floor((n - 1) / 15) + 1 };
 }

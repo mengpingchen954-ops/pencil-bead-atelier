@@ -43,7 +43,7 @@ test('15 authored stages introduce color, paper and thread goals progressively w
       assert.deepEqual(result.session.obstacles, result.frames.at(-1).obstaclesAfter);
     }
   }
-  assert.equal(levelConfig(16).chapter, 2); assert.equal(levelConfig(16).title, levelConfig(1).title);
+  assert.equal(levelConfig(16).chapter, 2); assert.equal(levelConfig(16).title, '第2季 · '+levelConfig(1).title);
 });
 
 test('four in a line retains a directional special and five retains a burst, without counting the survivor as collected', () => {

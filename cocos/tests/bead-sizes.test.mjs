@@ -21,7 +21,7 @@ test('native ring selection and slider resize only that bead live, with one undo
  const {game,actions}=fixture(),stock=plain(game.save.inventory),before=widths(game);let writes=0;game.persist=()=>writes++;
  const touch=(x,y=1077)=>({getUILocation:()=>({x,y:1280-y})});
  const meter=()=>game.page.children.find(n=>n.name==='Single bead size slider');
- meter().events.start(touch(494));meter().events.end(touch(494));assert.deepEqual(widths(game),before);assert.equal(game.undo.length,0);
+ assert.equal(meter(),undefined);assert.deepEqual(widths(game),before);assert.equal(game.undo.length,0);
  const p=game.slotPos(1),bead=game.slotNodes[1];bead.events.start(touch(p.x,p.y));bead.events.end(touch(p.x,p.y));assert.equal(game.slot,1);
  assert.ok(game.slotNodes[1].children.some(n=>n.name==='Selected groove'));
  const slider=meter();slider.events.start(touch(205));slider.events.move(touch(398));
@@ -41,7 +41,7 @@ test('cancelled size drag restores the bead and unchanged slider taps do not add
 
 test('size controls affect only the selected instance, including equal materials, and undo restores it',()=>{
  const {game,actions}=fixture(),before=widths(game),stock=plain(game.save.inventory);
- actions.get('+')();assert.deepEqual(widths(game),before);assert.equal(game.undo.length,0);
+ assert.equal(actions.has('+'),false);assert.deepEqual(widths(game),before);assert.equal(game.undo.length,0);
  actions.get('第1槽：珍珠')();actions.get('+')();
  assert.deepEqual(plain(game.workingSizes.slice(0,3)),[9,8,8]);
  const after=widths(game);assert.ok(after[0]>before[0]);assert.deepEqual(after.slice(1),before.slice(1));

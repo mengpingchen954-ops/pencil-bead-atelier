@@ -32,6 +32,11 @@ async function fixture(save,width=390){
  await page.goto(base,{waitUntil:'networkidle'});await ready();
  return {context,page,state,button,escape,ready};
 }
+async function tapNode(ui,name){
+ const p=await native(ui.page,"const walk=n=>{if(!n.active)return null;if(n.name===arg)return n;for(const c of n.children){const f=walk(c);if(f)return f;}return null;};const n=walk(g.modal?g.overlay:g.page);if(!n)throw Error('Missing '+arg);const t=n.getComponent(cc.UITransform),v=t.convertToWorldSpaceAR(new cc.Vec3(t.width/2,-t.height/2));return {x:v.x+360,y:640-v.y};",name);
+ const b=await ui.page.locator('#GameCanvas').boundingBox(),k=Math.min(b.width/720,b.height/1280),x=b.x+b.width/2+(p.x-360)*k,y=b.y+b.height/2+(p.y-640)*k;
+ if(ui.page.viewportSize().width===390)await ui.page.touchscreen.tap(x,y);else await ui.page.mouse.click(x,y);await ui.page.waitForTimeout(60);
+}
 async function native(page,fn,arg){return page.evaluate(async ({fn,arg})=>{const cc=await System.import('cc'),g=cc.director.getScene().getChildByName('AtelierGame').getComponent('AtelierGame');return Function('g','cc','arg',fn)(g,cc,arg);},{fn,arg});}
 try{
  for(const width of [390,1440]){
@@ -45,6 +50,18 @@ try{
   await ui.page.screenshot({path:dir+'/export-'+width+'.png'});await ui.button('×');
   await native(ui.page,"g.navigate('album')");assert.equal(await ui.page.getByRole('button',{name:'后页 →',exact:true}).count(),0);
   cases.push({width,compact,noDefaultLabel:true,sourceReturn:true});await ui.context.close();
+ }
+ for(const width of [390,1440]){
+  const ui=await fixture({...freshSave(),started:true,sound:false,reduced:true,completed:['daisy'],music:{enabled:false,track:'glimmer',volume:0}},width);
+  await ui.button('参加比赛');await ui.button('报名参加');await ui.page.getByRole('button',{name:'参考配色',exact:true}).dispatchEvent('click');await ui.button('显示参考虚影');
+  assert.ok((await ui.state()).save.competitions.draft.beads.every(t=>t===null));await ui.page.screenshot({path:dir+'/ghost-'+width+'.png'});
+  for(let i=0;i<12;i++){await tapNode(ui,'Slot '+i);await tapNode(ui,'Bead material '+(i<8?3:5));}
+  assert.equal((await ui.state()).save.competitions.draft.beads.filter(t=>t===3).length,8);await ui.page.screenshot({path:dir+'/predicted-'+width+'.png'});
+  await ui.button('提交参赛作品');await ui.button('提交评审');const won=await ui.state();assert.equal(won.save.competitions.entries[0].score,83);assert.equal(won.save.competitions.entries[0].scoringVersion,2);assert.equal(won.save.coins,164);await ui.page.screenshot({path:dir+'/silver-'+width+'.png'});
+  await ui.page.reload({waitUntil:'networkidle'});await ui.ready();assert.equal((await ui.state()).save.coins,164);await ui.context.close();
+  const game=await fixture({...freshSave(),started:true,sound:false,reduced:true,music:{enabled:false,track:'glimmer',volume:0}},width);
+  await game.button('消除采珠');const start=await game.page.getByRole('button',{name:/^开始采珠/}).textContent();await game.button(start);await game.page.screenshot({path:dir+'/first-match-'+width+'.png'});
+  assert.ok((await game.state()).session.board.length===64);await game.button('暂停');await game.button('继续游戏');assert.equal((await game.state()).modal,'');await game.context.close();
  }
  assert.deepEqual(errors,[]);fs.writeFileSync(dir+'/report.json',JSON.stringify({cases,errors},null,2));console.log('Optimization native controls and screenshots passed.');
 }finally{await browser.close();}

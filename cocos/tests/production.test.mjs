@@ -46,7 +46,7 @@ test('Creator production bundle preserves collection iteration and complete game
     assert.ok([0,7,8,6,9,10].includes(types[0]));assert.ok([19,16,15,18].includes(types[1]));
     assert.ok(Array.from(materials.MATERIAL_DROPS,slot=>types[slot]).filter(type=>dark.includes(type)).length<=4);
   }
-  for(const level of [1,5,6,12,13,100]){const session=model.newSession(19,level);assert.deepEqual(Array.from(session.materialTypes,t=>content.MATERIALS[t].category),[0,1,0,1,2,3]);assert.deepEqual(Array.from(session.dropPool),Array.from(materials.MATERIAL_DROPS));}
+  for(const level of [1,5,6,12,13,100]){const session=model.newSession(19,level);assert.deepEqual(Array.from(session.materialTypes,t=>content.MATERIALS[t].category),[0,1,0,1,2,3]);const targets=Array.from(session.objectives).filter(g=>g.kind==='color').map(g=>g.type);for(let t=0;t<6;t++)assert.equal(session.dropPool.filter(n=>n===t).length,materials.MATERIAL_DROPS.filter(n=>n===t).length*(targets.length?targets.includes(t)?3:2:1));}
   const trade=load([...definitions.keys()].find(n=>n.endsWith('/commerce.ts')));
   let customer={...model.freshSave(),started:true,inventory:Array(48).fill(6),gatheredStock:Array(48).fill(6),draft:Array(6).fill(0)};
   customer=trade.updateCustomers(customer,1000,()=>0);customer=trade.updateCustomers(customer,16000,()=>0);assert.equal(customer.customers.active.style,'jewelry');

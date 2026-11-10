@@ -11,10 +11,10 @@ test('occasional invitations open after the first, third and fifth commissions',
   assert.equal(beginCompetition(freshSave(),'unknown'),null);
 });
 test('judges use the published rubric, with gold, silver, bronze and participation awards',()=>{
-  const gold=evaluateCompetition('spring',Array.from({length:12},(_,i)=>i%2?5:3),'daisy');
+  const gold=evaluateCompetition('spring',Array.from({length:12},(_,i)=>i%6<4?3:5),'daisy');
   assert.deepEqual(gold,{score:100,theme:45,accent:20,detail:10,echo:25,medal:'金色灵感奖',reward:120});
   assert.equal(evaluateCompetition('spring',Array(12).fill(3),'daisy').medal,'银色巧思奖');
-  assert.equal(evaluateCompetition('spring',[3,3,3,3,3,3,5,5,5,0,0,0],'heart').medal,'铜色心意奖');
+  assert.equal(evaluateCompetition('spring',[3,3,3,3,3,3,5,5,5,0,0,0],'daisy').medal,'铜色心意奖');
   assert.equal(evaluateCompetition('spring',Array(12).fill(1),'heart').medal,'参与纪念奖');
   for(const beads of [Array(12),Array(12).fill(null),Array(11).fill(3),Array(12).fill(99),Array(12).fill(NaN)])assert.equal(evaluateCompetition('spring',beads,'daisy'),null);
   assert.equal(evaluateCompetition('spring',competitionPalette('spring'),'unknown'),null);

@@ -72,9 +72,9 @@ export function findMove(board, specials = [], obstacles = []) {
 function drawMaterial(random,dropPool) {
   return dropPool?dropPool[Math.floor(random()*dropPool.length)]:Math.floor(random()*6);
 }
-export function createBoard(seed = 1,dropPool=null) {
+export function createBoard(seed = 1,dropPool=null,minimumTypes=[]) {
   const random = rng(seed);
-  for (let attempt = 0; attempt < 100; attempt++) {
+  for (let attempt = 0; attempt < 1000; attempt++) {
     const board = [];
     for (let i = 0; i < 64; i++) {
       let t;
@@ -88,7 +88,7 @@ export function createBoard(seed = 1,dropPool=null) {
       );
       board.push(t);
     }
-    if (findMove(board)&&(!dropPool||new Set(board).size===6)) return board;
+    if (findMove(board)&&(!dropPool||new Set(board).size===6)&&minimumTypes.every(type=>board.filter(t=>t===type).length>=6)) return board;
   }
   throw new Error("Unable to create a playable board");
 }
@@ -96,10 +96,12 @@ export const targetForLevel = (level) => levelConfig(level).target;
 export function newSession(seed = 1, level = 1, order = null, save = null) {
   const config = levelConfig(level, order);
   const supply = save && order ? supplyGoals(save, order) : [];
-  const dropPool=order?null:[...MATERIAL_DROPS];
-  let board = createBoard(seed,dropPool);
+  const targets=(supply.length?supply:config.objectives).filter(g=>g.kind==='color').map(g=>g.type);
+  const basePool=order?[0,1,2,3,4,5]:MATERIAL_DROPS;
+  const dropPool=targets.length?[...basePool,...basePool,...basePool.filter(type=>targets.includes(type))]:order?null:[...MATERIAL_DROPS];
+  let board = createBoard(seed,dropPool,targets);
   if (supply.length) {
-    for (let attempt=0;attempt<64&&!findSupplyMove(board,supply);attempt++) board=createBoard(seed+attempt+1);
+    for (let attempt=0;attempt<64&&!findSupplyMove(board,supply);attempt++) board=createBoard(seed+attempt+1,dropPool,targets);
   }
   const early = level <= 3 && supply.length > 0;
   return {
@@ -612,7 +614,7 @@ export function shopProgress(save) {
   const furnished = Object.values(save.upgrades).reduce((sum, tier) => sum + tier, 0);
   const repaired = REPAIRS.filter((item) => save.renovation.repairs[item.id]).length;
   const tiers=FURNITURE.reduce((sum,item)=>sum+item.prices.length-1,0);
-  const percent = Math.round(((cleaned + furnished + repaired) / (CLEAN_SPOTS.length + tiers + REPAIRS.length)) * 100);
+  const percent = Math.round(cleaned/CLEAN_SPOTS.length*30+repaired/REPAIRS.length*30+furnished/tiers*40);
   return { cleaned, repaired, furnished, percent,
     stage: !isShopClean(save) ? "破败小店 · 等你打扫" : repaired === REPAIRS.length && furnished === tiers ? "焕然一新 · 我们的家" : "干净小店 · 一点点添置" };
 }
