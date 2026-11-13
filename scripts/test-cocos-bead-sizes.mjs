@@ -48,7 +48,7 @@ const slideSize=async(cancel=false)=>{
 };
 try {
  await button('自由 DIY');let s=await state();assert.equal(s.screen,'craft');assert.equal(s.save.draft.length,13);
- const before=await widths();await button('+');assert.deepEqual(await widths(),before);await page.waitForTimeout(2800);
+ const before=await widths();assert.equal(await page.getByRole('button',{name:'+',exact:true}).count(),0);assert.deepEqual(await widths(),before);await page.waitForTimeout(2800);
  await select(0);await tap(494,1077);assert.deepEqual((await state()).save.draftSizes.slice(0,3),[12,8,8]);await button('撤销');assert.deepEqual((await state()).save.draftSizes.slice(0,3),[8,8,8]);
  await select(1);await slideSize(true);assert.deepEqual((await state()).save.draftSizes.slice(0,3),[8,8,8]);
  await slideSize();assert.deepEqual((await state()).save.draftSizes.slice(0,3),[8,12,8]);await page.screenshot({path:dir+'/native-size-slider.png'});
@@ -65,9 +65,9 @@ try {
  await button('保存作品');s=await state();const work=s.save.commerce.works[0];assert.deepEqual(work.beadSizes.slice(0,3),[12,7,9]);const stock=s.save.inventory.slice();
  await button('上架橱窗 · 1');await button('确认上架');await page.reload({waitUntil:'networkidle'});await ready();assert.deepEqual((await state()).save.commerce.works[0].beadSizes,work.beadSizes);
  await ui.action('图鉴');await tap(207,409);assert.equal((await state()).modal,'free-work');await page.screenshot({path:dir+'/saved-work.png'});await button('再做一条');assert.deepEqual((await state()).save.draftSizes,work.beadSizes);assert.deepEqual((await state()).save.inventory,stock);
- await page.waitForFunction(()=>JSON.parse(window.render_game_to_text()).save.commerce.works[0].status==='sold',{},{timeout:30000});s=await state();assert.equal(s.save.coins,initial.coins);await button('返回售珠');await button('已售 1');await button('收钱 · 1');s=await state();assert.equal(s.save.coins,initial.coins+s.save.commerce.works[0].price);assert.deepEqual(s.save.commerce.works[0].beadSizes,work.beadSizes);
+ await page.waitForFunction(()=>JSON.parse(window.render_game_to_text()).save.commerce.works[0].status==='sold',{},{timeout:30000});s=await state();assert.equal(s.save.coins,initial.coins);await button('返回图鉴');await ui.action('售珠');await button('已售 1');await button('收钱 · 1');s=await state();assert.equal(s.save.coins,initial.coins+s.save.commerce.works[0].price);assert.deepEqual(s.save.commerce.works[0].beadSizes,work.beadSizes);
  report.sameMaterialIndependentSizes=true;report.nativeDragReplacementUndo=true;report.saveReloadGalleryRemake=true;report.salePaysOnce=true;report.widths=[360,390,1440];
  // Non-reduced animation ends at the selected instance's saved size.
- const motion=await fixture({...initial,reduced:false,draft:[0,...Array(11).fill(null)],draftSizes:[12,...Array(11).fill(8)]});await motion.button('自由 DIY');await motion.tap(360,239);const m=(await motion.state()).crafting.materials[3];await motion.tap(m.x,m.y);await motion.page.waitForTimeout(1200);assert.equal((await motion.state()).save.draftSizes[0],12);assert.ok((await motion.state()).crafting.flights.length===0);await motion.page.screenshot({path:dir+'/animated-replacement.png'});await motion.context.close();report.animation=true;
+ const motion=await fixture({...initial,reduced:false,draft:[0,...Array(11).fill(null)],draftSizes:[12,...Array(11).fill(8)]});await motion.button('自由 DIY');const first=(await motion.state()).crafting.slots[0];await motion.tap(first.x,first.y);const m=(await motion.state()).crafting.materials[3];await motion.tap(m.x,m.y);await motion.page.waitForTimeout(1200);assert.equal((await motion.state()).save.draftSizes[0],12);assert.ok((await motion.state()).crafting.flights.length===0);await motion.page.screenshot({path:dir+'/animated-replacement.png'});await motion.context.close();report.animation=true;
  assert.deepEqual(errors,[]);report.errors=errors;fs.writeFileSync(dir+'/report.json',JSON.stringify(report,null,2));console.log(JSON.stringify(report));
 } finally { await browser.close(); }

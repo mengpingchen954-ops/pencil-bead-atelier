@@ -18,7 +18,7 @@ function longLine(length, vertical = false) {
   return { ...newSession(55), board, target: 10000 };
 }
 
-test('15 authored stages introduce color, paper and thread goals progressively with independent layouts', () => {
+test('15 authored stages retain visible goals without thread overlays or hidden thread objectives', () => {
   assert.equal(OPENING_LEVELS.length, 15);
   assert.equal(new Set(OPENING_LEVELS.map(level => level.title)).size, 15);
   for (let level = 1; level <= 15; level++) {
@@ -26,6 +26,8 @@ test('15 authored stages introduce color, paper and thread goals progressively w
     assert.ok(config.moves >= 16 && config.moves <= 26);
     assert.ok(config.objectives.length > 0 && config.objectives.every(goal => goal.target > 0));
     assert.equal(config.obstacles.length, 64);
+    assert.ok(!config.obstacles.includes('thread'));
+    assert.ok(config.objectives.every(goal => goal.kind !== 'thread'));
     for (const goal of config.objectives) {
       if (['paper', 'thread'].includes(goal.kind)) assert.equal(config.obstacles.filter(x => x === goal.kind).length, goal.target);
       if (goal.kind === 'color') assert.ok([ORDERS[1].main, ORDERS[1].accent].includes(goal.type));

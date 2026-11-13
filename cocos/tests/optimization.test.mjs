@@ -3,7 +3,7 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import {createRequire} from 'node:module';
 const require=createRequire(import.meta.url);
-const {load,Node,UITransform,Label,Sprite,root}=require('../tools/generate-editor-layouts.cjs');
+const {load,Node,UITransform,Label,Sprite,Graphics,root}=require('../tools/generate-editor-layouts.cjs');
 const {AtelierGame}=load(root+'/assets/scripts/AtelierGame.ts');
 const rules=load(root+'/assets/scripts/model.ts');
 const {actionText,wrapText}=load(root+'/assets/scripts/theme.ts');
@@ -26,7 +26,18 @@ test('disabled buttons have no painted sprite, and painted buttons keep layout k
  assert.equal(disabled.getComponentsInChildren(Sprite).length,0);
  const active=g.button('继续',0,60,200,50,()=>{});
  assert.equal(active.getComponentsInChildren(Sprite).length,1);
+ assert.deepEqual(active.getComponent(Graphics).commands,[]);
  assert.equal(active.children.find(n=>n.name==='Painted surface').children[0].name,'Clipped paint');
+});
+test('match beads have neither square backing nor material badges; selection is circular',()=>{
+ const {g}=fixture();g.screen='match';g.session=rules.newSession(42,19);g.hint=[];
+ for(let type=0;type<6;type++){
+  const cell=g.makeBoardBead(type,type);assert.equal(cell.getComponent(Graphics),null);
+  assert.deepEqual(cell.children.map(n=>n.name),[g.materialArt(g.boardType(type))]);
+ }
+ g.selected=0;const selected=g.makeBoardBead(0,0);
+ assert.ok(selected.children.some(n=>n.name==='Selected bead'));
+ assert.ok(selected.children.find(n=>n.name==='Selected bead').getComponent(Graphics).commands.some(c=>c[0]==='ellipse'));
 });
 test('Chinese wrapping avoids punctuation starts and isolated final glyphs',()=>{
  const rows=wrapText('把喜欢的珠子，串成自己的故事。',120,24).split('\n');
@@ -55,7 +66,7 @@ test('target colors get one and a half their original weight and six opening cel
   assert.equal(rules.matches(session.board).length,0);assert.ok(rules.findMove(session.board));
   for(const type of targets)assert.ok(session.board.filter(t=>t===type).length>=6);
  }
- const first=rules.levelConfig(4),second=rules.levelConfig(19);assert.notDeepEqual(first.obstacles,second.obstacles);assert.match(second.title,/第2季/);
+ const first=rules.levelConfig(3),second=rules.levelConfig(18);assert.notDeepEqual(first.obstacles,second.obstacles);assert.match(second.title,/第2季/);
 });
 test('new contest rubric and ghost reference preserve earlier paid results and actual drafts',()=>{
  const comp=load(root+'/assets/scripts/competition.ts');

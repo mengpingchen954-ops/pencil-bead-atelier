@@ -74,7 +74,7 @@ test('Creator production bundle preserves collection iteration and complete game
   assert.deepEqual(Array.from(model.normalizeSave(sized).commerce.works[0].beadSizes),[6,10,8]);
   assert.equal(typeof model.activateSpecial,'function');
   const staged=model.newSession(971,15,content.ORDERS[1]);
-  assert.equal(model.goalProgress(staged).length,4);assert.ok(staged.obstacles.some(Boolean));
+  assert.equal(model.goalProgress(staged).length,3);assert.ok(staged.obstacles.some(Boolean));assert.ok(!staged.obstacles.includes('thread'));
   staged.specials[27]='row';staged.specials[29]='column';
   const blast=model.activateSpecial(staged,27);
   assert.equal(blast.valid,true);assert.equal(blast.session.moves,staged.moves-1);

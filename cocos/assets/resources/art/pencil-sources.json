@@ -57,17 +57,6 @@
       "method": "Crop and resize"
     },
     {
-      "asset": "pencil-paper.jpg",
-      "source": "33ea85ec227c3784a7322cdb208d8283.png",
-      "cropAt1143x2048": [
-        400,
-        1044,
-        740,
-        1100
-      ],
-      "method": "Blank paper texture strip"
-    },
-    {
       "asset": "pencil-felt.jpg",
       "source": "f1173b92b6d1e99c4146c66808e46082.png",
       "cropAt1143x2048": [
@@ -486,16 +475,6 @@
       "method": "Compact pearl/coin/heart/settings header with room for a native music shortcut; all resource values remain live native text"
     },
     {
-      "asset": "pencil-ui-primary.jpg",
-      "source": "003-首页-新店开局.png",
-      "method": "Blank sage painted button; green darkened for at least 4.5:1 paper-text contrast in its content area; rounded cream corners retained"
-    },
-    {
-      "asset": "pencil-ui-neutral.jpg",
-      "source": "003-首页-新店开局.png",
-      "method": "Blank cream painted button, no baked icon or action text"
-    },
-    {
       "asset": "pencil-ui-craft.png",
       "source": "003-首页-新店开局.png",
       "method": "Transparent action icon from the reference; native tint follows the active/neutral button state"
@@ -512,13 +491,58 @@
     },
     {
       "asset": "pencil-home-page.jpg",
-      "source": "003-首页-新店开局.png",
-      "method": "Supplied home illustration, decorative frame and original watercolour bracelet retained; customer, order, reward, stock status, primary actions and story/chapter progress removed for live native rendering"
+      "source": "f3523bf9c385a99f5962fb4758464468.png",
+      "method": "Supplied home and illustrated controls; sample resource values, story state and bottom navigation removed for live UI"
+    },
+    {
+      "asset": "pencil-ui-neutral.jpg",
+      "source": "f3523bf9c385a99f5962fb4758464468.png",
+      "method": "Single cream paper button with a fine double-line border, no text or icons"
+    },
+    {
+      "asset": "pencil-ui-primary.jpg",
+      "source": "f3523bf9c385a99f5962fb4758464468.png",
+      "method": "Blank sage paper action button with cream corners"
+    },
+    {
+      "asset": "pencil-paper.jpg",
+      "source": "f3523bf9c385a99f5962fb4758464468.png",
+      "method": "Warm cream paper texture from the supplied UI"
     },
     {
       "asset": "pencil-ui-panel.jpg",
-      "source": "003-首页-新店开局.png",
-      "method": "Blank floral paper frame for shared dialogs and information cards"
+      "source": "f3523bf9c385a99f5962fb4758464468.png",
+      "method": "Blank cream floral and gold dialog frame from the supplied reference"
+    },
+    {
+      "asset": "pencil-navigation.jpg",
+      "source": "f3523bf9c385a99f5962fb4758464468.png",
+      "method": "Cream bottom bar with reference floral and gold edges; no baked selection, icons or labels"
+    },
+    {
+      "asset": "icon-home.png",
+      "source": "f3523bf9c385a99f5962fb4758464468.png",
+      "method": "Hand-drawn navigation icon cropped from the supplied reference"
+    },
+    {
+      "asset": "icon-orders.png",
+      "source": "f3523bf9c385a99f5962fb4758464468.png",
+      "method": "Hand-drawn navigation icon cropped from the supplied reference"
+    },
+    {
+      "asset": "icon-craft.png",
+      "source": "f3523bf9c385a99f5962fb4758464468.png",
+      "method": "Hand-drawn navigation icon cropped from the supplied reference"
+    },
+    {
+      "asset": "icon-chair.png",
+      "source": "f3523bf9c385a99f5962fb4758464468.png",
+      "method": "Hand-drawn navigation icon cropped from the supplied reference"
+    },
+    {
+      "asset": "icon-album.png",
+      "source": "f3523bf9c385a99f5962fb4758464468.png",
+      "method": "Hand-drawn navigation icon cropped from the supplied reference"
     }
   ]
 }

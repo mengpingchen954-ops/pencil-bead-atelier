@@ -46,14 +46,14 @@
         "offsetY": 0,
         "trimX": 0,
         "trimY": 0,
-        "width": 1062,
-        "height": 463,
-        "rawWidth": 1062,
-        "rawHeight": 463,
-        "borderTop": 70,
-        "borderBottom": 48,
-        "borderLeft": 90,
-        "borderRight": 48,
+        "width": 720,
+        "height": 900,
+        "rawWidth": 720,
+        "rawHeight": 900,
+        "borderTop": 190,
+        "borderBottom": 177,
+        "borderLeft": 172,
+        "borderRight": 144,
         "packable": true,
         "pixelsToUnit": 100,
         "pivotX": 0.5,
@@ -64,17 +64,17 @@
         "atlasUuid": "",
         "vertices": {
           "rawPosition": [
-            -531,
-            -231.5,
+            -360,
+            -450,
             0,
-            531,
-            -231.5,
+            360,
+            -450,
             0,
-            -531,
-            231.5,
+            -360,
+            450,
             0,
-            531,
-            231.5,
+            360,
+            450,
             0
           ],
           "indexes": [
@@ -87,12 +87,12 @@
           ],
           "uv": [
             0,
-            463,
-            1062,
-            463,
+            900,
+            720,
+            900,
             0,
             0,
-            1062,
+            720,
             0
           ],
           "nuv": [
@@ -106,13 +106,13 @@
             1
           ],
           "minPos": [
-            -531,
-            -231.5,
+            -360,
+            -450,
             0
           ],
           "maxPos": [
-            531,
-            231.5,
+            360,
+            450,
             0
           ]
         }

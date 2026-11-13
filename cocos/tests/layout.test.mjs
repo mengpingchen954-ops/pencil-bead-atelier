@@ -92,8 +92,8 @@ test('all persistent navigation uses the home dimensions and five destinations w
     tabs.forEach((n,i)=>{
       assert.equal(n.position.x,i*144);assert.equal(n.position.y,-1140);
       assert.deepEqual(n.getComponent(UITransform).contentSize,{width:144,height:140});
-      const label=n.getComponentsInChildren(Label)[0];assert.equal(label.fontSize,23);
-      assert.equal(n.children.some(c=>c.name==='pencil-ui-active'),targets[i]===page);
+      const label=n.getComponentsInChildren(Label)[0];assert.equal(label.fontSize,28);
+      assert.equal(n.children.some(c=>c.name==='Selected navigation'),targets[i]===page);
     });
     for(const n of game.page.children.filter(n=>n.name.startsWith('Button: '))){
       assert.ok(-n.position.y+n.getComponent(UITransform).contentSize.height<=1140,page+' '+n.name);
@@ -104,8 +104,8 @@ test('all persistent navigation uses the home dimensions and five destinations w
 
 test('home shows the real display window and opens free DIY without a recipe',()=>{
   const {game,actions}=pausedGame('home'),before=JSON.stringify(game.save);game.render();
-  const labels=game.page.getComponentsInChildren(Label).map(l=>l.string);
-  assert.ok(labels.includes('第一件作品，等你来设计'));assert.ok(actions.has('查看售珠橱窗'));
+  assert.ok(actions.has('查看售珠橱窗'));assert.ok(actions.has('作品展示'));
+  for(const name of ['自由 DIY','消除采珠','故事与手账','顾客定制','参加比赛'])assert.ok(actions.has(name));
   actions.get('自由 DIY')();assert.equal(game.screen,'craft');assert.equal(JSON.stringify(game.save),before);
 });
 
@@ -175,12 +175,14 @@ test('every serialized illustration, bead and charm preserves its source aspect 
   }
 });
 
-test('workshop grooves are round and the bracelet has room between neighboring bead centers', () => {
+test('workshop keeps round hit areas and tightens the bracelet without resizing its beads', () => {
   const game=new AtelierGame(),top=game.slotPos(0),bottom=game.slotPos(6),right=game.slotPos(3),left=game.slotPos(9);
   assert.ok((bottom.y-top.y)/(right.x-left.x)>=.6);
+  assert.equal(right.x-left.x,300);
   for(let i=0;i<12;i++){
     const a=game.slotPos(i),b=game.slotPos((i+1)%12);
     assert.ok(Math.hypot(a.x-b.x,a.y-b.y)>=60);
+    assert.ok(Math.hypot(a.x-b.x,a.y-b.y)<80);
   }
   game.save=rules.freshSave();game.page=new Node('Page');game.craft();
   for(const slot of game.slotNodes){
@@ -364,14 +366,14 @@ test('DIY tools expand without changing progress and retain undo, preview and ga
  actions.get('工具')();actions.get('采珠')();assert.equal(game.modal,'intro');assert.equal(game.craftToolsOpen,false);assert.equal(JSON.stringify(game.save),before);
 });
 
-test('native goal HUD supports four objectives and claiming a win grants the displayed order supply exactly once', () => {
+test('native goal HUD shows the remaining visible objectives and claiming a win grants the displayed order supply exactly once', () => {
   const game=new AtelierGame(),actions=new Map();
   game.node=new Node('AtelierGame');game.page=new Node('Page');game.overlay=new Node('Dialogs');game.notices=new Node('Notices');
   game.persist=()=>{};game.scheduleOnce=()=>{};game.toast=()=>{};
   game.accessibility={clear(){},text(){},button(name,action){actions.set(name,action);},showDialog(){},closeDialog(){},announce(){}};
   game.save={...rules.freshSave(),started:true,reduced:true,level:15};
   game.session=rules.newSession(19,15);game.screen='match';game.render();
-  assert.equal(game.goalLabels.length,4);assert.equal(game.boardNodes.length,64);
+  assert.equal(game.goalLabels.length,3);assert.equal(game.boardNodes.length,64);
   assert.ok(game.obstacleNodes.filter(Boolean).length>0);
   game.session.status='won';game.session.collected=[40,20,10,20,0,10];
   const before=game.save.inventory.slice(),reward=rules.sessionRewards(game.session,game.save),types=game.session.materialTypes.slice();

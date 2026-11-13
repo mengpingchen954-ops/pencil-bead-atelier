@@ -1,7 +1,7 @@
 export const THEME = {
-  paper: '#faf6e9', ink: '#604832', sage: '#627351', muted: '#796b55', gold: '#956b31',
+  paper: '#faf5e9', ink: '#60391f', sage: '#687c5d', muted: '#857359', gold: '#a77b43',
   disabled: '#ebe5d8', disabledBorder: '#ddd3c2', buttonRadius: 14, dialogRadius: 26,
-  bodyFont: 'sans-serif', titleFont: 'KaiTi, STKaiti, cursive',
+  bodyFont: 'KaiTi, STKaiti, serif', titleFont: 'KaiTi, STKaiti, serif',
 };
 
 export function actionText(label:string) { return label.replace(/ · \d+$/, ''); }
