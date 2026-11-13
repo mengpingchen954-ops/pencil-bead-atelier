@@ -27,7 +27,7 @@ test('native ring selection and slider resize only that bead live, with one undo
  const slider=meter();slider.events.start(touch(205));slider.events.move(touch(398));
  assert.deepEqual(plain(game.workingSizes.slice(0,3)),[8,10,8]);assert.ok(widths(game)[1]>before[1]);assert.equal(writes,0);
  slider.events.move(touch(720));slider.events.end(touch(720));assert.deepEqual(plain(game.workingSizes.slice(0,3)),[8,12,8]);
- assert.deepEqual([widths(game)[0],widths(game)[2]],[before[0],before[2]]);assert.equal(writes,1);assert.equal(game.undo.length,1);
+ assert.equal(widths(game)[0],widths(game)[2]);assert.ok(Math.abs(widths(game)[1]/widths(game)[0]-12/8)<1e-10);assert.equal(writes,1);assert.equal(game.undo.length,1);
  actions.get('撤销')();assert.deepEqual(plain(game.workingSizes.slice(0,3)),[8,8,8]);assert.deepEqual(plain(game.save.inventory),stock);
 });
 
@@ -44,7 +44,7 @@ test('size controls affect only the selected instance, including equal materials
  assert.equal(actions.has('+'),false);assert.deepEqual(widths(game),before);assert.equal(game.undo.length,0);
  actions.get('第1槽：珍珠')();actions.get('+')();
  assert.deepEqual(plain(game.workingSizes.slice(0,3)),[9,8,8]);
- const after=widths(game);assert.ok(after[0]>before[0]);assert.deepEqual(after.slice(1),before.slice(1));
+ const after=widths(game);assert.ok(after[0]>before[0]);assert.equal(after[1],after[2]);assert.ok(Math.abs(after[0]/after[1]-9/8)<1e-10);
  for(const expected of [10,11,12]){actions.get('+')();assert.equal(game.workingSizes[0],expected);}const history=game.undo.length;actions.get('+')();assert.equal(game.undo.length,history);
  actions.get('第2槽：珍珠')();actions.get('−')();assert.deepEqual(plain(game.workingSizes.slice(0,3)),[12,7,8]);
  actions.get('撤销')();assert.deepEqual(plain(game.workingSizes.slice(0,3)),[12,8,8]);

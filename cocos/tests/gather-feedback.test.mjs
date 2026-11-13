@@ -27,7 +27,7 @@ test('one settlement counts all cascades once; feedback and result reopening nev
  assert.deepEqual(messages.filter(m=>m.startsWith('本关采集')),['本关采集 +'+amount+' 颗']);assert.equal(rules.total(game.save.inventory),amount);
  assert.equal(rules.total(result.session.collected)-54,result.frames.reduce((n,f)=>n+f.hit.length,0));
  const before=plain(game.save);game.result();game.result();assert.deepEqual(plain(game.save),before);
- assert.ok(labels(game.overlay).some(s=>s.startsWith('本关获得 '+rules.gatheredMaterials(result.session).filter(Boolean).length+' 种珠材，共 '+amount+' 颗')));
+ assert.ok(labels(game.overlay).some(s=>s.startsWith('获得 '+rules.gatheredMaterials(result.session).filter(Boolean).length+' 种珠材，共 '+amount+' 颗')));
  assert.equal(game.gatherEffects.children.length,1);assert.equal(game.gatherEffects.children[0].name,'Gather count');
  assert.ok(labels(game.gatherEffects).includes('本关采集 +'+amount+' 颗'));
  game.gatherEffects.children[0].isValid=true;scheduled.forEach(fn=>fn());assert.equal(game.gatherEffects.children.length,0);
@@ -44,7 +44,7 @@ test('success and failure report exact totals, including previous turns, without
   await game.resolve(result);
   const total=rules.total(rules.gatheredMaterials(result.session)),delta=total-rules.total(rules.gatheredMaterials(session));
   assert.equal(rules.total(game.save.inventory),total);assert.deepEqual(messages.filter(m=>m.startsWith('本关采集')),['本关采集 +'+delta+' 颗']);
-  assert.equal(game.modal,'result');assert.ok(labels(game.overlay).some(s=>s.startsWith('本关获得 '+rules.gatheredMaterials(result.session).filter(Boolean).length+' 种珠材，共 '+total+' 颗')));
+  assert.equal(game.modal,'result');assert.ok(labels(game.overlay).some(s=>s.startsWith('获得 '+rules.gatheredMaterials(result.session).filter(Boolean).length+' 种珠材，共 '+total+' 颗')));
   const stock=plain(game.save.inventory);game.result();assert.deepEqual(plain(game.save.inventory),stock);assert.equal(messages.filter(m=>m.startsWith('本关采集')).length,1);
  }
 });

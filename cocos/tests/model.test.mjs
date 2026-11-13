@@ -32,7 +32,7 @@ test("craft launches choose only free grooves, while an occupied selection can b
   assert.equal(craftTarget(Array(12).fill(0), 5), 5);
   assert.equal(craftTarget(Array(12).fill(0), -1, () => 0, true), 12);
   const extended = Array.from({length: 24}, (_, i) => i % 6);
-  assert.equal(craftTarget(extended, -1, () => 0, true), 24);
+  assert.equal(craftTarget(extended, -1, () => 0, true), -1);
   assert.equal(normalizeSave({...freshSave(), draft:[0, null, 1, ...Array(21).fill(2)]}).draft.length, 24);
   const save = { ...freshSave(), inventory: [1, 0, 0, 0, 0, 0], gatheredStock:[1,0,0,0,0,0], draft: [0, ...Array(11).fill(null)] };
   assert.equal(canPlace(save, 0, 1), false);

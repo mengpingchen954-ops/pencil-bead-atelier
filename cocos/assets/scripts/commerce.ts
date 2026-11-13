@@ -1,6 +1,6 @@
 import { MATERIALS, CHARMS } from './content.ts';
 
-import { materialStock, charmType, validMaterial, normalizeBeadSizes, normalizeBeadFacings } from './materials.ts';
+import { materialStock, charmType, validMaterial, normalizeBeadSizes, normalizeBeadFacings, CRAFT_LIMIT } from './materials.ts';
 export const SALE_DELAY = 20000;
 const beadPrices = [12, 16, 18, 10, 14, 20];
 const buyers = ['林阿姨', '花店小满', '许老师', '隔壁邻居'];
@@ -73,7 +73,7 @@ export function craftChecks(save:any) {
   const counts = Array(MATERIALS.length).fill(0);
   for (const type of save.draft || []) if (validMaterial(type)) counts[type]++;
   const draft=save.draft;
-  return {full:Array.isArray(draft)&&Array.from(draft).every(type=>type===null||validMaterial(type))&&validBeads(draft.filter(type=>type!==null)),charm:save.charm==='none'||charmType(save.charm)>=0&&materialStock(save,charmType(save.charm))>=(counts[charmType(save.charm)]||0)+1,
+  return {full:Array.isArray(draft)&&draft.filter(type=>type!==null).length+(save.charm==='none'?0:1)<=CRAFT_LIMIT&&Array.from(draft).every(type=>type===null||validMaterial(type))&&validBeads(draft.filter(type=>type!==null)),charm:save.charm==='none'||charmType(save.charm)>=0&&materialStock(save,charmType(save.charm))>=(counts[charmType(save.charm)]||0)+1,
     stock:counts.every((n,i)=>n<=materialStock(save,i))};
 }
 export function finishWork(save:any, now=Date.now()) {

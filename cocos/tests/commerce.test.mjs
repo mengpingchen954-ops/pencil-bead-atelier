@@ -16,13 +16,14 @@ test('free DIY accepts a single color and any charm, reserves actual stock once,
   for(const draft of [Array(12).fill(null),[],Array(12).fill(-1),Array(12),Array(12).fill(1.5)])assert.equal(finishWork({...save,draft},1000),null);
 });
 
-test('free DIY accepts every bead kind and arbitrary stock-backed counts',()=>{
-  const save={...prepared(),draft:Array.from({length:36},(_,i)=>i),charm:'none'};
+test('free DIY accepts every bead kind in stock-backed works up to twenty pieces',()=>{
+ for(let start=0;start<36;start+=20){
+  const draft=Array.from({length:Math.min(20,36-start)},(_,i)=>start+i),save={...prepared(),draft,charm:'none'};
   const next=finishWork(save,1000);
   assert.ok(next);
-  assert.equal(next.commerce.works[0].beads.length,36);
-  assert.deepEqual(next.commerce.works[0].beads,Array.from({length:36},(_,i)=>i));
-  assert.equal(next.inventory.reduce((sum,n)=>sum+(40-n),0),36);
+  assert.deepEqual(next.commerce.works[0].beads,draft);
+  assert.equal(next.inventory.reduce((sum,n)=>sum+(40-n),0),draft.length);
+ }
 });
 test('listing, withdrawal and repeated settlement cannot duplicate materials, works or income',()=>{
   let save=finishWork(prepared(),1000),price=suggestedPrice(save.commerce.works[0].beads);const stock=[...save.inventory],coins=save.coins;

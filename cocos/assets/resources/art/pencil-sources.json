@@ -490,6 +490,21 @@
       "method": "Watercolour selection wash, original home icon and text removed"
     },
     {
+      "asset": "pencil-resource-beads.png",
+      "source": "f3523bf9c385a99f5962fb4758464468.png",
+      "method": "Blank reference resource pill with its original icon; value is drawn live and centered"
+    },
+    {
+      "asset": "pencil-resource-coins.png",
+      "source": "f3523bf9c385a99f5962fb4758464468.png",
+      "method": "Blank reference resource pill with its original icon; value is drawn live and centered"
+    },
+    {
+      "asset": "pencil-resource-energy.png",
+      "source": "f3523bf9c385a99f5962fb4758464468.png",
+      "method": "Blank reference resource pill with its original icon; value is drawn live and centered"
+    },
+    {
       "asset": "pencil-home-page.jpg",
       "source": "f3523bf9c385a99f5962fb4758464468.png",
       "method": "Supplied home and illustrated controls; sample resource values, story state and bottom navigation removed for live UI"
@@ -512,7 +527,7 @@
     {
       "asset": "pencil-ui-panel.jpg",
       "source": "f3523bf9c385a99f5962fb4758464468.png",
-      "method": "Blank cream floral and gold dialog frame from the supplied reference"
+      "method": "Clean cream paper and fine border only; no flowers, gold corner overlays, numbers or navigation art"
     },
     {
       "asset": "pencil-navigation.jpg",
@@ -541,6 +556,16 @@
     },
     {
       "asset": "icon-album.png",
+      "source": "f3523bf9c385a99f5962fb4758464468.png",
+      "method": "Hand-drawn navigation icon cropped from the supplied reference"
+    },
+    {
+      "asset": "icon-settings.png",
+      "source": "f3523bf9c385a99f5962fb4758464468.png",
+      "method": "Hand-drawn navigation icon cropped from the supplied reference"
+    },
+    {
+      "asset": "icon-music.png",
       "source": "f3523bf9c385a99f5962fb4758464468.png",
       "method": "Hand-drawn navigation icon cropped from the supplied reference"
     }

@@ -15,6 +15,26 @@ export const materialStock = (save:any,type:number) => Math.max(0,Math.min(save.
 export const charmType = (charm:string) => MATERIALS.findIndex(m=>m.id===charm);
 export const validBead = (n:any) => Number.isInteger(n)&&n>=0&&n<BEADS.length;
 export const validMaterial = (n:any) => Number.isInteger(n)&&n>=0&&n<MATERIALS.length;
+export const CRAFT_LIMIT = 20;
+// Charms hang from a small loop, so their attachment uses less room on the wire.
+export function ringAngle(beads:(number|null)[],index:number) {
+  const widths=beads.map(type=>MATERIALS[type]?.id ? .3 : 1);
+  const total=widths.reduce((sum,width)=>sum+width,0)||1;
+  let distance=0;for(let i=1;i<=index;i++)distance+=(widths[i-1]+widths[i])/2;
+  return distance/total*Math.PI*2-Math.PI/2;
+}
+export function ringBeadScale(beads:(number|null)[],sizes:number[],radius:number,diameter:number,vertical=1) {
+  let scale=1;
+  for(let i=0;i<beads.length;i++){
+    if(beads[i]===null||MATERIALS[beads[i]]?.id)continue;
+    for(let j=i+1;j<beads.length;j++){
+      if(beads[j]===null||MATERIALS[beads[j]]?.id)continue;
+      const a=ringAngle(beads,i),b=ringAngle(beads,j),distance=radius*Math.hypot(Math.cos(a)-Math.cos(b),(Math.sin(a)-Math.sin(b))*vertical);
+      scale=Math.min(scale,Math.max(0,distance-radius*.04)/(diameter*(sizes[i]+sizes[j])/16));
+    }
+  }
+  return scale;
+}
 export function ringMaterials(beads:(number|null)[],sizes:number[]|undefined,charm='none',fallback=8,facings?:string[]) {
   const parts=[...beads],dimensions=normalizeBeadSizes(parts,sizes,fallback),directions=normalizeBeadFacings(parts,facings),type=charmType(charm);
   if(type>=0){const empty=parts.indexOf(null),index=empty<0?parts.length:empty;parts[index]=type;dimensions[index]=8;directions[index]='out';}

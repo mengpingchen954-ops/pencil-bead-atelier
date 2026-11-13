@@ -35,11 +35,13 @@ test('multiple charms reserve exact earned stock and locked or exhausted materia
  assert.equal(trade.finishWork(saved,1001),null);assert.equal(trade.finishWork({...game.save,charm:'leaf'},1001),null);
 });
 test('all 48 materials and their per-slot sizes survive save, listing, settlement and remake',()=>{
- const {game,actions}=fixture();game.save.draft=Array.from({length:48},(_,i)=>i);game.save.draftSizes=Array.from({length:48},(_,i)=>[6,8,10,12][i%4]);
- const save=trade.finishWork(game.save,1000),work=save.commerce.works[0];assert.equal(work.charm,'none');assert.equal(work.beads.length,48);assert.ok(save.inventory.every(n=>n===2));
+ for(let start=0;start<48;start+=20){
+ const {game,actions}=fixture();game.save.draft=Array.from({length:Math.min(20,48-start)},(_,i)=>start+i);game.save.draftSizes=game.save.draft.map((_,i)=>[6,8,10,12][i%4]);
+ const save=trade.finishWork(game.save,1000),work=save.commerce.works[0];assert.equal(work.charm,'none');assert.equal(work.beads.length,Math.min(20,48-start));assert.ok(work.beads.every(type=>save.inventory[type]===2));
  const listed=trade.listWork(save,work.id,trade.suggestedPrice(work.beads),2000),restored=rules.normalizeSave(plain(listed));assert.deepEqual(plain(restored.commerce),plain(listed.commerce));
  const sold=trade.settleSales(restored,50000);assert.equal(trade.settleSales(sold,60000),sold);game.save=sold;game.freeWorkPreview(work.id);
- assert.equal(game.overlay.children.filter(n=>n.name.startsWith('charm-')).length,12);actions.get('再做一条')();assert.deepEqual(plain(game.save.draft),plain(work.beads));assert.deepEqual(plain(game.save.draftSizes),plain(work.beadSizes));assert.ok(game.save.inventory.every(n=>n===2));
+ assert.equal(game.overlay.children.filter(n=>n.name.startsWith('charm-')).length,work.beads.filter(type=>type>=36).length);actions.get('再做一条')();assert.deepEqual(plain(game.save.draft.filter(type=>type!==null)),plain(work.beads));assert.deepEqual(plain(game.save.draftSizes.slice(0,work.beads.length)),plain(work.beadSizes));assert.ok(work.beads.every(type=>game.save.inventory[type]===2));
+ }
 });
 test('old central charm moves to a ring slot once without losing beads, sizes, stock or listings',()=>{
  const {game,actions}=fixture();game.save.inventory[0]=game.save.gatheredStock[0]=30;game.save.draft=Array(12).fill(0);game.save.draftSizes=Array(12).fill(12);game.save.charm='leaf';

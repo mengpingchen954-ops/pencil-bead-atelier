@@ -24,7 +24,7 @@ blank=Image.new('RGB',(584,338),'#f8f4f0');stage.paste(blank,(68,768))
 # Clear tabs, size, finish and helper sample text while preserving floral edges.
 for box in [(110,689,610,769),(83,1047,640,1100),(211,1100,512,1182),(201,1175,534,1203)]:
     tile=Image.new('RGB',(box[2]-box[0],box[3]-box[1]),'#f8f5f0');stage.paste(tile,box[:2])
-save(stage,'art','pencil-diy-stage.jpg')
+if '--beads-only' not in sys.argv:save(stage,'art','pencil-diy-stage.jpg')
 if '--stage-only' in sys.argv:
     print('Prepared simplified DIY stage; existing materials retained')
     sys.exit(0)
@@ -39,7 +39,16 @@ for i,b in enumerate(beads):
     # Each reference has different spacing; a shared grid captures printed names.
     xs,ys,label_tops=bead_grids[b['category']];row=b['cell']//4;im=images[b['category']];cx=xs[b['cell']%4];cy=ys[row];r=31
     assert cy+r+1<=label_tops[row], f'Bead {i} crop overlaps its printed label'
-    tile=im.crop((cx-r-1,cy-r-1,cx+r+1,cy+r+1)).convert('RGBA');mask=Image.new('L',tile.size);ImageDraw.Draw(mask).ellipse((1,1,63,63),fill=255);tile.putalpha(mask.filter(ImageFilter.GaussianBlur(.35)));save(tile.resize((192,192),Image.Resampling.LANCZOS),'beads',f'bead-{i}.png')
+    tile=im.crop((cx-r-1,cy-r-1,cx+r+1,cy+r+1)).convert('RGBA').resize((192,192),Image.Resampling.LANCZOS)
+    # Trim the reference's printed white rim, retaining the colored body and interior highlights.
+    mask=Image.new('L',tile.size);ImageDraw.Draw(mask).ellipse((11,11,181,181),fill=255)
+    tile.putalpha(mask.filter(ImageFilter.GaussianBlur(.6)))
+    tile=tile.crop((10,10,182,182)).resize((192,192),Image.Resampling.LANCZOS)
+    assert tile.getpixel((0,0))[3]==0 and tile.getpixel((96,96))[3]==255
+    save(tile,'beads',f'bead-{i}.png')
+if '--beads-only' in sys.argv:
+    print('Prepared 36 beads without printed white rims; other artwork retained')
+    sys.exit(0)
 # Flood only the connected pale card backdrop; retain white pearls inside the gold outlines.
 from collections import deque
 ids=['sakura','butterfly','star','moon','bow','pearl','drop','leaf','bell','tassel','daisy','heart']

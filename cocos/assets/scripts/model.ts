@@ -8,7 +8,7 @@ import { freshSeaHeart, normalizeSeaHeart } from "./heart.ts";
 import { freshCompetitions, normalizeCompetitions } from "./competition.ts";
 import { normalizeMusic } from "./music-settings.ts";
 import { freshCommerce, normalizeCommerce, salesProgress, workName, freshCustomers, normalizeCustomers } from "./commerce.ts";
-import { materialPalette, MATERIAL_DROPS, materialStock, validMaterial, normalizeBeadSizes, normalizeBeadFacings } from './materials.ts';
+import { materialPalette, MATERIAL_DROPS, materialStock, validMaterial, normalizeBeadSizes, normalizeBeadFacings, CRAFT_LIMIT } from './materials.ts';
 import { freshDaily, normalizeDaily } from './daily.ts';
 export const SAVE_KEY = "pencil-bead-atelier-v1";
 export function rng(seed = 1) {
@@ -522,6 +522,7 @@ export function canPlace(save, type, index) {
     type >= MATERIALS.length ||
     !Number.isInteger(index) ||
     index < 0 ||
+    index >= CRAFT_LIMIT ||
     index > Math.max(12,save.draft.length)
   )
     return false;
@@ -530,10 +531,10 @@ export function canPlace(save, type, index) {
   return (counts[type]||0) < materialStock(save,type);
 }
 export function craftTarget(draft, selected = -1, random = Math.random, unlimited = false) {
-  if (Number.isInteger(selected) && selected >= 0 && selected < draft.length)
+  if (Number.isInteger(selected) && selected >= 0 && selected < Math.min(CRAFT_LIMIT,draft.length))
     return selected;
-  const empty = Array.from({ length: draft.length }, (_, i) => i).filter((i) => draft[i] === null);
-  return empty.length ? empty[Math.min(empty.length - 1, Math.max(0, Math.floor(random() * empty.length)))] : unlimited?draft.length:-1;
+  const empty = Array.from({ length: Math.min(CRAFT_LIMIT,draft.length) }, (_, i) => i).filter((i) => draft[i] === null);
+  return empty.length ? empty[Math.min(empty.length - 1, Math.max(0, Math.floor(random() * empty.length)))] : unlimited&&draft.length<CRAFT_LIMIT?draft.length:-1;
 }
 export function checkOrder(
   save,

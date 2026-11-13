@@ -137,3 +137,9 @@ Web Mobile 构建可通过静态 HTTP 服务试玩。Android、iOS 和小游戏�
 
 
 手作落珠音效：采用 Kenney [Impact Sounds](https://kenney.nl/assets/impact-sounds) 的 CC0 轻碰拟音，玻璃三种变化、木质和金属各一种，转换为单声道44.1kHz PCM WAV。来源为 impactGlass_light_000–002、impactWood_light_000、impactMetal_light_000；授权原文随工程 assets/audio-license.txt 提供。初次接触托盘时播放主碰撞，弹到线圈时较轻，直接拖放或减少动效时播放一次；沿用音效开关。
+
+## 2026-11-13 · 界面与串珠手感
+
+共用弹窗移除误带的资源数字、导航图案和花角，统一使用干净纸面；各页资源条统一图标与数字居中。三消珠子放大并去掉白边，特殊珠使用立体箭头和花形标记。工坊只收紧饰品挂点的间距，普通珠子按可用空间保留可见间隙；自由作品允许 1–20 件珠子与饰品，原有作品与草稿保留。拖动时邻珠柔和让位，落珠后晃动回稳，减少动效设置可关闭反馈。
+
+`node scripts/test-cocos-bead-polish.mjs` 验证干净弹窗、资源居中、普通珠子间隙、原生拖动与落珠回稳、20 件上限、保存上架及三种特殊珠激活。
