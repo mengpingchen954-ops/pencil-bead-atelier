@@ -6,6 +6,7 @@ const base=process.env.GAME_URL||'http://127.0.0.1:8337/pencil-bead-atelier/',di
 fs.mkdirSync(dir,{recursive:true});const browser=await chromium.launch({headless:true}),errors=[],expectedTouchCancelDiagnostics=[];
 try{
  const context=await browser.newContext({viewport:{width:390,height:844},isMobile:true,hasTouch:true}),page=await context.newPage();
+ page.setDefaultTimeout(90000);page.setDefaultNavigationTimeout(90000);
  page.on('pageerror',e=>errors.push(e.message));page.on('console',m=>{if(m.type()==='error'){if(m.text().includes('Ignored attempt to cancel a touchcancel event with cancelable=false'))expectedTouchCancelDiagnostics.push(m.text());else errors.push(m.text());}});
  page.on('response',r=>{if(r.status()>=400)errors.push(r.status()+' '+r.url());});
  await page.addInitScript(save=>localStorage.setItem('pencil-bead-atelier-v1',JSON.stringify(save)),{...freshSave(),started:true,sound:false,reduced:false,firstSteps:{craft:1,firstGather:1}});
