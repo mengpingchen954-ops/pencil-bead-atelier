@@ -645,10 +645,10 @@ export const EXTRA_MATERIALS = [
     "cell": 31,
     "color": "#b1c8cc",
     "bounds": [
+      0.0781,
       0.0104,
-      0.0312,
-      0.9896,
-      0.9688
+      0.9167,
+      0.9896
     ],
     "tone": "yellow",
     "pale": true

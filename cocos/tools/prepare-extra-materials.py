@@ -162,7 +162,7 @@ for index,item in enumerate(items,48):
             components.append(points)
         keep=Image.new('L',mask.size);pixels=keep.load();largest=max(map(len,components),default=0)
         for points in components:
-            if len(points)<largest*.03:continue
+            if len(points)<largest*(1 if item['round'] else .03):continue
             for x,y in points:pixels[x,y]=255
         mask=Image.fromarray(np.minimum(a,np.asarray(keep.filter(ImageFilter.MaxFilter(5)))))
     image.putalpha(mask)
