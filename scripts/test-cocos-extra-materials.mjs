@@ -37,7 +37,7 @@ try{
     const sprites=await game((g,cc)=>g.page.getChildByName('Material viewport').getChildByName('Material content').children.filter(n=>n.name.startsWith('Bead material ')).map(n=>!!n.children.find(n=>n.getComponent(cc.Sprite))?.getComponent(cc.Sprite)?.spriteFrame));assert.ok(sprites.every(Boolean));
     if(width!==540)await page.screenshot({path:dir+'/category-'+c+'-offset-'+offset+'-'+width+'.png'});
    }
-  }assert.equal(new Set(seen).size,MATERIALS.length);
+  }assert.equal(new Set(seen).size,MATERIALS.filter(m=>!m.retired).length);assert.equal(seen.includes(105),false);
   for(const type of [52,64,112,142,148,120]){
    await reveal(type);await game(g=>{g.slot=-1;g.render();});s=await state();await tap(s.crafting.materials[type].x,s.crafting.materials[type].y);await page.waitForTimeout(1000);assert.equal((await state()).save.draft.at(-1),type);
   }

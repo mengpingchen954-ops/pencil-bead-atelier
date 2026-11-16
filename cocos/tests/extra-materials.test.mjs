@@ -24,7 +24,7 @@ test('the distinct supplied crops have unique names, assets, transparency metada
  }
  for(let category=0;category<4;category++){
   const ids=categoryMaterials(category);
-  assert.deepEqual(ids,MATERIALS.flatMap((m,i)=>m.category===category?[i]:[]).sort((a,b)=>MATERIALS[a].cell-MATERIALS[b].cell));
+  assert.deepEqual(ids,MATERIALS.flatMap((m,i)=>!m.retired&&m.category===category?[i]:[]).sort((a,b)=>MATERIALS[a].cell-MATERIALS[b].cell));
   assert.equal(categoryMaterials(category,true).length,12);assert.ok(categoryMaterials(category,true).every(i=>i<48));
  }
 });
@@ -37,13 +37,14 @@ test('old inventory, draft and listed works keep their original IDs while new ma
 });
 test('approved full silhouettes and side-view replacements survive sheet extraction at the original material IDs',()=>{
  const folder=root+'/source-art/material-overrides/',changes=JSON.parse(fs.readFileSync(folder+'manifest.json','utf8'));
- assert.deepEqual(changes.map(r=>r.type),[83,105,106,107,108,110,119,126,127,128,142,144,146]);
+ assert.deepEqual(changes.map(r=>r.type),[67,83,105,106,107,108,110,119,123,126,127,128,142,144,146]);
  for(const change of changes){
   const m=MATERIALS[change.type],asset=m.id?'charm-'+m.id+'.png':'bead-'+change.type+'.png',source=fs.readFileSync(folder+asset),runtime=fs.readFileSync(root+'/assets/resources/'+(m.id?'art/':'beads/')+asset);
   assert.equal(m.name,change.name);assert.deepEqual(runtime,source,asset+' must keep its approved complete silhouette');
   assert.equal(source.readUInt32BE(16),192);assert.equal(source.readUInt32BE(20),192);assert.equal(source[25],6,'RGBA transparency');
   assert.ok(m.bounds[0]>0&&m.bounds[1]>0&&m.bounds[2]<1&&m.bounds[3]<1,'transparent margin prevents edge clipping');
   if(change.type===110){assert.deepEqual(m.attachment,change.attachment);assert.ok(m.bounds[2]-m.bounds[0]>.8,'both fish-tail fins retained');assert.ok(fs.existsSync(folder+'silver-tail-original.png'));}
+  else if(change.type===123){assert.ok(m.bounds[2]-m.bounds[0]>.94);assert.ok(m.bounds[3]-m.bounds[1]>.94);assert.ok(fs.existsSync(folder+'wood-bead-original.png'));}
   else {assert.equal(change.status,'success');assert.ok(change.submit_id);assert.match(change.prompt,/纯侧面/);assert.equal(m.threaded,true);for(const angle of [-Math.PI/2,0,Math.PI/3])assert.equal(materialPlacement(change.type,angle).angle,-angle*180/Math.PI-90);}
   const width=m.bounds[2]-m.bounds[0],height=m.bounds[3]-m.bounds[1];
   if([107,119,126,144].includes(change.type))assert.ok(height>width*2.3,'side-on spacers retain their thin edge profile');
@@ -59,7 +60,7 @@ test('every new material is earned at its actual ID once and can complete and re
    const save={...bank.save,draft:[t],draftSizes:[12],draftFacings:[MATERIALS[t].id?'in':'out']},done=finishWork(save,1000);assert.ok(done);assert.equal(done.inventory[t],save.inventory[t]-1);
    const listed=listWork(done,1,suggestedPrice([t]),2000);assert.deepEqual(normalizeSave(plain(listed)).commerce,listed.commerce);
   });assert.deepEqual(bankEarlyCollection(bank.save,bank.session).save,bank.save);
- }assert.equal(reached.size,105);
+ }assert.equal(reached.size,103);assert.equal(reached.has(83),false);assert.equal(reached.has(105),false);
  const pale=MATERIALS.findIndex((m,i)=>i>=48&&m.category===0&&m.pale);assert.equal(customerFit('cream',Array(6).fill(pale),'none').ok,true);
 });
 test('native continuous DIY categories select new beads and accessories, preserves dimensions on deletion and undo',()=>{
@@ -69,7 +70,7 @@ test('native continuous DIY categories select new beads and accessories, preserv
   const ids=g.page.getChildByName('Material viewport').getChildByName('Material content').children.filter(n=>n.name.startsWith('Bead material ')).map(n=>Number(n.name.slice(14)));
   assert.deepEqual(ids,categoryMaterials(category));ids.forEach(id=>seen.add(id));
   assert.equal(actions.has('下一页珠材'),false);assert.equal(actions.has('上一页珠材'),false);
- }assert.equal(seen.size,count);
+ }assert.equal(seen.size,count-2);assert.equal(seen.has(83),false);assert.equal(seen.has(105),false);
  for(const type of [52,64,112,142]){
   const m=MATERIALS[type];g.slot=-1;g.craftCategory=m.category;g.render();actions.get((m.id?'选择':'放入')+m.name)();assert.equal(g.save.draft.at(-1),type);
  }

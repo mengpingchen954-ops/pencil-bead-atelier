@@ -290,13 +290,14 @@ export const EXTRA_MATERIALS = [
     "cell": 12,
     "color": "#d4b676",
     "bounds": [
+      0.2865,
       0.0104,
-      0.125,
-      0.9896,
-      0.8698
+      0.7135,
+      0.9896
     ],
     "tone": "metal",
-    "id": "new-flower-spacer"
+    "id": "new-flower-spacer",
+    "threaded": true
   },
   {
     "name": "冰裂粉晶",
@@ -547,7 +548,8 @@ export const EXTRA_MATERIALS = [
     ],
     "tone": "green",
     "pale": true,
-    "threaded": true
+    "threaded": true,
+    "retired": true
   },
   {
     "name": "薄荷切面晶",
@@ -875,7 +877,8 @@ export const EXTRA_MATERIALS = [
     ],
     "tone": "metal",
     "id": "new-silver-flower-cap",
-    "threaded": true
+    "threaded": true,
+    "retired": true
   },
   {
     "name": "镂空银隔珠",
@@ -1188,10 +1191,10 @@ export const EXTRA_MATERIALS = [
     "cell": 12,
     "color": "#a58160",
     "bounds": [
-      0.0833,
       0.0104,
-      0.9115,
-      0.9896
+      0.0156,
+      0.9896,
+      0.9844
     ],
     "tone": "brown"
   },

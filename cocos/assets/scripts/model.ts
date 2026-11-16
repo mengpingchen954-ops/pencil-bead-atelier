@@ -523,6 +523,7 @@ export function canPlace(save, type, index) {
     !Number.isInteger(type) ||
     type < 0 ||
     type >= MATERIALS.length ||
+    MATERIALS[type]?.retired ||
     !Number.isInteger(index) ||
     index < 0 ||
     index >= CRAFT_LIMIT ||

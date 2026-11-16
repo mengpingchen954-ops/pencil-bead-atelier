@@ -1,5 +1,5 @@
 import { BEADS, MATERIALS } from './content.ts';
-const groups=[0,1,2,3].map(category=>MATERIALS.flatMap((m,i)=>m.category===category?[i]:[]));
+const groups=[0,1,2,3].map(category=>MATERIALS.flatMap((m,i)=>!m.retired&&m.category===category?[i]:[]));
 const legacyTones=['white','red','blue','green','yellow','purple','purple','pink','green','purple','blue','pink','yellow','white','brown','yellow','pink','green','pink','purple','green','brown','brown','pink'];
 const tone=(i:number)=>MATERIALS[i].tone||legacyTones[i]||'brown';
 const deep=(i:number)=>MATERIALS[i].deep||[1,14,17,20,21,22,25,27,28,29,31,32,34,35].includes(i);
@@ -11,7 +11,7 @@ export function materialUnlockOrder(unlocked:boolean[],order:unknown) {
   return Array.from(new Set([...known,...legacy]));
 }
 export function categoryMaterials(category:number,contest=false,save?:any) {
-  const types=MATERIALS.flatMap((m,i)=>m.category===category&&(!contest||i<48)?[i]:[]).sort((a,b)=>MATERIALS[a].cell-MATERIALS[b].cell);
+  const types=MATERIALS.flatMap((m,i)=>!m.retired&&m.category===category&&(!contest||i<48)?[i]:[]).sort((a,b)=>MATERIALS[a].cell-MATERIALS[b].cell);
   if(!save||contest)return types;
   const order=materialUnlockOrder(save.materialUnlocked||[],save.materialUnlockOrder),rank=new Map(order.map((type,index)=>[type,index]));
   return types.sort((a,b)=>(rank.get(a)??MATERIALS.length)-(rank.get(b)??MATERIALS.length));
@@ -39,6 +39,14 @@ export const validMaterial = (n:any) => Number.isInteger(n)&&n>=0&&n<MATERIALS.l
 export const CRAFT_LIMIT = 20;
 // Charms hang from a small loop, so their attachment uses less room on the wire.
 export function ringAngle(beads:(number|null)[],index:number,sizes?:number[]) {
+  if(beads.length===3&&!beads.includes(null)&&beads.filter(type=>!MATERIALS[type]?.id).length===2&&beads.some(type=>MATERIALS[type]?.id&&MATERIALS[type]?.threaded&&MATERIALS[type].bounds[2]-MATERIALS[type].bounds[0]<.6)){
+    // Three pieces form a triangle: fit the visible spacer edges between full-size beads.
+    const widths=beads.map((type,i)=>(MATERIALS[type]?.threaded?(MATERIALS[type].bounds[2]-MATERIALS[type].bounds[0]):MATERIALS[type]?.id ? .3 : 1)*(sizes?.[i]||8)/8);
+    const sides=widths.map((w,i)=>(w+widths[(i+1)%3])/2+4/76),[a,b,c]=sides,s=(a+b+c)/2;
+    const radius=a*b*c/(4*Math.sqrt(s*(s-a)*(s-b)*(s-c))),arcs=sides.map(side=>2*Math.asin(Math.min(1,side/(2*radius))));
+    const longest=sides.indexOf(Math.max(...sides));if(sides[longest]**2>sides[(longest+1)%3]**2+sides[(longest+2)%3]**2)arcs[longest]=Math.PI*2-arcs[longest];
+    return -Math.PI/2+arcs.slice(0,index).reduce((sum,a)=>sum+a,0);
+  }
   const widths=beads.map((type,i)=>(MATERIALS[type]?.id ? .3 : 1)*(sizes?.[i]||8)/8);
   const total=widths.reduce((sum,width)=>sum+width,0)||1;
   let distance=0;for(let i=1;i<=index;i++)distance+=(widths[i-1]+widths[i])/2;

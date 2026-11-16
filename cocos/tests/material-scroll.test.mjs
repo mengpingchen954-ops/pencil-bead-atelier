@@ -19,7 +19,7 @@ test('native scrolling holds every category material under a fixed clip, with no
  const old=viewport().getComponent(cc.ScrollView);g.craftCategory=1;old.scrollToOffset({y:80});assert.equal(g.craftScroll[0],80);assert.equal(g.craftScroll[1],0);
  for(let c=0;c<4;c++){
   g.craftCategory=c;g.render();const v=viewport(),scroll=v.getComponent(cc.ScrollView),content=v.getChildByName('Material content');
-  assert.deepEqual(content.children.map(n=>Number(n.name.slice(14))).sort((a,b)=>a-b),plain(MATERIALS.flatMap((m,i)=>m.category===c?[i]:[])));
+  assert.deepEqual(content.children.map(n=>Number(n.name.slice(14))).sort((a,b)=>a-b),plain(MATERIALS.flatMap((m,i)=>!m.retired&&m.category===c?[i]:[])));
   assert.equal(v.getComponent(UITransform).contentSize.height,294);assert.ok(v.getComponent(cc.Mask));assert.equal(scroll.horizontal,false);assert.equal(scroll.vertical,true);assert.equal(scroll.inertia,false);
   scroll.scrollToOffset({y:100});assert.equal(g.guideNode,null);assert.equal(g.craftScroll[c],100);g.render();assert.equal(viewport().getChildByName('Material content').position.y,100);
   assert.equal(actions.has('下一页珠材'),false);assert.equal(actions.has('上一页珠材'),false);
@@ -43,7 +43,7 @@ test('short taps still place materials and native cancellation releases a held s
 test('DIY, inventory, onboarding and the text snapshot follow the sorted material cells',()=>{
  const {g}=fixture();g.save.materialUnlocked.fill(false);g.save.materialUnlockOrder=[];
  for(let c=0;c<4;c++){
-  const ids=MATERIALS.flatMap((m,i)=>m.category===c?[i]:[]).slice(-3).reverse();
+  const ids=MATERIALS.flatMap((m,i)=>!m.retired&&m.category===c?[i]:[]).slice(-3).reverse();
   ids.forEach(i=>g.save.materialUnlocked[i]=true);g.save.materialUnlockOrder.push(...ids);g.craftCategory=c;g.render();
   const content=g.page.getChildByName('Material viewport').getChildByName('Material content');
   assert.deepEqual(plain(content.children.slice(0,3).map(n=>Number(n.name.slice(14)))),plain(ids));

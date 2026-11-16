@@ -270,14 +270,8 @@
     "asset": "charm-new-flower-spacer.png",
     "name": "繁花银隔珠",
     "category": 3,
-    "source": "a43b4457624cd6a029a45e0ab15dd922.png",
-    "crop": [
-      82,
-      1033,
-      282,
-      1186
-    ],
-    "method": "Original alpha retained; isolated sprite; similar views/sizes represented once"
+    "source": "Dreamina text2image 9476956b-15b2-4696-a213-5d6291ef2b41",
+    "method": "Strict 90-degree side orthographic generation; chroma backdrop removed; complete silhouette uniformly fitted with transparent margins"
   },
   {
     "type": 68,
@@ -1012,14 +1006,8 @@
     "asset": "bead-123.png",
     "name": "斑纹木珠",
     "category": 2,
-    "source": "9eb067fe788148993db574628f7e2009.png",
-    "crop": [
-      353,
-      417,
-      467,
-      531
-    ],
-    "method": "Original alpha retained; isolated sprite; similar views/sizes represented once"
+    "source": "wood-bead-original.png (complete supplied sheet material)",
+    "method": "Original complete alpha silhouette retained; corrected source region includes the entire right side; uniform fit and transparent padding, no circle mask"
   },
   {
     "type": 124,

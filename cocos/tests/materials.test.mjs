@@ -12,7 +12,7 @@ test('all supplied materials are reachable in weighted six-type match palettes',
  for(let c=0;c<4;c++)assert.ok(MATERIALS.filter(m=>m.category===c).length>=12);
  assert.deepEqual(MATERIAL_DROPS,[0,0,0,0,0,0,0,0,1,1,1,2,2,2,2,3,4,4,5,5]);
  const all=new Set();for(let level=1;level<=MATERIALS.length*2;level++){const types=materialPalette(level);assert.equal(new Set(types).size,6);assert.deepEqual(types.map(i=>MATERIALS[i].category),[0,1,0,1,2,3]);types.forEach(i=>all.add(i));assert.deepEqual(newSession(42,level).materialTypes,types);}
- assert.equal(all.size,MATERIALS.length);
+ assert.equal(all.size,MATERIALS.filter(m=>!m.retired).length);assert.equal(all.has(105),false);
 });
 
 test('every level favors pale materials, caps dark draw weight at 20%, and retains category weights',()=>{
