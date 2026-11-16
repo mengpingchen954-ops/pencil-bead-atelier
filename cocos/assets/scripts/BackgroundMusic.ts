@@ -1,5 +1,5 @@
 import { AudioSource, AudioClip, resources } from 'cc';
-import { normalizeMusic } from './music-settings';
+import { normalizeMusic, MUSIC_TRACKS } from './music-settings';
 
 export class BackgroundMusic {
   private settings=normalizeMusic(null);
@@ -12,8 +12,15 @@ export class BackgroundMusic {
 
   constructor(private source:AudioSource,
     private load=(path:string,done:(error:Error|null,clip?:AudioClip)=>void)=>resources.load(path,AudioClip,done),
-    private onError=()=>{}) {
-    source.playOnAwake=false;source.loop=true;
+    private onError=()=>{},private onTrack=(track:string)=>{}) {
+    source.playOnAwake=false;source.loop=false;
+    source.node?.on('ended',this.advance,this);
+  }
+  private advance(source?:AudioSource) {
+    if(source&&source!==this.source)return;
+    if(this.disposed||this.hidden||!this.settings.enabled)return;
+    const index=MUSIC_TRACKS.findIndex(track=>track.id===this.track),track=MUSIC_TRACKS[(index+1)%MUSIC_TRACKS.length].id;
+    this.update({...this.settings,track});this.onTrack(track);
   }
   update(settings:any) {
     if(this.disposed)return;
@@ -43,5 +50,5 @@ export class BackgroundMusic {
   }
   setHidden(hidden:boolean) { if(this.disposed)return;this.hidden=hidden;this.sync(); }
   snapshot() { return {track:this.track,loading:this.loading,failed:this.failed,playing:this.source.playing,volume:this.source.volume}; }
-  dispose() { this.disposed=true;this.generation++;this.source.stop();this.source.clip=null; }
+  dispose() { this.disposed=true;this.generation++;this.source.node?.off('ended',this.advance,this);this.source.stop();this.source.clip=null; }
 }

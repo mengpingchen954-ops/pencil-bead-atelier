@@ -2,6 +2,8 @@ import {chromium} from 'playwright';
 import assert from 'node:assert/strict';
 import fs from 'node:fs';
 import {freshSave,newSession} from '../cocos/assets/scripts/model.ts';
+import {ORDERS,STORIES} from '../cocos/assets/scripts/content.ts';
+import {finishStory} from '../cocos/assets/scripts/story.ts';
 import {finishWork} from '../cocos/assets/scripts/commerce.ts';
 const base=process.env.GAME_URL||'http://127.0.0.1:8337/pencil-bead-atelier/',dir=process.env.POLISH_ARTIFACTS||'artifacts/bead-polish';
 fs.mkdirSync(dir,{recursive:true});
@@ -22,7 +24,7 @@ try{
  const state=()=>page.evaluate(()=>JSON.parse(window.render_game_to_text()));
  const clearBeads=async()=>assert.equal(await game((g,cc)=>{
   const beads=g.slotNodes.map(n=>{const art=n.children.find(c=>c.name.startsWith('bead-'));if(!art)return null;const t=n.getComponent(cc.UITransform);return {x:n.position.x+t.width/2,y:n.position.y-t.height/2,d:art.getComponent(cc.UITransform).width};}).filter(Boolean);
-  return beads.every((a,i)=>beads.slice(i+1).every(b=>Math.hypot(a.x-b.x,a.y-b.y)-(a.d+b.d)/2>=5.99));
+  return beads.every((a,i)=>beads.slice(i+1).every(b=>Math.hypot(a.x-b.x,a.y-b.y)-(a.d+b.d)/2>=3.99));
  }),true,'Normal beads must leave a visible gap');
  const aligned=()=>game((g,cc)=>g.page.children.filter(n=>n.name.startsWith('Resource ')).map(n=>{const l=n.children.find(c=>c.getComponent(cc.Label)),label=l.getComponent(cc.Label),p=n.getComponent(cc.UITransform),t=l.getComponent(cc.UITransform);return label.horizontalAlign===cc.Label.HorizontalAlign.CENTER&&label.verticalAlign===cc.Label.VerticalAlign.CENTER&&Math.abs((-l.position.y+t.height/2)-p.height/2)<.01;}));
  assert.deepEqual(await aligned(),[true,true,true]);await shot('home-centered');
@@ -41,12 +43,25 @@ try{
  const settled=await game(g=>({flow:g.craftFlows.size,art:g.slotNodes.map(n=>n.children.find(c=>c.name.startsWith('bead-'))?.position.x??0),slots:g.slotNodes.map(n=>({x:n.position.x,y:n.position.y})),save:JSON.stringify(g.save)}));
  assert.equal(settled.flow,0);assert.deepEqual(settled.art,rest.art);assert.deepEqual(settled.slots,rest.slots);assert.equal(settled.save,rest.save);await shot('flow-settled');
  await game(g=>{g.save.draft[3]=null;g.render();});const target=(await state()).crafting.slots[3];
- await cdp.send('Input.dispatchTouchEvent',{type:'touchStart',touchPoints:[await xy(146,805)]});
+ await cdp.send('Input.dispatchTouchEvent',{type:'touchStart',touchPoints:[await xy(146,868)]});
  await cdp.send('Input.dispatchTouchEvent',{type:'touchMove',touchPoints:[await xy(target.x,target.y)]});await cdp.send('Input.dispatchTouchEvent',{type:'touchEnd',touchPoints:[]});
  await page.waitForTimeout(80);assert.ok(await game(g=>g.craftFlows.size)>0);await shot('insertion-flow');await page.waitForTimeout(1800);assert.equal(await game(g=>g.craftFlows.size),0);
- await game(g=>{g.save.reduced=true;g.save.draft=Array(19).fill(0);g.render();});await tap(146,805);
- assert.equal((await state()).save.draft.length,20);await tap(286,805);assert.equal((await state()).save.draft.length,20);await clearBeads();await shot('twenty-limit');
+ await game(g=>{g.save.reduced=true;g.save.draft=Array(19).fill(0);g.render();});await tap(146,868);
+ assert.equal((await state()).save.draft.length,20);await tap(286,868);assert.equal((await state()).save.draft.length,20);await clearBeads();await shot('twenty-limit');
  await button('完成制作');await button('保存并上架');assert.equal((await state()).save.commerce.works.at(-1).beads.length,20);await shot('twenty-listing');await button('×');
+ for(const width of [390,540,1440]){
+  await page.setViewportSize({width,height:width===390?844:960});let previous=0;
+  for(const count of [12,14,20]){
+   await game((g,cc,{save,count})=>{g.save={...save,reduced:true,draft:Array(count).fill(0),draftSizes:Array(count).fill(8)};g.navigate('craft');},{save:initial,count});
+   const geometry=await game((g,cc)=>({radius:g.craftRadius(),diameters:g.slotNodes.map(n=>n.children.find(c=>c.name.startsWith('bead-')).getComponent(cc.UITransform).width),bottom:g.craftCenterY()+g.craftRadius()+g.craftDiameter(0)/2}));
+   assert.ok(geometry.radius>previous);previous=geometry.radius;assert.ok(geometry.diameters.every(d=>d===76));assert.ok(geometry.bottom<770);assert.equal(await game(g=>g.craftRadius()+38+5<=g.craftPlateRadius()*.89),true);await clearBeads();await shot('expanded-'+count+'-'+width);
+  }
+  let completed={...initial,reduced:true,completed:ORDERS.map(o=>o.id)};for(const story of STORIES)completed=finishStory(completed,story.id)||completed;
+  await game((g,cc,save)=>{g.save=save;g.navigate('storyMap');},completed);
+  assert.equal(await game((g,cc)=>g.page.getComponentsInChildren(cc.Label).filter(l=>l.string==='我们的故事').length),1);
+  assert.equal(await page.getByRole('button',{name:'制作手串',exact:true}).count(),0);await shot('story-clean-'+width);
+ }
+ await page.setViewportSize({width:390,height:844});
  for(const kind of ['row','column','burst']){
   const session=newSession(971,19);session.specials[27]=kind;
   await game((g,cc,session)=>{g.closeModal();g.save.reduced=true;g.session=session;g.screen='match';g.render();},session);

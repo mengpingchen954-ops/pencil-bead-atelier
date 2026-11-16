@@ -38,7 +38,8 @@ try{
   await nativeButton('album');assert.equal((await state()).screen,'album');await screenshot('album');
   await nativeButton('decor');assert.equal((await state()).screen,'decor');await screenshot('decor');
   await nativeButton('home');await nativeButton('自由 DIY');let s=await state();assert.equal(s.screen,'craft');
-  const radii=s.crafting.slots.map(p=>Math.hypot(p.x-360,p.y-410));assert.ok(radii.every(r=>Math.abs(r-150)<.01));
+  const geometry=await page.evaluate(async()=>{const cc=await System.import('cc'),g=cc.director.getScene().getChildByName('AtelierGame').getComponent('AtelierGame');return {radius:g.craftRadius(),y:g.craftCenterY()};});
+  const radii=s.crafting.slots.map(p=>Math.hypot(p.x-360,p.y-geometry.y));assert.ok(radii.every(r=>Math.abs(r-geometry.radius)<.01));
   assert.deepEqual(s.save.draft,initial.draft);assert.deepEqual(s.save.draftSizes,initial.draftSizes);await screenshot('craft');
   await nativeButton('菜单');assert.equal((await state()).modal,'pause');await screenshot('pause');
   const singleSurface=await page.evaluate(async()=>{

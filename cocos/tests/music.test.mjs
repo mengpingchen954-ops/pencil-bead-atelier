@@ -19,15 +19,16 @@ test('music preferences migrate safely, clamp volume and retain the selected son
 
 function player(){
   const source={playing:false,clip:null,volume:0,plays:0,stops:0,pauses:0,play(){this.playing=true;this.plays++;},pause(){this.playing=false;this.pauses++;},stop(){this.playing=false;this.stops++;}};
-  const pending=[],failures=[];
-  const music=new BackgroundMusic(source,(path,done)=>pending.push({path,done}),()=>failures.push(true));
-  return {music,source,pending,failures};
+  const pending=[],failures=[],tracks=[],events=new Map();
+  source.node={on:(event,fn,target)=>events.set(event,source=>fn.call(target,source)),off:event=>events.delete(event)};
+  const music=new BackgroundMusic(source,(path,done)=>pending.push({path,done}),()=>failures.push(true),track=>tracks.push(track));
+  return {music,source,pending,failures,tracks,events};
 }
 
-test('music loops independently and volume changes or gameplay clicks do not restart playback',()=>{
+test('music plays independently and volume changes or gameplay clicks do not restart playback',()=>{
   const {music,source,pending}=player();
   music.update({track:'glimmer',volume:.35});
-  assert.equal(pending[0].path,'music/glimmer');assert.equal(source.loop,true);
+  assert.equal(pending[0].path,'music/glimmer');assert.equal(source.loop,false);
   pending[0].done(null,{name:'glimmer'});assert.equal(source.plays,1);
   music.update({track:'glimmer',volume:.8});music.update({track:'glimmer',volume:.8});
   assert.equal(source.volume,.8);assert.equal(source.plays,1);assert.equal(pending.length,1);
@@ -57,4 +58,16 @@ test('a disabled saved player loads only when music is enabled',()=>{
   music.update({track:'healing',volume:.25,enabled:false});assert.equal(pending.length,0);
   music.update({track:'healing',volume:.25,enabled:true});assert.equal(pending.length,1);
   pending[0].done(null,{name:'healing'});assert.equal(source.playing,true);
+});
+
+test('natural song endings advance the playlist once, wrap, and stop after disposal',()=>{
+ const {music,source,pending,tracks,events}=player(),ended=source=>events.get('ended')?.(source);
+ music.update({track:'glimmer',volume:.35});pending[0].done(null,{name:'glimmer'});
+ ended({});assert.equal(tracks.length,0);ended();assert.equal(pending[1].path,'music/calm');assert.deepEqual(tracks,['calm']);
+ pending[1].done(null,{name:'calm'});assert.equal(source.playing,true);
+ music.setHidden(true);ended();assert.equal(tracks.length,1);music.setHidden(false);
+ music.update({track:'healing',volume:.35});pending[2].done(null,{name:'healing'});ended();
+ assert.equal(pending[3].path,'music/glimmer');assert.deepEqual(tracks,['calm','glimmer']);
+ music.update({track:'glimmer',enabled:false});ended();assert.equal(tracks.length,2);
+ music.dispose();assert.equal(events.size,0);ended();assert.equal(tracks.length,2);
 });

@@ -22,9 +22,22 @@ for box,fill in [((64,24,177,64),'#f9eade'),((560,24,680,64),'#fbe5dc'),((255,25
 # Reference lower area becomes a clean native material grid; retain the outer flowers.
 blank=Image.new('RGB',(584,338),'#f8f4f0');stage.paste(blank,(68,768))
 # Clear tabs, size, finish and helper sample text while preserving floral edges.
-for box in [(110,689,610,769),(83,1047,640,1100),(211,1100,512,1182),(201,1175,534,1203)]:
+for box in [(40,689,680,806),(83,1047,640,1170),(211,1100,512,1240),(201,1175,534,1278)]:
     tile=Image.new('RGB',(box[2]-box[0],box[3]-box[1]),'#f8f5f0');stage.paste(tile,box[:2])
-if '--beads-only' not in sys.argv:save(stage,'art','pencil-diy-stage.jpg')
+if '--beads-only' not in sys.argv:
+    save(stage,'art','pencil-diy-stage.jpg')
+    plate=images[0].crop((94,150,626,682)).convert('RGBA')
+    # Remove the sample's dashed guide so only the live bracelet wire is visible.
+    paper=Image.new('RGBA',plate.size)
+    sample=images[0].crop((300,310,410,365)).convert('RGBA')
+    for y in range(0,532,sample.height):
+        for x in range(0,532,sample.width):paper.paste(sample,(x,y))
+    ring=Image.new('L',plate.size);draw=ImageDraw.Draw(ring)
+    draw.ellipse((84,76,448,440),fill=255);draw.ellipse((106,98,426,418),fill=0)
+    plate=Image.composite(paper,plate,ring.filter(ImageFilter.GaussianBlur(2)))
+    mask=Image.new('L',plate.size);ImageDraw.Draw(mask).ellipse((5,5,527,527),fill=255)
+    plate.putalpha(mask.filter(ImageFilter.GaussianBlur(.7)))
+    save(plate,'art','pencil-diy-plate.png')
 if '--stage-only' in sys.argv:
     print('Prepared simplified DIY stage; existing materials retained')
     sys.exit(0)

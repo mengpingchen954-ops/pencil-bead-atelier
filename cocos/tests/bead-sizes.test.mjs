@@ -19,7 +19,7 @@ const widths=game=>game.slotNodes.slice(0,3).map(n=>n.children.find(n=>n.name.st
 
 test('native ring selection and slider resize only that bead live, with one undo per gesture',()=>{
  const {game,actions}=fixture(),stock=plain(game.save.inventory),before=widths(game);let writes=0;game.persist=()=>writes++;
- const touch=(x,y=1077)=>({getUILocation:()=>({x,y:1280-y})});
+ const touch=(x,y=1161)=>({getUILocation:()=>({x,y:1280-y})});
  const meter=()=>game.page.children.find(n=>n.name==='Single bead size slider');
  assert.equal(meter(),undefined);assert.deepEqual(widths(game),before);assert.equal(game.undo.length,0);
  const p=game.slotPos(1),bead=game.slotNodes[1];bead.events.start(touch(p.x,p.y));bead.events.end(touch(p.x,p.y));assert.equal(game.slot,1);
@@ -32,7 +32,7 @@ test('native ring selection and slider resize only that bead live, with one undo
 });
 
 test('cancelled size drag restores the bead and unchanged slider taps do not add history',()=>{
- const {game,actions}=fixture();actions.get('第1槽：珍珠')();const before=widths(game),touch=x=>({getUILocation:()=>({x,y:203})});
+ const {game,actions}=fixture();actions.get('第1槽：珍珠')();const before=widths(game),touch=x=>({getUILocation:()=>({x,y:139})});
  let slider=game.page.children.find(n=>n.name==='Single bead size slider');slider.events.start(touch(494));assert.equal(game.workingSizes[0],12);slider.events.cancel();
  assert.deepEqual(widths(game),before);assert.equal(game.undo.length,0);assert.equal(game.slot,0);
  slider=game.page.children.find(n=>n.name==='Single bead size slider');slider.events.start(touch(301));slider.events.end(touch(301));assert.equal(game.undo.length,0);
@@ -82,7 +82,7 @@ test('old uniform sizes migrate per bead and malformed sizes fall back without a
 });
 
 test('every integer millimeter works in the slider, buttons and saved works, with unchanged bounds',()=>{
- const {game,actions}=fixture(),stock=plain(game.save.inventory),touch=x=>({getUILocation:()=>({x,y:203})});
+ const {game,actions}=fixture(),stock=plain(game.save.inventory),touch=x=>({getUILocation:()=>({x,y:139})});
  actions.get('第1槽：珍珠')();
  for(const size of [6,7,8,9,10,11,12]){
   const slider=game.page.children.find(n=>n.name==='Single bead size slider'),event=touch(205+289*(size-6)/6);

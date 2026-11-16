@@ -1,7 +1,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import {createRequire} from 'node:module';
-const require=createRequire(import.meta.url),{load,Node,root}=require('../tools/generate-editor-layouts.cjs');
+const require=createRequire(import.meta.url),{load,Node,UITransform,Label,root}=require('../tools/generate-editor-layouts.cjs');
 const {AtelierGame}=load(root+'/assets/scripts/AtelierGame.ts'),rules=load(root+'/assets/scripts/model.ts');
 function fixture(){
  const game=new AtelierGame();game.page=new Node('Page');game.overlay=new Node('Dialogs');game.notices=new Node('Notices');
@@ -11,6 +11,22 @@ function fixture(){
 }
 const positions=nodes=>nodes.map(n=>({...n.position}));
 const step=(game,n)=>{for(let i=0;i<n;i++)game.update(1/60);};
+test('adding beads expands their centers, retains every bead diameter, and leaves the tray below the ring',()=>{
+ const game=fixture();game.save.reduced=true;let previous=0;
+ for(const count of [12,14,16,18,20]){
+  game.save.draft=Array(count).fill(0);game.save.draftSizes=Array(count).fill(8);game.render();
+  const radius=game.craftRadius();assert.ok(radius>previous);previous=radius;
+  assert.equal(game.craftDiameter(0),76);assert.ok(radius+38+5<=game.craftPlateRadius()*.89);
+  const bottom=game.craftCenterY()+radius+38;assert.ok(bottom<770);
+  assert.ok(game.slotNodes.every(n=>n.children.find(c=>c.name.startsWith('bead-')).getComponent(UITransform).contentSize.width===76));
+ }
+ const tiles=game.page.children.filter(n=>n.name.startsWith('Bead material ')),last=tiles.at(-1),tray=game.page.getChildByName('Material tray');
+ const rows=[...new Set(tiles.map(n=>-n.position.y))].sort((a,b)=>a-b);assert.deepEqual(rows,[834,934,1034]);
+ assert.ok(-tray.position.y+tray.getComponent(UITransform).contentSize.height-Math.max(...tiles.map(n=>-n.position.y+n.getComponent(UITransform).contentSize.height))<10);
+ game.screen='storyMap';game.render();
+ assert.equal(game.page.children.flatMap(n=>n.components.filter(c=>c instanceof Label)).filter(c=>c.string==='我们的故事').length,1);
+ assert.equal(game.page.children.some(n=>n.name==='Button: 制作手串'),false);
+});
 test('neighbors flow visually during drag and return exactly without moving slots or changing saves',()=>{
  const game=fixture(),saved=JSON.stringify(game.save),slots=positions(game.slotNodes);
  const art=game.slotNodes.map(n=>n.children.find(c=>c.name.startsWith('bead-'))),rest=positions(art);
@@ -20,6 +36,25 @@ test('neighbors flow visually during drag and return exactly without moving slot
  game.releaseCraftFlow();step(game,180);assert.equal(game.craftFlows.size,0);assert.deepEqual(positions(art),rest);
  game.bumpCraftNeighbors(0);step(game,6);assert.notDeepEqual(positions(art),rest);
  step(game,180);assert.deepEqual(positions(art),rest);assert.equal(JSON.stringify(game.save),saved);
+});
+test('the full artwork of every bead and charm stays inside the second plate line, including mixed sizes and facings',()=>{
+ const game=fixture();game.save.reduced=true;
+ for(let type=0;type<48;type++)for(const facing of ['in','out']){
+  game.save.draft=Array(19).fill(0).concat(type);game.save.draftSizes=Array(19).fill(8).concat(12);game.save.draftFacings=Array(19).fill('out').concat(facing);game.render();
+  const boundary=game.craftPlateRadius()*.89,cy=-game.craftCenterY();
+  game.slotNodes.forEach(slot=>slot.children.filter(n=>/^(bead-|charm-)/.test(n.name)).forEach(art=>{
+   const t=art.getComponent(UITransform),{width:w,height:h}=t.contentSize,a=t.anchorPoint,r=art.angle*Math.PI/180||0;
+   if(type<36&&art.name.startsWith('bead-')){
+    const x=slot.position.x+art.position.x,y=slot.position.y+art.position.y;
+    assert.ok(Math.hypot(x-360,y-cy)+w/2<=boundary-5);return;
+   }
+   for(const x of [-a.x*w,(1-a.x)*w])for(const y of [-a.y*h,(1-a.y)*h]){
+    const px=slot.position.x+art.position.x+x*Math.cos(r)-y*Math.sin(r),py=slot.position.y+art.position.y+x*Math.sin(r)+y*Math.cos(r);
+    // Round bead texture corners are transparent; only charm bounds need the rectangular check.
+    if(art.name.startsWith('charm-'))assert.ok(Math.hypot(px-360,py-cy)<=boundary-5);
+   }
+  }));
+ }
 });
 test('flow survives a redraw, ends on navigation, and respects reduced motion',()=>{
  const game=fixture();game.dragCraftNeighbors(0,60,0);step(game,12);game.releaseCraftFlow();
