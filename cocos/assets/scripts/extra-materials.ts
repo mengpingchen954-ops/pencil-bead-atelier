@@ -541,9 +541,9 @@ export const EXTRA_MATERIALS = [
     "color": "#d6b0a1",
     "bounds": [
       0.0104,
-      0.1094,
+      0.2188,
       0.9896,
-      0.8854
+      0.7812
     ],
     "tone": "green",
     "pale": true,
@@ -869,12 +869,13 @@ export const EXTRA_MATERIALS = [
     "color": "#d4b676",
     "bounds": [
       0.0104,
-      0.0104,
-      0.9844,
-      0.9896
+      0.2135,
+      0.9896,
+      0.7865
     ],
     "tone": "metal",
-    "id": "new-silver-flower-cap"
+    "id": "new-silver-flower-cap",
+    "threaded": true
   },
   {
     "name": "镂空银隔珠",
@@ -883,13 +884,14 @@ export const EXTRA_MATERIALS = [
     "cell": 21,
     "color": "#d4b676",
     "bounds": [
-      0.0156,
+      0.3281,
       0.0104,
-      0.9844,
+      0.6719,
       0.9896
     ],
     "tone": "metal",
-    "id": "new-silver-filigree"
+    "id": "new-silver-filigree",
+    "threaded": true
   },
   {
     "name": "镶钻银隔珠",
@@ -898,13 +900,14 @@ export const EXTRA_MATERIALS = [
     "cell": 22,
     "color": "#d4b676",
     "bounds": [
-      0.0156,
+      0.3177,
       0.0104,
-      0.9844,
+      0.6823,
       0.9896
     ],
     "tone": "metal",
-    "id": "new-silver-diamond-spacer"
+    "id": "new-silver-diamond-spacer",
+    "threaded": true
   },
   {
     "name": "镂空银球",
@@ -914,12 +917,13 @@ export const EXTRA_MATERIALS = [
     "color": "#d4b676",
     "bounds": [
       0.0104,
-      0.0104,
+      0.026,
       0.9896,
-      0.9896
+      0.974
     ],
     "tone": "metal",
-    "id": "new-silver-ball"
+    "id": "new-silver-ball",
+    "threaded": true
   },
   {
     "name": "金铃簇",
@@ -1119,13 +1123,14 @@ export const EXTRA_MATERIALS = [
     "cell": 33,
     "color": "#d4b676",
     "bounds": [
-      0.0156,
+      0.3698,
       0.0104,
-      0.9792,
+      0.6302,
       0.9896
     ],
     "tone": "metal",
-    "id": "new-gold-diamond-spacer"
+    "id": "new-gold-diamond-spacer",
+    "threaded": true
   },
   {
     "name": "镶钻心坠",
@@ -1229,13 +1234,14 @@ export const EXTRA_MATERIALS = [
     "cell": 35,
     "color": "#d4b676",
     "bounds": [
+      0.3229,
       0.0104,
-      0.0104,
-      0.9844,
+      0.6771,
       0.9896
     ],
     "tone": "metal",
-    "id": "new-double-spacer"
+    "id": "new-double-spacer",
+    "threaded": true
   },
   {
     "name": "雕花金方珠",
@@ -1244,13 +1250,14 @@ export const EXTRA_MATERIALS = [
     "cell": 36,
     "color": "#d4b676",
     "bounds": [
-      0.0156,
       0.0104,
-      0.9792,
+      0.0104,
+      0.9844,
       0.9896
     ],
     "tone": "metal",
-    "id": "new-gold-cube"
+    "id": "new-gold-cube",
+    "threaded": true
   },
   {
     "name": "金管珠",
@@ -1260,12 +1267,13 @@ export const EXTRA_MATERIALS = [
     "color": "#d4b676",
     "bounds": [
       0.0104,
-      0.3229,
+      0.401,
       0.9896,
-      0.6719
+      0.599
     ],
     "tone": "metal",
-    "id": "new-gold-tube"
+    "id": "new-gold-tube",
+    "threaded": true
   },
   {
     "name": "满钻银珠",
@@ -1511,10 +1519,10 @@ export const EXTRA_MATERIALS = [
     "cell": 37,
     "color": "#d6b0a1",
     "bounds": [
-      0.1198,
       0.0104,
-      0.8802,
-      0.9896
+      0.224,
+      0.9896,
+      0.776
     ],
     "tone": "green",
     "pale": true,
@@ -1541,9 +1549,9 @@ export const EXTRA_MATERIALS = [
     "cell": 14,
     "color": "#a58160",
     "bounds": [
+      0.3958,
       0.0104,
-      0.0104,
-      0.9896,
+      0.6042,
       0.9896
     ],
     "tone": "brown",
@@ -1577,13 +1585,14 @@ export const EXTRA_MATERIALS = [
     "cell": 48,
     "color": "#d4b676",
     "bounds": [
-      0.1042,
       0.0104,
-      0.8958,
-      0.9896
+      0.3385,
+      0.9896,
+      0.6615
     ],
     "tone": "metal",
-    "id": "new-jade-setting"
+    "id": "new-jade-setting",
+    "threaded": true
   },
   {
     "name": "紫绢晶",

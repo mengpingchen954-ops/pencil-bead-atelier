@@ -2,47 +2,52 @@
   {
     "type": 83,
     "name": "橄榄切面桶珠",
-    "source": "Dreamina text2image 06f3e387-ab36-4d67-820c-36e2785aa33f",
-    "method": "Strict frontal orthographic generation; magenta backdrop removed; complete silhouette uniformly fitted with transparent margins",
-    "submit_id": "06f3e387-ab36-4d67-820c-36e2785aa33f",
+    "source": "Dreamina text2image 70c37194-5432-4efc-8ff1-bd79094af3db",
+    "method": "Strict 90-degree side orthographic generation; chroma backdrop removed; complete silhouette uniformly fitted with transparent margins",
+    "submit_id": "70c37194-5432-4efc-8ff1-bd79094af3db",
     "status": "success",
-    "prompt": "为手串游戏制作一张严格纯正面的2D材质精灵图。这是平面正投影素材，不是立体产品照片。镜头垂直于物体唯一的正面，零俯视、零仰视、零侧视。主体说明：One perfectly horizontally aligned symmetrical faceted hexagonal green gemstone tile. The flat central polygon face points directly toward the camera, matching left and right facet borders; olive green translucent crystal with delicate gold flecks. Both ends identical.。只画这一个完整物体，居中，约占画布70%，正面形状左右完全对称。所有圆形必须是正圆，禁止椭圆！完全禁止透视，禁止倾斜，禁止可见侧边厚度，禁止顶部或右侧的第二个面，禁止透视内壁，禁止圆柱立体示意图，禁止斜切面。保留浅色精细水彩和彩铅的手游材质质感，纹理精致、边缘清晰、弱柔和明暗。纯品红色背景RGB255,0,255，用于抠图，不要阴影、文字、边框、桌面、字符串、额外物体。物体内无品红反光。"
+    "threaded": true,
+    "prompt": "为手串手游生成一张严格纯侧面的材质图，绝不是纯正面图。工业正投影90度侧视，零透视、零俯视、零仰视、零微斜。镜头正对材质侧壁，穿线方向在画面里从左到右水平。具体物体：橄榄绿切面桶珠。穿线轴从左到右水平贯穿珠子，镜头垂直对准圆柱的侧壁。横向短桶的完整侧轮廓，上下边缘对称的切面，正中宽侧壁有晶体金色细点。只见侧壁，不见左右端面，不见孔口，不是圆形宝石牌。。完整物体居中，保留所有轮廓、镂空、装饰边缘，主体长边占画布约72%，四周留白。浅淡水彩与彩铅手绘游戏精灵风格，精细自然纹理，光柔和，绝不做写实产品照片。没有其他物体、没有文字、没有投影、没有线绳。背景必须是均匀纯品红色RGB255,0,255方便抠图，物体上不要品红反光。不要画方向轴线、辅助线、穿线绳或穿出物体外的线条，方向描述仅用来理解角度。禁止剖切或截面，完整物体不能切半。注意：要严格90度侧面，只看到侧壁，不可微侧，不可三分之二视角，不可看到正面或顶部，不可出现圆形或椭圆形的孔口和端面。"
   },
   {
     "type": 105,
     "name": "银花托",
-    "source": "Dreamina text2image ccc05cff-a2f2-4ae7-b1a5-b5ec24db7c39",
-    "method": "Strict frontal orthographic generation; magenta backdrop removed; complete silhouette uniformly fitted with transparent margins",
-    "submit_id": "ccc05cff-a2f2-4ae7-b1a5-b5ec24db7c39",
+    "source": "Dreamina text2image 05e3ed02-b90c-4f8c-824e-83ed65138386",
+    "method": "Strict 90-degree side orthographic generation; chroma backdrop removed; complete silhouette uniformly fitted with transparent margins",
+    "submit_id": "05e3ed02-b90c-4f8c-824e-83ed65138386",
     "status": "success",
-    "prompt": "为手串游戏制作一张严格纯正面的2D材质精灵图。这是平面正投影素材，不是立体产品照片。镜头垂直于物体唯一的正面，零俯视、零仰视、零侧视。主体说明：One perfectly circular flat six-petal silver floral bead cap rosette, tiny circular central thread hole, radially symmetrical petal-shaped engraved lacework. All petals coplanar, circle seen exactly face-on.。只画这一个完整物体，居中，约占画布70%，正面形状左右完全对称。所有圆形必须是正圆，禁止椭圆！完全禁止透视，禁止倾斜，禁止可见侧边厚度，禁止顶部或右侧的第二个面，禁止透视内壁，禁止圆柱立体示意图，禁止斜切面。保留浅色精细水彩和彩铅的手游材质质感，纹理精致、边缘清晰、弱柔和明暗。纯品红色背景RGB255,0,255，用于抠图，不要阴影、文字、边框、桌面、字符串、额外物体。物体内无品红反光。"
+    "threaded": true,
+    "prompt": "为手串手游生成一张严格纯侧面的材质图，绝不是纯正面图。工业正投影90度侧视，零透视、零俯视、零仰视、零微斜。镜头正对材质侧壁，穿线方向在画面里从左到右水平。具体物体：完整银花托外壳的纯侧面轮廓，横向小喇叭银帽。左端是窄小银底，右端是宽的花瓣边缘。完整外壳的上沿和下沿关于水平中心线完全镜像对称，轮廓为左右宽窄不同的圆润梯形，细腻花瓣和镂空卷草雕纹布满侧壁。画整个完整未切开的外壳，只见外侧壁，不见内部，不能画成半只杯子。禁止任何线绳、细长横线、坐标轴、辅助线。。完整物体居中，保留所有轮廓、镂空、装饰边缘，主体长边占画布约72%，四周留白。浅淡水彩与彩铅手绘游戏精灵风格，精细自然纹理，光柔和，绝不做写实产品照片。没有其他物体、没有文字、没有投影、没有线绳。背景必须是均匀纯品红色RGB255,0,255方便抠图，物体上不要品红反光。不要画方向轴线、辅助线、穿线绳或穿出物体外的线条，方向描述仅用来理解角度。禁止剖切或截面，完整物体不能切半。注意：要严格90度侧面，只看到侧壁，不可微侧，不可三分之二视角，不可看到正面或顶部，不可出现圆形或椭圆形的孔口和端面。"
   },
   {
     "type": 106,
     "name": "镂空银隔珠",
-    "source": "Dreamina text2image 4428fd7e-0753-4256-8ed4-546bb3a7cd73",
-    "method": "Strict frontal orthographic generation; magenta backdrop removed; complete silhouette uniformly fitted with transparent margins",
-    "submit_id": "4428fd7e-0753-4256-8ed4-546bb3a7cd73",
+    "source": "Dreamina text2image 6eb63a08-bb57-49f1-905e-a60793618b18",
+    "method": "Strict 90-degree side orthographic generation; chroma backdrop removed; complete silhouette uniformly fitted with transparent margins",
+    "submit_id": "6eb63a08-bb57-49f1-905e-a60793618b18",
     "status": "success",
-    "prompt": "为手串游戏制作一张严格纯正面的2D材质精灵图。这是平面正投影素材，不是立体产品照片。镜头垂直于物体唯一的正面，零俯视、零仰视、零侧视。主体说明：One perfectly circular flat silver filigree spacer medallion, small round central threading hole, a wide ring of symmetrical silver scrollwork, engraved leaf loops, transparent openwork apertures show the magenta backdrop. Exact circular shape.。只画这一个完整物体，居中，约占画布70%，正面形状左右完全对称。所有圆形必须是正圆，禁止椭圆！完全禁止透视，禁止倾斜，禁止可见侧边厚度，禁止顶部或右侧的第二个面，禁止透视内壁，禁止圆柱立体示意图，禁止斜切面。保留浅色精细水彩和彩铅的手游材质质感，纹理精致、边缘清晰、弱柔和明暗。纯品红色背景RGB255,0,255，用于抠图，不要阴影、文字、边框、桌面、字符串、额外物体。物体内无品红反光。"
+    "threaded": true,
+    "prompt": "为手串手游生成一张严格纯侧面的材质图，绝不是纯正面图。工业正投影90度侧视，零透视、零俯视、零仰视、零微斜。镜头正对材质侧壁，穿线方向在画面里从左到右水平。具体物体：镂空银隔珠的纯侧面。穿线轴从左到右水平。短圆柱银隔珠的侧壁构成竖向圆角矩形轮廓，高度是宽度的2倍，侧壁布满精细银色卷草镂空纹。只见这个侧壁，不见左右端面，不见中心圆孔，禁止圆形银盘。。完整物体居中，保留所有轮廓、镂空、装饰边缘，主体长边占画布约72%，四周留白。浅淡水彩与彩铅手绘游戏精灵风格，精细自然纹理，光柔和，绝不做写实产品照片。没有其他物体、没有文字、没有投影、没有线绳。背景必须是均匀纯品红色RGB255,0,255方便抠图，物体上不要品红反光。不要画方向轴线、辅助线、穿线绳或穿出物体外的线条，方向描述仅用来理解角度。禁止剖切或截面，完整物体不能切半。注意：要严格90度侧面，只看到侧壁，不可微侧，不可三分之二视角，不可看到正面或顶部，不可出现圆形或椭圆形的孔口和端面。"
   },
   {
     "type": 107,
     "name": "镶钻银隔珠",
-    "source": "Dreamina text2image 2e68e1dd-626a-4d32-a81e-288b9ddb238e",
-    "method": "Strict frontal orthographic generation; magenta backdrop removed; complete silhouette uniformly fitted with transparent margins",
-    "submit_id": "2e68e1dd-626a-4d32-a81e-288b9ddb238e",
+    "source": "Dreamina text2image 9c58c83b-855c-4230-bf01-983b5c1d2f77",
+    "method": "Strict 90-degree side orthographic generation; chroma backdrop removed; complete silhouette uniformly fitted with transparent margins",
+    "submit_id": "9c58c83b-855c-4230-bf01-983b5c1d2f77",
     "status": "success",
-    "prompt": "为手串游戏制作一张严格纯正面的2D材质精灵图。这是平面正投影素材，不是立体产品照片。镜头垂直于物体唯一的正面，零俯视、零仰视、零侧视。主体说明：One perfectly circular flat jeweled silver spacer face, small perfectly round hole at center, tiny white diamonds arranged symmetrically in a continuous circle between two thin silver circular outlines. The jewelry lies entirely in the picture plane.。只画这一个完整物体，居中，约占画布70%，正面形状左右完全对称。所有圆形必须是正圆，禁止椭圆！完全禁止透视，禁止倾斜，禁止可见侧边厚度，禁止顶部或右侧的第二个面，禁止透视内壁，禁止圆柱立体示意图，禁止斜切面。保留浅色精细水彩和彩铅的手游材质质感，纹理精致、边缘清晰、弱柔和明暗。纯品红色背景RGB255,0,255，用于抠图，不要阴影、文字、边框、桌面、字符串、额外物体。物体内无品红反光。"
+    "threaded": true,
+    "prompt": "为手串手游生成一张严格纯侧面的材质图，绝不是纯正面图。工业正投影90度侧视，零透视、零俯视、零仰视、零微斜。镜头正对材质侧壁，穿线方向在画面里从左到右水平。具体物体：镶钻银隔珠的纯侧面。穿线轴从左到右水平。薄圆柱银隔片的侧壁构成竖向窄圆角矩形轮廓，高度是宽度的3倍。左右两条笔直银边，中间一列晶莹的小钻石嵌在侧壁。仅见侧壁，禁止圆盘形状，禁止中心圆孔，不可见端面。。完整物体居中，保留所有轮廓、镂空、装饰边缘，主体长边占画布约72%，四周留白。浅淡水彩与彩铅手绘游戏精灵风格，精细自然纹理，光柔和，绝不做写实产品照片。没有其他物体、没有文字、没有投影、没有线绳。背景必须是均匀纯品红色RGB255,0,255方便抠图，物体上不要品红反光。注意：要严格90度侧面，只看到侧壁，不可微侧，不可三分之二视角，不可看到正面或顶部，不可出现圆形或椭圆形的孔口和端面。"
   },
   {
     "type": 108,
     "name": "镂空银球",
-    "source": "Dreamina text2image 3cfc29ce-de29-4f21-82aa-147b5ee40033",
-    "method": "Strict frontal orthographic generation; magenta backdrop removed; complete silhouette uniformly fitted with transparent margins",
-    "submit_id": "3cfc29ce-de29-4f21-82aa-147b5ee40033",
+    "source": "Dreamina text2image 0ef21914-281e-4b16-812e-455fe545c843",
+    "method": "Strict 90-degree side orthographic generation; chroma backdrop removed; complete silhouette uniformly fitted with transparent margins",
+    "submit_id": "0ef21914-281e-4b16-812e-455fe545c843",
     "status": "success",
-    "prompt": "为手串游戏制作一张严格纯正面的2D材质精灵图。这是平面正投影素材，不是立体产品照片。镜头垂直于物体唯一的正面，零俯视、零仰视、零侧视。主体说明：One perfectly circular silver filigree sphere FACE, symmetrical spiral floral openwork silver lattice covering a circular silhouette, front surface shading only, a centered radial pattern. An ornamental circular lace disc, face-on.。只画这一个完整物体，居中，约占画布70%，正面形状左右完全对称。所有圆形必须是正圆，禁止椭圆！完全禁止透视，禁止倾斜，禁止可见侧边厚度，禁止顶部或右侧的第二个面，禁止透视内壁，禁止圆柱立体示意图，禁止斜切面。保留浅色精细水彩和彩铅的手游材质质感，纹理精致、边缘清晰、弱柔和明暗。纯品红色背景RGB255,0,255，用于抠图，不要阴影、文字、边框、桌面、字符串、额外物体。物体内无品红反光。"
+    "threaded": true,
+    "prompt": "为手串手游生成一张严格纯侧面的材质图，绝不是纯正面图。工业正投影90度侧视，零透视、零俯视、零仰视、零微斜。镜头正对材质侧壁，穿线方向在画面里从左到右水平。具体物体：镂空银球的纯侧面。穿线轴从左到右水平。完整银色球珠的圆形侧轮廓，均匀精细的银丝卷草镂空网格覆盖球侧壁，不要中心孔和正面放射花心；保持球体水彩浅淡柔和体积。左右两个穿线孔位于侧轮廓边缘，正对镜头的是球侧壁。。完整物体居中，保留所有轮廓、镂空、装饰边缘，主体长边占画布约72%，四周留白。浅淡水彩与彩铅手绘游戏精灵风格，精细自然纹理，光柔和，绝不做写实产品照片。没有其他物体、没有文字、没有投影、没有线绳。背景必须是均匀纯品红色RGB255,0,255方便抠图，物体上不要品红反光。不要画方向轴线、辅助线、穿线绳或穿出物体外的线条，方向描述仅用来理解角度。禁止剖切或截面，完整物体不能切半。注意：要严格90度侧面，只看到侧壁，不可微侧，不可三分之二视角，不可看到正面或顶部，不可出现圆形或椭圆形的孔口和端面。"
   },
   {
     "type": 110,
@@ -59,64 +64,71 @@
   {
     "type": 119,
     "name": "镶钻金隔珠",
-    "source": "Dreamina text2image 66c1daf6-6558-4106-8522-61bd4764be48",
-    "method": "Strict frontal orthographic generation; magenta backdrop removed; complete silhouette uniformly fitted with transparent margins",
-    "submit_id": "66c1daf6-6558-4106-8522-61bd4764be48",
+    "source": "Dreamina text2image 56f94eea-c58f-4c86-a7b0-f3df419ca5e7",
+    "method": "Strict 90-degree side orthographic generation; chroma backdrop removed; complete silhouette uniformly fitted with transparent margins",
+    "submit_id": "56f94eea-c58f-4c86-a7b0-f3df419ca5e7",
     "status": "success",
-    "prompt": "为手串游戏制作一张严格纯正面的2D材质精灵图。这是平面正投影素材，不是立体产品照片。镜头垂直于物体唯一的正面，零俯视、零仰视、零侧视。主体说明：One perfectly circular flat pale-gold jeweled spacer face, small perfectly round central threading hole, tiny clear white diamonds arranged symmetrically in a continuous circle between two fine pale gold circular outlines. Coplanar radial layout.。只画这一个完整物体，居中，约占画布70%，正面形状左右完全对称。所有圆形必须是正圆，禁止椭圆！完全禁止透视，禁止倾斜，禁止可见侧边厚度，禁止顶部或右侧的第二个面，禁止透视内壁，禁止圆柱立体示意图，禁止斜切面。保留浅色精细水彩和彩铅的手游材质质感，纹理精致、边缘清晰、弱柔和明暗。纯品红色背景RGB255,0,255，用于抠图，不要阴影、文字、边框、桌面、字符串、额外物体。物体内无品红反光。"
+    "threaded": true,
+    "prompt": "为手串手游生成一张严格纯侧面的材质图，绝不是纯正面图。工业正投影90度侧视，零透视、零俯视、零仰视、零微斜。镜头正对材质侧壁，穿线方向在画面里从左到右水平。具体物体：镶钻金隔珠的纯侧面。穿线轴从左到右水平。薄圆柱金隔片的侧壁构成竖向窄圆角矩形轮廓，高度是宽度的3倍。左右两条浅金笔直边，中间一列细小透明钻石镶在侧壁。禁止圆形圆盘，禁止中心圆孔，禁止可见左右端面。。完整物体居中，保留所有轮廓、镂空、装饰边缘，主体长边占画布约72%，四周留白。浅淡水彩与彩铅手绘游戏精灵风格，精细自然纹理，光柔和，绝不做写实产品照片。没有其他物体、没有文字、没有投影、没有线绳。背景必须是均匀纯品红色RGB255,0,255方便抠图，物体上不要品红反光。不要画方向轴线、辅助线、穿线绳或穿出物体外的线条，方向描述仅用来理解角度。禁止剖切或截面，完整物体不能切半。注意：要严格90度侧面，只看到侧壁，不可微侧，不可三分之二视角，不可看到正面或顶部，不可出现圆形或椭圆形的孔口和端面。"
   },
   {
     "type": 126,
     "name": "双环银隔珠",
-    "source": "Dreamina text2image f42489d7-b288-405b-94ec-021c59ad1904",
-    "method": "Strict frontal orthographic generation; magenta backdrop removed; complete silhouette uniformly fitted with transparent margins",
-    "submit_id": "f42489d7-b288-405b-94ec-021c59ad1904",
+    "source": "Dreamina text2image 9e22f686-4fc9-4558-9b0b-90da07cdf13e",
+    "method": "Strict 90-degree side orthographic generation; chroma backdrop removed; complete silhouette uniformly fitted with transparent margins",
+    "submit_id": "9e22f686-4fc9-4558-9b0b-90da07cdf13e",
     "status": "success",
-    "prompt": "为手串游戏制作一张严格纯正面的2D材质精灵图。这是平面正投影素材，不是立体产品照片。镜头垂直于物体唯一的正面，零俯视、零仰视、零侧视。主体说明：One perfectly circular flat silver double-ring spacer FACE, small round central threading hole, two concentric polished silver rings with delicate engraved lines, radial symmetry, circle seen exactly face-on.。只画这一个完整物体，居中，约占画布70%，正面形状左右完全对称。所有圆形必须是正圆，禁止椭圆！完全禁止透视，禁止倾斜，禁止可见侧边厚度，禁止顶部或右侧的第二个面，禁止透视内壁，禁止圆柱立体示意图，禁止斜切面。保留浅色精细水彩和彩铅的手游材质质感，纹理精致、边缘清晰、弱柔和明暗。纯品红色背景RGB255,0,255，用于抠图，不要阴影、文字、边框、桌面、字符串、额外物体。物体内无品红反光。"
+    "threaded": true,
+    "prompt": "为手串手游生成一张严格纯侧面的材质图，绝不是纯正面图。工业正投影90度侧视，零透视、零俯视、零仰视、零微斜。镜头正对材质侧壁，穿线方向在画面里从左到右水平。具体物体：双环银隔珠的纯侧面。穿线轴从左到右水平。两片相邻薄银环边缘从侧面看，构成两条相邻的竖向平行银色圆角窄条，中间极细深银色缝隙；整体高度是宽度的3倍。不要画正面同心圆，不可见中心孔，不可见椭圆口。。完整物体居中，保留所有轮廓、镂空、装饰边缘，主体长边占画布约72%，四周留白。浅淡水彩与彩铅手绘游戏精灵风格，精细自然纹理，光柔和，绝不做写实产品照片。没有其他物体、没有文字、没有投影、没有线绳。背景必须是均匀纯品红色RGB255,0,255方便抠图，物体上不要品红反光。不要画方向轴线、辅助线、穿线绳或穿出物体外的线条，方向描述仅用来理解角度。禁止剖切或截面，完整物体不能切半。注意：要严格90度侧面，只看到侧壁，不可微侧，不可三分之二视角，不可看到正面或顶部，不可出现圆形或椭圆形的孔口和端面。"
   },
   {
     "type": 127,
     "name": "雕花金方珠",
-    "source": "Dreamina text2image 4e6c4fd6-7844-48e1-a314-1e62e48c5506",
-    "method": "Strict frontal orthographic generation; magenta backdrop removed; complete silhouette uniformly fitted with transparent margins",
-    "submit_id": "4e6c4fd6-7844-48e1-a314-1e62e48c5506",
+    "source": "Dreamina text2image 43d347bf-0d40-4b2c-82fa-697700bea0c5",
+    "method": "Strict 90-degree side orthographic generation; chroma backdrop removed; complete silhouette uniformly fitted with transparent margins",
+    "submit_id": "43d347bf-0d40-4b2c-82fa-697700bea0c5",
     "status": "success",
-    "prompt": "为手串游戏制作一张严格纯正面的2D材质精灵图。这是平面正投影素材，不是立体产品照片。镜头垂直于物体唯一的正面，零俯视、零仰视、零侧视。主体说明：One upright perfectly symmetrical flat rounded-SQUARE pale gold tile with one ornate four-petal flower engraved on its broad face, fine delicate floral filigree. Only one square face, like an illuminated decorative tile, all four edges parallel to picture edges.。只画这一个完整物体，居中，约占画布70%，正面形状左右完全对称。所有圆形必须是正圆，禁止椭圆！完全禁止透视，禁止倾斜，禁止可见侧边厚度，禁止顶部或右侧的第二个面，禁止透视内壁，禁止圆柱立体示意图，禁止斜切面。保留浅色精细水彩和彩铅的手游材质质感，纹理精致、边缘清晰、弱柔和明暗。纯品红色背景RGB255,0,255，用于抠图，不要阴影、文字、边框、桌面、字符串、额外物体。物体内无品红反光。"
+    "threaded": true,
+    "prompt": "为手串手游生成一张严格纯侧面的材质图，绝不是纯正面图。工业正投影90度侧视，零透视、零俯视、零仰视、零微斜。镜头正对材质侧壁，穿线方向在画面里从左到右水平。具体物体：雕花金方珠的纯侧面。穿线轴从左到右水平。正方体金珠的一个完整侧壁正对镜头，轮廓是四边水平竖直的浅金正方形，侧壁雕细腻卷草和小花纹。只允许看到一个侧面，不可见顶面或左右相邻面，不可见孔。。完整物体居中，保留所有轮廓、镂空、装饰边缘，主体长边占画布约72%，四周留白。浅淡水彩与彩铅手绘游戏精灵风格，精细自然纹理，光柔和，绝不做写实产品照片。没有其他物体、没有文字、没有投影、没有线绳。背景必须是均匀纯品红色RGB255,0,255方便抠图，物体上不要品红反光。不要画方向轴线、辅助线、穿线绳或穿出物体外的线条，方向描述仅用来理解角度。禁止剖切或截面，完整物体不能切半。注意：要严格90度侧面，只看到侧壁，不可微侧，不可三分之二视角，不可看到正面或顶部，不可出现圆形或椭圆形的孔口和端面。"
   },
   {
     "type": 128,
     "name": "金管珠",
-    "source": "Dreamina text2image e718ff6b-b7c4-4d7a-9ae9-8f8683ce36d3",
-    "method": "Strict frontal orthographic generation; magenta backdrop removed; complete silhouette uniformly fitted with transparent margins",
-    "submit_id": "e718ff6b-b7c4-4d7a-9ae9-8f8683ce36d3",
+    "source": "Dreamina text2image 6451af3a-732c-47ac-a4e7-0e11e6e45b68",
+    "method": "Strict 90-degree side orthographic generation; chroma backdrop removed; complete silhouette uniformly fitted with transparent margins",
+    "submit_id": "6451af3a-732c-47ac-a4e7-0e11e6e45b68",
     "status": "success",
-    "prompt": "为手串游戏制作一张严格纯正面的2D材质精灵图。这是平面正投影素材，不是立体产品照片。镜头垂直于物体唯一的正面，零俯视、零仰视、零侧视。主体说明：One perfectly horizontal flat short narrow rounded-rectangle pale gold tube FACE, symmetric ends, delicate longitudinal engraved parallel gold lines. A flat thin gold capsule face, no volume.。只画这一个完整物体，居中，约占画布70%，正面形状左右完全对称。所有圆形必须是正圆，禁止椭圆！完全禁止透视，禁止倾斜，禁止可见侧边厚度，禁止顶部或右侧的第二个面，禁止透视内壁，禁止圆柱立体示意图，禁止斜切面。保留浅色精细水彩和彩铅的手游材质质感，纹理精致、边缘清晰、弱柔和明暗。纯品红色背景RGB255,0,255，用于抠图，不要阴影、文字、边框、桌面、字符串、额外物体。物体内无品红反光。"
+    "threaded": true,
+    "prompt": "为手串手游生成一张严格纯侧面的材质图，绝不是纯正面图。工业正投影90度侧视，零透视、零俯视、零仰视、零微斜。镜头正对材质侧壁，穿线方向在画面里从左到右水平。具体物体：金管珠的纯侧面。穿线轴从左到右水平，细长金属圆管横躺，轮廓为左右平头的细长横向圆角矩形，长度是高度的3倍。可见的只有浅金色管子的外侧壁，带平行横向刻纹。不见管口、不见圆形端面、不见椭圆。。完整物体居中，保留所有轮廓、镂空、装饰边缘，主体长边占画布约72%，四周留白。浅淡水彩与彩铅手绘游戏精灵风格，精细自然纹理，光柔和，绝不做写实产品照片。没有其他物体、没有文字、没有投影、没有线绳。背景必须是均匀纯品红色RGB255,0,255方便抠图，物体上不要品红反光。不要画方向轴线、辅助线、穿线绳或穿出物体外的线条，方向描述仅用来理解角度。禁止剖切或截面，完整物体不能切半。注意：要严格90度侧面，只看到侧壁，不可微侧，不可三分之二视角，不可看到正面或顶部，不可出现圆形或椭圆形的孔口和端面。"
   },
   {
     "type": 142,
     "name": "浅绿玉桶",
-    "source": "Dreamina text2image 1e697908-64ea-4f2e-97d1-a20371735bff",
-    "method": "Strict frontal orthographic generation; magenta backdrop removed; complete silhouette uniformly fitted with transparent margins",
-    "submit_id": "1e697908-64ea-4f2e-97d1-a20371735bff",
+    "source": "Dreamina text2image 7deaacd3-e8cd-446b-8261-733d4c8ef47d",
+    "method": "Strict 90-degree side orthographic generation; chroma backdrop removed; complete silhouette uniformly fitted with transparent margins",
+    "submit_id": "7deaacd3-e8cd-446b-8261-733d4c8ef47d",
     "status": "success",
-    "prompt": "为手串游戏制作一张严格纯正面的2D材质精灵图。这是平面正投影素材，不是立体产品照片。镜头垂直于物体唯一的正面，零俯视、零仰视、零侧视。主体说明：One upright perfectly symmetrical flat rounded-RECTANGLE pale olive green jade tile FACE. Fine natural jade marbling and tiny gold flecks across the one broad flat green surface, soft corner radius, only one surface like a polished jade plaque.。只画这一个完整物体，居中，约占画布70%，正面形状左右完全对称。所有圆形必须是正圆，禁止椭圆！完全禁止透视，禁止倾斜，禁止可见侧边厚度，禁止顶部或右侧的第二个面，禁止透视内壁，禁止圆柱立体示意图，禁止斜切面。保留浅色精细水彩和彩铅的手游材质质感，纹理精致、边缘清晰、弱柔和明暗。纯品红色背景RGB255,0,255，用于抠图，不要阴影、文字、边框、桌面、字符串、额外物体。物体内无品红反光。"
+    "threaded": true,
+    "prompt": "为手串手游生成一张严格纯侧面的材质图，绝不是纯正面图。工业正投影90度侧视，零透视、零俯视、零仰视、零微斜。镜头正对材质侧壁，穿线方向在画面里从左到右水平。具体物体：浅绿玉桶珠的纯侧面。穿线轴从左到右水平，半透明浅橄榄绿玉石短圆柱横躺，整个侧壁是宽度略大于高度的柔和圆角矩形。天然淡绿玉纹、细小金点，边缘左右对称。只见完整侧壁，零顶部视角，不可见左右端面和孔口，不是玉牌。。完整物体居中，保留所有轮廓、镂空、装饰边缘，主体长边占画布约72%，四周留白。浅淡水彩与彩铅手绘游戏精灵风格，精细自然纹理，光柔和，绝不做写实产品照片。没有其他物体、没有文字、没有投影、没有线绳。背景必须是均匀纯品红色RGB255,0,255方便抠图，物体上不要品红反光。注意：要严格90度侧面，只看到侧壁，不可微侧，不可三分之二视角，不可看到正面或顶部，不可出现圆形或椭圆形的孔口和端面。"
   },
   {
     "type": 144,
     "name": "扁木隔片",
-    "source": "Dreamina text2image ec9614aa-34b8-4602-8888-4c73a0373984",
-    "method": "Strict frontal orthographic generation; magenta backdrop removed; complete silhouette uniformly fitted with transparent margins",
-    "submit_id": "ec9614aa-34b8-4602-8888-4c73a0373984",
+    "source": "Dreamina text2image cae73aed-5df5-4e5d-9fc8-ce368a638627",
+    "method": "Strict 90-degree side orthographic generation; chroma backdrop removed; complete silhouette uniformly fitted with transparent margins",
+    "submit_id": "cae73aed-5df5-4e5d-9fc8-ce368a638627",
     "status": "success",
-    "prompt": "为手串游戏制作一张严格纯正面的2D材质精灵图。这是平面正投影素材，不是立体产品照片。镜头垂直于物体唯一的正面，零俯视、零仰视、零侧视。主体说明：One perfectly circular flat natural beige wooden spacer disc, tiny perfectly circular threading hole in the exact center, fine warm wood grain and subtle concentric rings across the broad circular face. Circle exactly face-on.。只画这一个完整物体，居中，约占画布70%，正面形状左右完全对称。所有圆形必须是正圆，禁止椭圆！完全禁止透视，禁止倾斜，禁止可见侧边厚度，禁止顶部或右侧的第二个面，禁止透视内壁，禁止圆柱立体示意图，禁止斜切面。保留浅色精细水彩和彩铅的手游材质质感，纹理精致、边缘清晰、弱柔和明暗。纯品红色背景RGB255,0,255，用于抠图，不要阴影、文字、边框、桌面、字符串、额外物体。物体内无品红反光。"
+    "threaded": true,
+    "prompt": "为手串手游生成一张严格纯侧面的材质图，绝不是纯正面图。工业正投影90度侧视，零透视、零俯视、零仰视、零微斜。镜头正对材质侧壁，穿线方向在画面里从左到右水平。具体物体：扁木隔片的纯侧面。穿线轴从左到右水平，薄木圆片从侧边看，轮廓是一条竖向窄圆角矩形，高度是宽度的4倍，浅米色原木细纹，边缘自然圆润。只能看见木圆片外圈的侧壁厚度，不可见圆盘正面，不可见木年轮圆面，不可见中心孔。。完整物体居中，保留所有轮廓、镂空、装饰边缘，主体长边占画布约72%，四周留白。浅淡水彩与彩铅手绘游戏精灵风格，精细自然纹理，光柔和，绝不做写实产品照片。没有其他物体、没有文字、没有投影、没有线绳。背景必须是均匀纯品红色RGB255,0,255方便抠图，物体上不要品红反光。不要画方向轴线、辅助线、穿线绳或穿出物体外的线条，方向描述仅用来理解角度。禁止剖切或截面，完整物体不能切半。注意：要严格90度侧面，只看到侧壁，不可微侧，不可三分之二视角，不可看到正面或顶部，不可出现圆形或椭圆形的孔口和端面。"
   },
   {
     "type": 146,
     "name": "金镶绿玉",
-    "source": "Dreamina text2image 47022d18-48f0-44ce-b136-ff4c429650cb",
-    "method": "Strict frontal orthographic generation; magenta backdrop removed; complete silhouette uniformly fitted with transparent margins",
-    "submit_id": "47022d18-48f0-44ce-b136-ff4c429650cb",
+    "source": "Dreamina text2image 37dbfe78-01bc-442a-9bcf-00fd91f10254",
+    "method": "Strict 90-degree side orthographic generation; chroma backdrop removed; complete silhouette uniformly fitted with transparent margins",
+    "submit_id": "37dbfe78-01bc-442a-9bcf-00fd91f10254",
     "status": "success",
-    "prompt": "为手串游戏制作一张严格纯正面的2D材质精灵图。这是平面正投影素材，不是立体产品照片。镜头垂直于物体唯一的正面，零俯视、零仰视、零侧视。主体说明：One upright perfectly symmetrical flat oval pale green jade cabochon FACE with an ornate delicate pale-gold bezel visible evenly around the entire oval. Central green jade oval and the gold frame face the camera together, frontal jewelry elevation.。只画这一个完整物体，居中，约占画布70%，正面形状左右完全对称。所有圆形必须是正圆，禁止椭圆！完全禁止透视，禁止倾斜，禁止可见侧边厚度，禁止顶部或右侧的第二个面，禁止透视内壁，禁止圆柱立体示意图，禁止斜切面。保留浅色精细水彩和彩铅的手游材质质感，纹理精致、边缘清晰、弱柔和明暗。纯品红色背景RGB255,0,255，用于抠图，不要阴影、文字、边框、桌面、字符串、额外物体。物体内无品红反光。"
+    "threaded": true,
+    "prompt": "为手串手游生成一张严格纯侧面的材质图，绝不是纯正面图。工业正投影90度侧视，零透视、零俯视、零仰视、零微斜。镜头正对材质侧壁，穿线方向在画面里从左到右水平。具体物体：金镶绿玉的纯侧面。一颗椭圆玉石戒面从水平方向严格侧看：底部是完整的窄浅金包镶底座，顶端为略拱起的浅绿色玉石轮廓，整体是横向低矮圆顶，长度是高度的2.4倍。玉石只有侧面拱壁与浅绿纹理，金色底座侧面刻有小花纹。不可见玉石正面完整椭圆，不可见镶边围成的圆圈。。完整物体居中，保留所有轮廓、镂空、装饰边缘，主体长边占画布约72%，四周留白。浅淡水彩与彩铅手绘游戏精灵风格，精细自然纹理，光柔和，绝不做写实产品照片。没有其他物体、没有文字、没有投影、没有线绳。背景必须是均匀纯品红色RGB255,0,255方便抠图，物体上不要品红反光。不要画方向轴线、辅助线、穿线绳或穿出物体外的线条，方向描述仅用来理解角度。禁止剖切或截面，完整物体不能切半。注意：要严格90度侧面，只看到侧壁，不可微侧，不可三分之二视角，不可看到正面或顶部，不可出现圆形或椭圆形的孔口和端面。"
   }
 ]

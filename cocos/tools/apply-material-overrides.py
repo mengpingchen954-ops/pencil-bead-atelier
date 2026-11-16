@@ -22,6 +22,7 @@ if manifest.exists():
         assert bounds and min(bounds[:2])>=1 and max(bounds[2:])<=191
         item['bounds']=[round(v/192,4) for v in bounds]
         if 'attachment' in change:item['attachment']=change['attachment']
+        if 'threaded' in change:item['threaded']=change['threaded']
         shutil.copyfile(folder/asset,root/'assets/resources'/('art' if item.get('id') else 'beads')/asset)
         record=next(r for r in records if r['type']==change['type'])
         record.update(source=change['source'],method=change['method'])

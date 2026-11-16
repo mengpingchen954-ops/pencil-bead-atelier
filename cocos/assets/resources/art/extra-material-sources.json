@@ -494,8 +494,8 @@
     "asset": "bead-83.png",
     "name": "橄榄切面桶珠",
     "category": 0,
-    "source": "Dreamina text2image 06f3e387-ab36-4d67-820c-36e2785aa33f",
-    "method": "Strict frontal orthographic generation; magenta backdrop removed; complete silhouette uniformly fitted with transparent margins"
+    "source": "Dreamina text2image 70c37194-5432-4efc-8ff1-bd79094af3db",
+    "method": "Strict 90-degree side orthographic generation; chroma backdrop removed; complete silhouette uniformly fitted with transparent margins"
   },
   {
     "type": 84,
@@ -796,32 +796,32 @@
     "asset": "charm-new-silver-flower-cap.png",
     "name": "银花托",
     "category": 3,
-    "source": "Dreamina text2image ccc05cff-a2f2-4ae7-b1a5-b5ec24db7c39",
-    "method": "Strict frontal orthographic generation; magenta backdrop removed; complete silhouette uniformly fitted with transparent margins"
+    "source": "Dreamina text2image 05e3ed02-b90c-4f8c-824e-83ed65138386",
+    "method": "Strict 90-degree side orthographic generation; chroma backdrop removed; complete silhouette uniformly fitted with transparent margins"
   },
   {
     "type": 106,
     "asset": "charm-new-silver-filigree.png",
     "name": "镂空银隔珠",
     "category": 3,
-    "source": "Dreamina text2image 4428fd7e-0753-4256-8ed4-546bb3a7cd73",
-    "method": "Strict frontal orthographic generation; magenta backdrop removed; complete silhouette uniformly fitted with transparent margins"
+    "source": "Dreamina text2image 6eb63a08-bb57-49f1-905e-a60793618b18",
+    "method": "Strict 90-degree side orthographic generation; chroma backdrop removed; complete silhouette uniformly fitted with transparent margins"
   },
   {
     "type": 107,
     "asset": "charm-new-silver-diamond-spacer.png",
     "name": "镶钻银隔珠",
     "category": 3,
-    "source": "Dreamina text2image 2e68e1dd-626a-4d32-a81e-288b9ddb238e",
-    "method": "Strict frontal orthographic generation; magenta backdrop removed; complete silhouette uniformly fitted with transparent margins"
+    "source": "Dreamina text2image 9c58c83b-855c-4230-bf01-983b5c1d2f77",
+    "method": "Strict 90-degree side orthographic generation; chroma backdrop removed; complete silhouette uniformly fitted with transparent margins"
   },
   {
     "type": 108,
     "asset": "charm-new-silver-ball.png",
     "name": "镂空银球",
     "category": 3,
-    "source": "Dreamina text2image 3cfc29ce-de29-4f21-82aa-147b5ee40033",
-    "method": "Strict frontal orthographic generation; magenta backdrop removed; complete silhouette uniformly fitted with transparent margins"
+    "source": "Dreamina text2image 0ef21914-281e-4b16-812e-455fe545c843",
+    "method": "Strict 90-degree side orthographic generation; chroma backdrop removed; complete silhouette uniformly fitted with transparent margins"
   },
   {
     "type": 109,
@@ -962,8 +962,8 @@
     "asset": "charm-new-gold-diamond-spacer.png",
     "name": "镶钻金隔珠",
     "category": 3,
-    "source": "Dreamina text2image 66c1daf6-6558-4106-8522-61bd4764be48",
-    "method": "Strict frontal orthographic generation; magenta backdrop removed; complete silhouette uniformly fitted with transparent margins"
+    "source": "Dreamina text2image 56f94eea-c58f-4c86-a7b0-f3df419ca5e7",
+    "method": "Strict 90-degree side orthographic generation; chroma backdrop removed; complete silhouette uniformly fitted with transparent margins"
   },
   {
     "type": 120,
@@ -1054,24 +1054,24 @@
     "asset": "charm-new-double-spacer.png",
     "name": "双环银隔珠",
     "category": 3,
-    "source": "Dreamina text2image f42489d7-b288-405b-94ec-021c59ad1904",
-    "method": "Strict frontal orthographic generation; magenta backdrop removed; complete silhouette uniformly fitted with transparent margins"
+    "source": "Dreamina text2image 9e22f686-4fc9-4558-9b0b-90da07cdf13e",
+    "method": "Strict 90-degree side orthographic generation; chroma backdrop removed; complete silhouette uniformly fitted with transparent margins"
   },
   {
     "type": 127,
     "asset": "charm-new-gold-cube.png",
     "name": "雕花金方珠",
     "category": 3,
-    "source": "Dreamina text2image 4e6c4fd6-7844-48e1-a314-1e62e48c5506",
-    "method": "Strict frontal orthographic generation; magenta backdrop removed; complete silhouette uniformly fitted with transparent margins"
+    "source": "Dreamina text2image 43d347bf-0d40-4b2c-82fa-697700bea0c5",
+    "method": "Strict 90-degree side orthographic generation; chroma backdrop removed; complete silhouette uniformly fitted with transparent margins"
   },
   {
     "type": 128,
     "asset": "charm-new-gold-tube.png",
     "name": "金管珠",
     "category": 3,
-    "source": "Dreamina text2image e718ff6b-b7c4-4d7a-9ae9-8f8683ce36d3",
-    "method": "Strict frontal orthographic generation; magenta backdrop removed; complete silhouette uniformly fitted with transparent margins"
+    "source": "Dreamina text2image 6451af3a-732c-47ac-a4e7-0e11e6e45b68",
+    "method": "Strict 90-degree side orthographic generation; chroma backdrop removed; complete silhouette uniformly fitted with transparent margins"
   },
   {
     "type": 129,
@@ -1260,8 +1260,8 @@
     "asset": "bead-142.png",
     "name": "浅绿玉桶",
     "category": 0,
-    "source": "Dreamina text2image 1e697908-64ea-4f2e-97d1-a20371735bff",
-    "method": "Strict frontal orthographic generation; magenta backdrop removed; complete silhouette uniformly fitted with transparent margins"
+    "source": "Dreamina text2image 7deaacd3-e8cd-446b-8261-733d4c8ef47d",
+    "method": "Strict 90-degree side orthographic generation; chroma backdrop removed; complete silhouette uniformly fitted with transparent margins"
   },
   {
     "type": 143,
@@ -1282,8 +1282,8 @@
     "asset": "bead-144.png",
     "name": "扁木隔片",
     "category": 2,
-    "source": "Dreamina text2image ec9614aa-34b8-4602-8888-4c73a0373984",
-    "method": "Strict frontal orthographic generation; magenta backdrop removed; complete silhouette uniformly fitted with transparent margins"
+    "source": "Dreamina text2image cae73aed-5df5-4e5d-9fc8-ce368a638627",
+    "method": "Strict 90-degree side orthographic generation; chroma backdrop removed; complete silhouette uniformly fitted with transparent margins"
   },
   {
     "type": 145,
@@ -1304,8 +1304,8 @@
     "asset": "charm-new-jade-setting.png",
     "name": "金镶绿玉",
     "category": 3,
-    "source": "Dreamina text2image 47022d18-48f0-44ce-b136-ff4c429650cb",
-    "method": "Strict frontal orthographic generation; magenta backdrop removed; complete silhouette uniformly fitted with transparent margins"
+    "source": "Dreamina text2image 37dbfe78-01bc-442a-9bcf-00fd91f10254",
+    "method": "Strict 90-degree side orthographic generation; chroma backdrop removed; complete silhouette uniformly fitted with transparent margins"
   },
   {
     "type": 147,

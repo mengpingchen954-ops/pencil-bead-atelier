@@ -1,4 +1,4 @@
-System.register(["./application.c35be.js"], function (_export, _context) {
+System.register(["./application.bacb0.js"], function (_export, _context) {
   "use strict";
 
   var Application, canvas, $p, bcr, application;
@@ -6,8 +6,8 @@ System.register(["./application.c35be.js"], function (_export, _context) {
     return System["import"](url);
   }
   return {
-    setters: [function (_applicationC35beJs) {
-      Application = _applicationC35beJs.Application;
+    setters: [function (_applicationBacb0Js) {
+      Application = _applicationBacb0Js.Application;
     }],
     execute: function () {
       canvas = document.getElementById('GameCanvas');
