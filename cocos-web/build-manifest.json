@@ -704,7 +704,7 @@
     "tests/music.test.mjs": "1c82415ff91260c7fe8c7b527da197c6b5977ac465e7703f3428c747f92c06fb",
     "tests/optimization.test.mjs": "c1f3bd5f7ed02d7661ba5946585c20d8341636ac91baf57da350dc483e3adcbc",
     "tests/orders.test.mjs": "d4f6b32ab63205fcf445fbd579219518bfeee2650ffe84a8a4eeb4fdebdf7d61",
-    "tests/packing-fit.test.mjs": "8e2093be8b918701c60adab6d4d48fc86d5f8c68949656f5adc67dc8e57bbc3d",
+    "tests/packing-fit.test.mjs": "13ba9e21493cd3e02e3e476f7d31295b16bec28ada6f29a7eaa5aa3d79ff1cf0",
     "tests/production.test.mjs": "495ca3454ba24ff244f45a578db1eaaeb7c9b54ca26f2ba5a6bd121c4ee002a6",
     "tests/renovation.test.mjs": "feaa5df0e3510fda2ebaf4141cfa298465e7712ae2bce07f8637e8d4c60f48ae",
     "tests/ring-charms.test.mjs": "1fe780abd00cecd28d085552cb4d75817a96df8a361ab5b1096d00b9aa79f168",
