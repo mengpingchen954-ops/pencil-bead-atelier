@@ -623,11 +623,11 @@ test('double taps remove one bead across native rerenders, while slow taps, othe
  const touch=i=>{const p=game.slotPos(i);return {getUILocation:()=>({x:p.x,y:1280-p.y})};};
  const tap=i=>{const n=game.slotNodes[i];n.events.start(touch(i));n.events.end(touch(i));};
  const stock=game.save.inventory.slice();tap(0);const firstNode=game.slotNodes[0];assert.equal(game.slot,0);assert.equal(game.undo.length,0);
- tap(0);assert.notEqual(game.slotNodes[0],firstNode);assert.equal(game.save.draft[0],null);assert.equal(game.slot,-1);assert.equal(game.undo.length,1);
+ tap(0);assert.notEqual(game.slotNodes[0],firstNode);assert.deepEqual(Array.from(game.save.draft),[1,2]);assert.equal(game.slot,-1);assert.equal(game.undo.length,1);
  actions.get('撤销')();assert.equal(game.save.draft[0],0);assert.equal(game.craftTap,null);
  tap(0);game.craftTap.at-=500;tap(0);assert.equal(game.save.draft[0],0);assert.equal(game.slot,-1);assert.equal(game.undo.length,0);
- game.craftTap=null;game.slot=0;tap(0);tap(0);assert.equal(game.save.draft[0],null,'double tap also removes an already selected bead');actions.get('撤销')();
- tap(0);tap(1);assert.equal(game.save.draft[0],0);assert.equal(game.save.draft[1],1);tap(1);assert.equal(game.save.draft[1],null);actions.get('撤销')();
+ game.craftTap=null;game.slot=0;tap(0);tap(0);assert.deepEqual(Array.from(game.save.draft),[1,2],'double tap also removes an already selected bead');actions.get('撤销')();
+ tap(0);tap(1);assert.equal(game.save.draft[0],0);assert.equal(game.save.draft[1],1);tap(1);assert.deepEqual(Array.from(game.save.draft),[0,2]);actions.get('撤销')();
  tap(8);tap(8);assert.equal(game.undo.length,0);assert.equal(game.save.draft[8],null);
  tap(0);game.slotNodes[0].events.start(touch(0));game.slotNodes[0].events.cancel();tap(0);assert.equal(game.save.draft[0],0);
  const n=game.slotNodes[0];n.events.start(touch(0));n.events.move(touch(1));n.events.end(touch(1));assert.equal(game.craftTap,null);assert.equal(game.save.draft[1],0);tap(1);assert.equal(game.save.draft[1],0);

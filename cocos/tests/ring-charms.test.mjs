@@ -24,7 +24,7 @@ test('charms use ordinary ring slots, size, drag, replacement, removal and undo 
  node.events.start(touch(0));node.events.move(touch(3));node.events.end(touch(3));assert.equal(game.save.draft[3],leaf);assert.equal(game.save.draftSizes[3],9);
  actions.get('选择风铃')();assert.equal(game.save.draft[3],bell);assert.equal(game.save.draftSizes[3],9);
  actions.get('撤销')();assert.equal(game.save.draft[3],leaf);assert.equal(game.save.draftSizes[3],9);
- actions.get('第4槽：叶子挂饰')();actions.get('移除')();assert.equal(game.save.draft[3],null);actions.get('撤销')();assert.equal(game.save.draft[3],leaf);
+ actions.get('第4槽：叶子挂饰')();actions.get('移除')();assert.deepEqual(plain(game.save.draft),[]);actions.get('撤销')();assert.equal(game.save.draft[3],leaf);
  assert.deepEqual(plain(game.save.inventory),stock);assert.deepEqual(plain(game.save.gatheredStock),stock);
 });
 test('multiple charms reserve exact earned stock and locked or exhausted materials cannot be added',()=>{

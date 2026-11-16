@@ -1,0 +1,46 @@
+[
+  {
+    "asset": "pencil-customer-lin.png",
+    "source": "pencil-dialogue-lin.png",
+    "crop": [
+      115,
+      0,
+      355,
+      240
+    ],
+    "method": "Head-and-shoulders crop with feathered circular alpha; existing user-provided artwork"
+  },
+  {
+    "asset": "pencil-customer-xiaoman.png",
+    "source": "09-characters.png",
+    "crop": [
+      815,
+      135,
+      1205,
+      525
+    ],
+    "method": "Head-and-shoulders crop with feathered circular alpha; existing user-provided artwork"
+  },
+  {
+    "asset": "pencil-customer-teacher.png",
+    "source": "09-characters.png",
+    "crop": [
+      1350,
+      50,
+      1790,
+      490
+    ],
+    "method": "Head-and-shoulders crop with feathered circular alpha; existing user-provided artwork"
+  },
+  {
+    "asset": "pencil-customer-neighbor.png",
+    "source": "09-characters.png",
+    "crop": [
+      275,
+      105,
+      705,
+      535
+    ],
+    "method": "Head-and-shoulders crop with feathered circular alpha; existing user-provided artwork"
+  }
+]

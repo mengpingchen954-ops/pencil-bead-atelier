@@ -88,3 +88,13 @@ test('native arrival waits for a safe shop screen, announces once and leaves exi
  game.modal='';game.tickCustomers();assert.ok(game.save.customers.active);assert.equal(messages.filter(m=>m.startsWith('叮铃')).length,1);assert.equal(game.modal,'');
  const arrived=JSON.stringify(game.save);game.tickCustomers();assert.equal(JSON.stringify(game.save),arrived);assert.equal(messages.filter(m=>m.startsWith('叮铃')).length,1);
 });
+
+test('custom requests and thanks display the matching customer portrait with speech and retain request actions',()=>{
+ for(const [buyer,id] of [['林阿姨','lin'],['花店小满','xiaoman'],['许老师','teacher'],['隔壁邻居','neighbor']]){
+  const save=request();save.customers.active.buyer=buyer;save.customers.active.status='offered';const {game,actions}=native(save),before=JSON.stringify(game.save);
+  game.customerDialog();assert.ok(game.overlay.getChildByName('Customer portrait '+id));assert.ok(game.overlay.getChildByName('Customer speech bubble'));assert.ok(actions.has('接受定制'));assert.equal(JSON.stringify(game.save),before);
+  game.save.customers.active.status='accepted';game.customerDialog();assert.ok(game.overlay.getChildByName('Customer portrait '+id));assert.ok(actions.has('去制作定制'));
+  game.customerReceipt({buyer,beads:Array(6).fill(0),beadSizes:Array(6).fill(8),beadFacings:Array(6).fill('out'),charm:'none',commission:{style:'cream'}});
+  assert.ok(game.overlay.getChildByName('Customer portrait '+id));assert.ok(game.overlay.getChildByName('Customer speech bubble'));
+ }
+});

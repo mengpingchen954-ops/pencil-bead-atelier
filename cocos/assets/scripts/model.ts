@@ -472,7 +472,7 @@ export function normalizeSave(input) {
       .filter((id) => CLEAN_SPOTS.some((spot) => spot.id === id))));
   for (const item of REPAIRS)
     s.renovation.repairs[item.id] = isShopClean(s) && input.renovation?.repairs?.[item.id] === true;
-  s.draft = Array.from({ length: Math.max(12,Array.isArray(input.draft)?input.draft.length:0) }, (_, i) =>
+  s.draft = Array.from({ length: Array.isArray(input.draft)?input.draft.length:12 }, (_, i) =>
     Number.isInteger(input.draft?.[i]) &&
     input.draft[i] >= 0 &&
     input.draft[i] < MATERIALS.length

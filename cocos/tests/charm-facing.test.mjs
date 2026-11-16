@@ -84,6 +84,6 @@ test('Creator outside-hit releases commit the gesture while genuine input cancel
  for(const [y,code] of [[300,'touch-end'],[110,'touch-end'],[300,'touch-cancel']]){
   const {game}=fixture(),p=game.slotPos(0),image=art(game,0),touch=(x,y)=>({getUILocation:()=>({x,y:1280-y}),getEventCode:()=>code});
   image.events.start(touch(p.x,p.y));image.events.move(touch(p.x,y));image.events.cancel(touch(p.x,y));
-  assert.equal(game.save.draft[0],y===110?null:leaf);assert.equal(game.workingFacings[0],y===300&&code==='touch-end'?'in':'out');assert.equal(game.undo.length,code==='touch-end'?1:0);
+  if(y===110)assert.deepEqual(plain(game.save.draft),[leaf,0]);assert.equal(game.save.draft[0],leaf);assert.equal(game.workingFacings[0],y===300&&code==='touch-end'?'in':'out');assert.equal(game.undo.length,code==='touch-end'?1:0);
  }
 });

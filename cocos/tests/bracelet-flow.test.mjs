@@ -64,3 +64,23 @@ test('flow survives a redraw, ends on navigation, and respects reduced motion',(
  game.screen='craft';game.save.reduced=true;game.render();game.dragCraftNeighbors(0,60,30);game.bumpCraftNeighbors(0);
  assert.equal(game.craftFlows.size,0);
 });
+
+test('deletion preserves each survivor visual position then springs into a smaller gap-free ring',()=>{
+ const game=fixture();game.persist=()=>{};game.save.draft=Array.from({length:12},(_,i)=>i);game.save.draftSizes=Array(12).fill(8);game.render();
+ const old=game.slotNodes.map(slot=>{const art=slot.children.find(n=>n.name.startsWith('bead-'));return {x:slot.position.x+art.position.x,y:slot.position.y+art.position.y};}),radius=game.craftRadius();
+ game.slot=5;game.removeCraftBead();assert.equal(game.save.draft.length,11);assert.ok(game.craftRadius()<radius);assert.ok(game.craftFlows.size>0);
+ const art=game.slotNodes.map((slot,i)=>{const n=slot.children.find(n=>n.name.startsWith('bead-')),before=old[i<5?i:i+1];n.isValid=true;
+  assert.ok(Math.abs(slot.position.x+n.position.x-before.x)<.001);assert.ok(Math.abs(slot.position.y+n.position.y-before.y)<.001);assert.equal(n.getComponent(UITransform).contentSize.width,76);return n;});
+ const initial=positions(art);step(game,12);assert.notDeepEqual(positions(art),initial);step(game,180);assert.equal(game.craftFlows.size,0);
+ game.slotNodes.forEach((slot,i)=>{const next=game.slotNodes[(i+1)%11];assert.ok(Math.abs(Math.hypot(slot.position.x-next.position.x,slot.position.y-next.position.y)-80)<.001);});
+});
+
+
+test('deleting down to two ordinary beads keeps the same close spacing and full size',()=>{
+ const game=fixture();game.persist=()=>{};game.save.reduced=true;
+ for(let count=12;count>=2;count--){
+  game.save.draft=Array(count).fill(0);game.save.draftSizes=Array(count).fill(8);game.render();
+  const a=game.slotPos(0),b=game.slotPos(1);assert.ok(Math.abs(Math.hypot(a.x-b.x,a.y-b.y)-80)<.001);assert.equal(game.craftDiameter(0),76);
+  game.slot=0;game.removeCraftBead();assert.equal(game.save.draft.length,count-1);
+ }
+});

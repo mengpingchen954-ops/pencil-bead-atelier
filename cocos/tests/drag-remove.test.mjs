@@ -15,7 +15,7 @@ test('beads and charm bodies drop outside every side of the tray without consumi
  for(const index of [0,1])for(const [x,y] of [[35,410],[685,410],[360,115],[360,705],[125,175]]){
   const {game,actions}=fixture(),before=plain(game.save),p=game.slotPos(index),slot=game.slotNodes[index],hit=index===1?slot.children.find(n=>n.name==='charm-leaf'):slot;
   hit.events.start(touch(p.x,p.y));hit.events.move(touch(x,y));assert.equal(game.save.draft[index],before.draft[index]);hit.events.end(touch(x,y));
-  assert.equal(game.save.draft[index],null);assert.equal(game.undo.length,1);assert.equal(game.slot,-1);assert.deepEqual(plain(game.save.inventory),before.inventory);assert.deepEqual(plain(game.save.gatheredStock),before.gatheredStock);
+  assert.deepEqual(plain(game.save.draft),before.draft.filter((type,i)=>type!==null&&i!==index));assert.equal(game.undo.length,1);assert.equal(game.slot,-1);assert.deepEqual(plain(game.save.inventory),before.inventory);assert.deepEqual(plain(game.save.gatheredStock),before.gatheredStock);
   actions.get('撤销')();assert.deepEqual(plain(game.save),before);
  }
 });
@@ -29,5 +29,27 @@ test('inside/rim drops, returning inside and cancelled drags do not remove mater
 test('outward removal persists and keeps contest drafts isolated from normal DIY',()=>{
  const {game,actions}=fixture(),normal=plain(game.save.draft);game.save.competitions.draft={id:'spring',beads:[0,...Array(11).fill(null)],beadSizes:Array(12).fill(8),charm:'none'};game.screen='contestCraft';game.render();
  const node=game.slotNodes[0],p=game.slotPos(0);node.events.start(touch(p.x,p.y));node.events.move(touch(20,410));node.events.end(touch(20,410));assert.equal(game.save.competitions.draft.beads[0],null);assert.deepEqual(plain(game.save.draft),normal);actions.get('撤销')();assert.equal(game.save.competitions.draft.beads[0],0);
- game.screen='craft';game.render();const bead=game.slotNodes[0];bead.events.start(touch(p.x,p.y));bead.events.move(touch(20,410));bead.events.end(touch(20,410));assert.equal(rules.normalizeSave(plain(game.save)).draft[0],null);
+ game.screen='craft';game.render();const bead=game.slotNodes[0];bead.events.start(touch(p.x,p.y));bead.events.move(touch(20,410));bead.events.end(touch(20,410));assert.deepEqual(plain(rules.normalizeSave(plain(game.save)).draft),[leaf,1]);
+});
+
+test('selected deletion compacts first/middle/last materials, keeps sizes/facings and reloads without holes',()=>{
+ for(const index of [0,1,2]){
+  const {game,actions}=fixture(),before=plain(game.save);game.selectCraftSlot(index);assert.ok(game.page.getChildByName('Button: 删除选中材质'));
+  actions.get('删除选中材质')();const kept=[0,1,2].filter(i=>i!==index);
+  assert.deepEqual(plain(game.save.draft),kept.map(i=>before.draft[i]));
+  assert.deepEqual(plain(game.save.draftSizes),kept.map(i=>before.draftSizes[i]));
+  assert.deepEqual(plain(game.save.draftFacings),kept.map(i=>before.draftFacings[i]));
+  assert.deepEqual(plain(rules.normalizeSave(plain(game.save)).draft),plain(game.save.draft));
+  assert.deepEqual(plain(game.save.inventory),before.inventory);assert.deepEqual(plain(game.save.gatheredStock),before.gatheredStock);
+  actions.get('撤销')();assert.deepEqual(plain(game.save),before);
+ }
+ const {game}=fixture();while(game.save.draft.some(t=>t!==null)){game.slot=0;game.removeCraftBead();}
+ assert.equal(game.save.draft.length,0);assert.equal(rules.normalizeSave(plain(game.save)).draft.length,0);
+ game.place(0);assert.deepEqual(plain(game.save.draft),[0]);
+});
+test('Delete removes only the selected material in craft, and never behind a dialog or while busy',()=>{
+ const {game}=fixture();game.slot=1;game.modal='settings';game.onKey({keyCode:46});assert.equal(game.save.draft[1],leaf);
+ game.modal='';game.busy=true;game.onKey({keyCode:46});assert.equal(game.save.draft[1],leaf);
+ game.busy=false;game.onKey({keyCode:46});assert.deepEqual(plain(game.save.draft),[0,1]);game.onKey({keyCode:46});assert.equal(game.save.draft.length,2);
+ game.screen='home';game.slot=0;game.onKey({keyCode:46});assert.equal(game.save.draft.length,2);
 });
