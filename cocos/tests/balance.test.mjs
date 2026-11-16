@@ -1,3 +1,5 @@
+import {MATERIALS as TEST_MATERIALS} from '../assets/scripts/content.ts';
+const MATERIAL_COUNT=TEST_MATERIALS.length;
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import {freshSave,normalizeSave,newSession,gatheredMaterials,total,purchase,shopProgress} from '../assets/scripts/model.ts';
@@ -29,7 +31,7 @@ test('wins scale over five-stage bands, losses keep 60 percent rounded down, and
 });
 
 test('reputation controls new prices and cubic waits, while old high-price listings and receipts keep their deadlines',()=>{
- const ready=finishWork({...freshSave(),draft:Array(5).fill(0),inventory:Array(48).fill(10),gatheredStock:Array(48).fill(10)},1000);
+ const ready=finishWork({...freshSave(),draft:Array(5).fill(0),inventory:Array(MATERIAL_COUNT).fill(10),gatheredStock:Array(MATERIAL_COUNT).fill(10)},1000);
  const beads=ready.commerce.works[0].beads,price=suggestedPrice(beads);assert.equal(price,90);
  for(const [rep,cap]of [[0,1.2],[100,1.3],[300,1.5],[999,1.5],[-2,1.2],[NaN,1.2]]){
   const max=Math.floor(price*cap);assert.equal(priceBounds(beads,rep).max,max);

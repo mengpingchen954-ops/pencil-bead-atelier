@@ -1,3 +1,5 @@
+import {MATERIALS as TEST_MATERIALS} from '../assets/scripts/content.ts';
+const MATERIAL_COUNT=TEST_MATERIALS.length;
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import {createRequire} from 'node:module';
@@ -12,7 +14,7 @@ function fixture(){
  game.node=new Node('AtelierGame');game.page=new Node('Page');game.overlay=new Node('Dialogs');game.notices=new Node('Notices');
  game.persist=()=>{};game.toast=()=>{};game.play=()=>{};
  game.accessibility={clear(){actions.clear();},text(){},button(name,fn,modal,enabled){if(enabled)actions.set(name,fn);},showDialog(){},closeDialog(){}};
- game.save={...rules.freshSave(),started:true,reduced:true,inventory:Array(48).fill(3),gatheredStock:Array(48).fill(3),materialUnlocked:Array(48).fill(true)};
+ game.save={...rules.freshSave(),started:true,reduced:true,inventory:Array(MATERIAL_COUNT).fill(3),gatheredStock:Array(MATERIAL_COUNT).fill(3),materialUnlocked:Array(MATERIAL_COUNT).fill(true)};
  game.navigate('craft');return {game,actions};
 }
 test('charms use ordinary ring slots, size, drag, replacement, removal and undo without spending stock',()=>{

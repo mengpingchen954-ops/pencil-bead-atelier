@@ -1,3 +1,5 @@
+import {MATERIALS as TEST_MATERIALS} from '../assets/scripts/content.ts';
+const MATERIAL_COUNT=TEST_MATERIALS.length;
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import {createRequire} from 'node:module';
@@ -9,7 +11,7 @@ function fixture(){
  const game=new AtelierGame(),actions=new Map();game.node=new Node('AtelierGame');game.page=new Node('Page');game.overlay=new Node('Dialogs');game.notices=new Node('Notices');
  game.persist=()=>{};game.toast=()=>{};game.play=()=>{};
  game.accessibility={clear(){actions.clear();},text(){},button(name,fn,modal,enabled){if(enabled)actions.set(name,fn);},showDialog(){},closeDialog(){}};
- game.save={...rules.freshSave(),started:true,reduced:true,inventory:Array(48).fill(20),gatheredStock:Array(48).fill(20),materialUnlocked:Array(48).fill(true),draft:[0,leaf,1,...Array(9).fill(null)],draftSizes:[12,10,6,...Array(9).fill(8)],draftFacings:['out','in',...Array(10).fill('out')]};game.screen='craft';game.render();return {game,actions};
+ game.save={...rules.freshSave(),started:true,reduced:true,inventory:Array(MATERIAL_COUNT).fill(20),gatheredStock:Array(MATERIAL_COUNT).fill(20),materialUnlocked:Array(MATERIAL_COUNT).fill(true),draft:[0,leaf,1,...Array(9).fill(null)],draftSizes:[12,10,6,...Array(9).fill(8)],draftFacings:['out','in',...Array(10).fill('out')]};game.screen='craft';game.render();return {game,actions};
 }
 test('beads and charm bodies drop outside every side of the tray without consuming stock, with one-step undo',()=>{
  for(const index of [0,1])for(const [x,y] of [[35,410],[685,410],[360,115],[360,705],[125,175]]){

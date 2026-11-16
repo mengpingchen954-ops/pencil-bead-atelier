@@ -1,13 +1,24 @@
 import { BEADS, MATERIALS } from './content.ts';
+const groups=[0,1,2,3].map(category=>MATERIALS.flatMap((m,i)=>m.category===category?[i]:[]));
+const legacyTones=['white','red','blue','green','yellow','purple','purple','pink','green','purple','blue','pink','yellow','white','brown','yellow','pink','green','pink','purple','green','brown','brown','pink'];
+const tone=(i:number)=>MATERIALS[i].tone||legacyTones[i]||'brown';
+const deep=(i:number)=>MATERIALS[i].deep||[1,14,17,20,21,22,25,27,28,29,31,32,34,35].includes(i);
+export const isPaleMaterial=(i:number)=>!!MATERIALS[i]?.pale||[0,6,7,8,9,10,15,16,18,19].includes(i);
+export const materialPage=(category:number,page=0,contest=false)=>MATERIALS.flatMap((m,i)=>m.category===category&&(!contest||i<48)?[i]:[]).sort((a,b)=>MATERIALS[a].cell-MATERIALS[b].cell).slice(page*12,page*12+12);
+export const materialPages=(category:number,contest=false)=>Math.ceil(MATERIALS.filter((m,i)=>m.category===category&&(!contest||i<48)).length/12);
 export const materialPalette = (level:number) => {
-  const step=(Math.max(1,level)-1)%12;
-  const paleJewelry=[0,7,8,6,9,10],paleCrystal=[19,16,15,18];
-  const accentJewelry=[7,0,1,2,3,4,5,6,8,9,10,11][step];
-  const accentCrystal=[12,13,15,14,17,20,16,21,22,18,19,23][step];
-  const wood=[24,25,30,27,28,29,26,31,32,33,34,35][step];
-  // Pale main colors dominate; rotate accents so all 48 materials remain collectible.
-  const primary=(palette:number[],accent:number)=>{const choices=palette.filter(type=>type!==accent);return choices[step%choices.length];};
-  return [primary(paleJewelry,accentJewelry),primary(paleCrystal,accentCrystal),accentJewelry,accentCrystal,wood,36+step];
+  const step=Math.max(1,Math.floor(level))-1,accent=groups[0][step%groups[0].length];
+  let crystal=groups[1][step%groups[1].length],wood=groups[2][step%groups[2].length];
+  if(deep(accent)){
+    if(deep(crystal)){const light=groups[1].filter(i=>!deep(i));crystal=light[step%light.length];}
+    if(deep(wood))wood=[24,26,30,33][step%4];
+  };
+  const used=[tone(accent),tone(crystal)];
+  const primary=(category:number)=>{
+    const pale=groups[category].filter(i=>isPaleMaterial(i)&&i!==accent&&i!==crystal&&!used.includes(tone(i)));
+    const choices=[...pale.filter(i=>i>=48),...pale.filter(i=>i<48)],type=choices[step%choices.length];used.push(tone(type));return type;
+  };
+  return [primary(0),primary(1),accent,crystal,wood,groups[3][step%groups[3].length]];
 };
 // 60% jewelry, 20% crystal, 10% wood and 10% charms before avoiding opening matches.
 export const MATERIAL_DROPS = [0,0,0,0,0,0,0,0,1,1,1,2,2,2,2,3,4,4,5,5];
@@ -51,7 +62,8 @@ const CHARM_POINTS:Record<string,number[]> = {
   bell:[90,31,90,116],tassel:[105,32,101,127],daisy:[48,40,96,110],heart:[99,31,99,112],
 };
 export function materialPlacement(type:number,radialAngle:number,facing='out') {
-  const points=CHARM_POINTS[MATERIALS[type]?.id];
+  const material=MATERIALS[type],points=material?.attachment||CHARM_POINTS[material?.id];
+  if(material?.threaded)return {anchorX:.5,anchorY:.5,angle:-radialAngle*180/Math.PI-90,offsetX:0,offsetY:0};
   if(!points)return {anchorX:.5,anchorY:.5,angle:0,offsetX:0,offsetY:0};
   const [hx,hy,bx,by]=points,angle=Math.atan2(by-hy,bx-hx)-radialAngle-(facing==='in'?Math.PI:0),dx=.5-hx/192,dy=.5-hy/192;
   return {anchorX:hx/192,anchorY:1-hy/192,angle:angle*180/Math.PI,

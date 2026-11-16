@@ -1,10 +1,12 @@
+import {MATERIALS as TEST_MATERIALS} from '../assets/scripts/content.ts';
+const MATERIAL_COUNT=TEST_MATERIALS.length;
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import {createRequire} from 'node:module';
 import {freshSave,normalizeSave} from '../assets/scripts/model.ts';
 import {finishWork,listWork,settleSales,suggestedPrice,renameWork,randomWorkName,workName} from '../assets/scripts/commerce.ts';
 
-const prepared=()=>({...freshSave(),started:true,reduced:true,inventory:Array(48).fill(30),gatheredStock:Array(48).fill(30),draft:[0,43],draftSizes:[6,12],draftFacings:['out','in'],draftName:'  月光与蔷薇  '});
+const prepared=()=>({...freshSave(),started:true,reduced:true,inventory:Array(MATERIAL_COUNT).fill(30),gatheredStock:Array(MATERIAL_COUNT).fill(30),draft:[0,43],draftSizes:[6,12],draftFacings:['out','in'],draftName:'  月光与蔷薇  '});
 test('manual names persist through completion, listing, sale and reload without changing transactions',()=>{
   const before=prepared(),ready=finishWork(before,1000);
   assert.equal(ready.commerce.works[0].name,'月光与蔷薇');assert.equal(ready.draftName,'');assert.equal(before.draftName,'  月光与蔷薇  ');

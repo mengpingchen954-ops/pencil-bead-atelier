@@ -1,13 +1,15 @@
+import {MATERIALS as TEST_MATERIALS} from '../assets/scripts/content.ts';
+const MATERIAL_COUNT=TEST_MATERIALS.length;
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import {createRequire} from 'node:module';
 import {freshSave,normalizeSave} from '../assets/scripts/model.ts';
 import {CUSTOM_STYLES,customerFit,updateCustomers,acceptCustomer,declineCustomer,deliverCustomer,finishWork,collectSale,settleSales,listWork,salesProgress} from '../assets/scripts/commerce.ts';
-const stock=()=>({...freshSave(),started:true,inventory:Array(48).fill(20),gatheredStock:Array(48).fill(20),materialUnlocked:Array(48).fill(true)});
+const stock=()=>({...freshSave(),started:true,inventory:Array(MATERIAL_COUNT).fill(20),gatheredStock:Array(MATERIAL_COUNT).fill(20),materialUnlocked:Array(MATERIAL_COUNT).fill(true)});
 const request=(save=stock(),style='cream')=>({...save,customers:{nextId:2,nextAt:1000,lastStyle:'',active:{id:1,buyer:'林阿姨',style,status:'accepted',createdAt:1000}}});
 
 test('random visits are scheduled and saved, select feasible styles, and never replace an outstanding wish',()=>{
- const original={...freshSave(),started:true,inventory:[6,...Array(47).fill(0)],gatheredStock:[6,...Array(47).fill(0)]},before=structuredClone(original);
+ const original={...freshSave(),started:true,inventory:[6,...Array(MATERIAL_COUNT-1).fill(0)],gatheredStock:[6,...Array(MATERIAL_COUNT-1).fill(0)]},before=structuredClone(original);
  assert.equal(updateCustomers({...original,started:false},1000,()=>0).customers.active,null);
  const waiting=updateCustomers(original,1000,()=>0);assert.equal(waiting.customers.nextAt,16000);assert.equal(updateCustomers(waiting,15999),waiting);
  const guests=new Set(),styles=new Set();
@@ -19,7 +21,7 @@ test('random visits are scheduled and saved, select feasible styles, and never r
  }
  assert.equal(guests.size,4);assert.equal(styles.size,2);assert.deepEqual(original,before);
  const next={...waiting,customers:{...waiting.customers,lastStyle:'cream'}};assert.equal(updateCustomers(next,16000,()=>.99).customers.active.style,'jewelry');
- const crafted=finishWork({...stock(),draft:Array(6).fill(24)},1000),noStock={...crafted,inventory:Array(48).fill(0),gatheredStock:Array(48).fill(0),customers:waiting.customers};
+ const crafted=finishWork({...stock(),draft:Array(6).fill(24)},1000),noStock={...crafted,inventory:Array(MATERIAL_COUNT).fill(0),gatheredStock:Array(MATERIAL_COUNT).fill(0),customers:waiting.customers};
  assert.equal(updateCustomers(noStock,16000,()=>.99).customers.active.style,'forest');
 });
 
@@ -28,7 +30,7 @@ test('five styles allow free arrangements, use exact halves and minimum size, an
  for(const style of CUSTOM_STYLES){const beads=cases[style.id];assert.equal(customerFit(style.id,beads).ok,true);assert.equal(customerFit(style.id,beads.slice(0,5)).ok,false);assert.equal(customerFit(style.id,beads.toReversed()).ok,true);}
  assert.equal(customerFit('cream',[0,7,8,12,13,24,25]).ok,false);assert.equal(customerFit('cream',[0,7,8,9,12,13,24]).ok,true);
  assert.equal(customerFit('charm',[0,1,2,12,13],'heart').ok,true);assert.equal(customerFit('charm',[0,1,2,12,13]).ok,false);
- for(const beads of [Array(6),[0,0,0,0,0,-1],[0,0,0,0,0,48],[0,0,0,0,0,'0']])assert.equal(customerFit('jewelry',beads).ok,false);
+ for(const beads of [Array(6),[0,0,0,0,0,-1],[0,0,0,0,0,MATERIAL_COUNT],[0,0,0,0,0,'0']])assert.equal(customerFit('jewelry',beads).ok,false);
  assert.equal(customerFit('unknown',Array(6).fill(0)).ok,false);
 });
 

@@ -1,3 +1,5 @@
+import {MATERIALS as TEST_MATERIALS} from '../assets/scripts/content.ts';
+const MATERIAL_COUNT=TEST_MATERIALS.length;
 import fs from 'node:fs';
 import test from 'node:test';
 import assert from 'node:assert/strict';
@@ -89,7 +91,7 @@ test('story uses the five shared destinations and cleanup counts for thirty perc
  let save=rules.freshSave();const {CLEAN_SPOTS}=load(root+'/assets/scripts/content.ts');for(const spot of CLEAN_SPOTS)save=rules.cleanSpot(save,spot.id);assert.equal(rules.shopProgress(save).percent,30);
 });
 test('collect all pays only unclaimed sales once and controller restores the transaction on storage failure',()=>{
- const trade=load(root+'/assets/scripts/commerce.ts');let save={...rules.freshSave(),inventory:Array(48).fill(20),gatheredStock:Array(48).fill(20)};
+ const trade=load(root+'/assets/scripts/commerce.ts');let save={...rules.freshSave(),inventory:Array(MATERIAL_COUNT).fill(20),gatheredStock:Array(MATERIAL_COUNT).fill(20)};
  for(let i=0;i<4;i++){save=trade.finishWork({...save,draft:[0]},1000+i);save=trade.listWork(save,i+1,42,2000);}
  save=trade.settleSales(save,100000);save=trade.collectSale(save,1);
  const before=JSON.stringify(save),next=trade.collectAllSales(save);assert.equal(next.coins,save.coins+126);assert.equal(JSON.stringify(save),before);assert.equal(trade.collectAllSales(next),null);
@@ -101,7 +103,7 @@ test('random names exclude all existing names even after the original suggestion
  for(let i=0;i<100;i++){const name=randomWorkName('',used);assert.ok(name.length<=24);assert.equal(used.includes(name),false);used.push(name);}
 });
 test('price presets update the displayed waiting time and commit the selected slider price',()=>{
- const trade=load(root+'/assets/scripts/commerce.ts'),{g,actions}=fixture();g.save=trade.finishWork({...g.save,inventory:Array(48).fill(20),gatheredStock:Array(48).fill(20),draft:[0,0,0]},1000);
+ const trade=load(root+'/assets/scripts/commerce.ts'),{g,actions}=fixture();g.save=trade.finishWork({...g.save,inventory:Array(MATERIAL_COUNT).fill(20),gatheredStock:Array(MATERIAL_COUNT).fill(20),draft:[0,0,0]},1000);
  const bounds=trade.priceBounds([0,0,0],0);g.listingDialog(1,bounds.min);
  actions.get('高价')();assert.ok(g.overlay.getComponentsInChildren(Label).some(l=>l.string==='售价 '+bounds.max+' 金币'));
  actions.get('降价 10')();assert.ok(g.overlay.getComponentsInChildren(Label).some(l=>l.string==='售价 '+(bounds.max-10)+' 金币'));actions.get('快卖')();actions.get('确认上架')();assert.equal(g.save.commerce.works[0].price,bounds.min);assert.equal(g.save.commerce.works[0].sellAt-g.save.commerce.works[0].listedAt,trade.saleDuration([0,0,0],bounds.min));
@@ -118,7 +120,7 @@ test('empty state drawings are distinct and reputation upgrade reports the actua
 });
 
 test('the final customer work page compacts around actual cards and returns to the first page',()=>{
- const trade=load(root+'/assets/scripts/commerce.ts'),{g,actions,flush}=fixture();let save={...g.save,inventory:Array(48).fill(30),gatheredStock:Array(48).fill(30)};
+ const trade=load(root+'/assets/scripts/commerce.ts'),{g,actions,flush}=fixture();let save={...g.save,inventory:Array(MATERIAL_COUNT).fill(30),gatheredStock:Array(MATERIAL_COUNT).fill(30)};
  for(let i=0;i<4;i++)save=trade.finishWork({...save,draft:Array(6).fill(0)},1000+i);
  g.save={...save,customers:{nextId:2,nextAt:0,lastStyle:'',active:{id:1,style:'jewelry',buyer:'许老师',status:'accepted',createdAt:1}}};
  g.customerWorks(1);flush();assert.ok(g.overlay.getChildByName('Dialog paper').getComponent(UITransform).contentSize.height<600);

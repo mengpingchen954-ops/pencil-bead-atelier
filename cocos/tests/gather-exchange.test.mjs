@@ -1,3 +1,5 @@
+import {MATERIALS as TEST_MATERIALS} from '../assets/scripts/content.ts';
+const MATERIAL_COUNT=TEST_MATERIALS.length;
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import {freshSave,newSession,bankEarlyCollection,gatheredMaterials,sessionRewards,goalProgress,normalizeSave,total} from '../assets/scripts/model.ts';
@@ -30,7 +32,7 @@ test('playing, empty and abandoned rounds award nothing; complete sparse rounds 
 });
 
 test('old property survives, repeat banking cannot duplicate, and a fresh run has a separate reward',()=>{
- const original={...freshSave(),inventory:Array(48).fill(200),gatheredStock:Array(48).fill(150),materialUnlocked:Array(48).fill(true)};
+ const original={...freshSave(),inventory:Array(MATERIAL_COUNT).fill(200),gatheredStock:Array(MATERIAL_COUNT).fill(150),materialUnlocked:Array(MATERIAL_COUNT).fill(true)};
  const session={...newSession(43,19),status:'won',collected:[99,80,60,40,20,1]};
  const bank=bankEarlyCollection(original,session);assert.equal(total(bank.save.inventory)-total(original.inventory),14);
  assert.equal(total(bank.save.gatheredStock)-total(original.gatheredStock),14);assert.deepEqual(bank.save.materialUnlocked,original.materialUnlocked);

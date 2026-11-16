@@ -1,3 +1,5 @@
+import {MATERIALS as TEST_MATERIALS} from '../assets/scripts/content.ts';
+const MATERIAL_COUNT=TEST_MATERIALS.length;
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import {createRequire} from 'node:module';
@@ -5,7 +7,7 @@ const require=createRequire(import.meta.url),{load,Node,UITransform,Label,root}=
 const {AtelierGame}=load(root+'/assets/scripts/AtelierGame.ts'),rules=load(root+'/assets/scripts/model.ts');
 function fixture(){
  const game=new AtelierGame();game.page=new Node('Page');game.overlay=new Node('Dialogs');game.notices=new Node('Notices');
- game.save={...rules.freshSave(),started:true,reduced:false,draft:Array(12).fill(0),inventory:Array(48).fill(30),gatheredStock:Array(48).fill(30)};
+ game.save={...rules.freshSave(),started:true,reduced:false,draft:Array(12).fill(0),inventory:Array(MATERIAL_COUNT).fill(30),gatheredStock:Array(MATERIAL_COUNT).fill(30)};
  game.screen='craft';game.render();
  game.slotNodes.forEach(n=>n.children.forEach(c=>{c.isValid=true;}));return game;
 }

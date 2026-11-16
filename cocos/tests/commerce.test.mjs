@@ -1,3 +1,5 @@
+import {MATERIALS as TEST_MATERIALS} from '../assets/scripts/content.ts';
+const MATERIAL_COUNT=TEST_MATERIALS.length;
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import {freshSave,normalizeSave,newSession,bankEarlyCollection,gatheredMaterials,sessionRewards,move,findMove} from '../assets/scripts/model.ts';
@@ -6,7 +8,7 @@ import {storyUnlocked,storyRoute} from '../assets/scripts/story.ts';
 import {STORIES} from '../assets/scripts/content.ts';
 import {beginCompetition} from '../assets/scripts/competition.ts';
 
-const prepared=()=>({...freshSave(),inventory:Array(48).fill(40),gatheredStock:Array(48).fill(40),materialUnlocked:Array(48).fill(true),draft:Array(12).fill(5),charm:'heart'});
+const prepared=()=>({...freshSave(),inventory:Array(MATERIAL_COUNT).fill(40),gatheredStock:Array(MATERIAL_COUNT).fill(40),materialUnlocked:Array(MATERIAL_COUNT).fill(true),draft:Array(12).fill(5),charm:'heart'});
 test('free DIY accepts a single color and any charm, reserves actual stock once, and pays nothing on save',()=>{
   const save=prepared(),snapshot=structuredClone(save),next=finishWork(save,1000);
   assert.ok(next);assert.deepEqual(save,snapshot);assert.equal(next.inventory[5],28);assert.equal(next.coins,save.coins);assert.equal(next.rep,save.rep);

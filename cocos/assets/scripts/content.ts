@@ -1,5 +1,6 @@
 // @ts-nocheck
 // Rules and narrative retained from the original game; engine-independent.
+import { EXTRA_MATERIALS } from './extra-materials.ts';
 export const BEADS = [
   {
     "name": "珍珠",
@@ -584,7 +585,7 @@ export const FURNITURE = [
   },
 ];
 export const CHARMS = {"none":"无饰品","sakura":"樱花吊坠","butterfly":"蝴蝶挂饰","star":"星星吊坠","moon":"月亮挂饰","bow":"蝴蝶结","pearl":"珍珠坠","drop":"水滴吊坠","leaf":"叶子挂饰","bell":"风铃","tassel":"流苏","daisy":"小花挂饰","heart":"爱心吊坠"};
-export const MATERIALS = [...BEADS, ...[{"id":"sakura","name":"樱花吊坠","short":"樱花吊坠","category":3,"cell":0,"color":"#d7a895"},{"id":"butterfly","name":"蝴蝶挂饰","short":"蝴蝶挂饰","category":3,"cell":1,"color":"#d7a895"},{"id":"star","name":"星星吊坠","short":"星星吊坠","category":3,"cell":2,"color":"#d7a895"},{"id":"moon","name":"月亮挂饰","short":"月亮挂饰","category":3,"cell":3,"color":"#d7a895"},{"id":"bow","name":"蝴蝶结","short":"蝴蝶结","category":3,"cell":4,"color":"#d7a895"},{"id":"pearl","name":"珍珠坠","short":"珍珠坠","category":3,"cell":5,"color":"#d7a895"},{"id":"drop","name":"水滴吊坠","short":"水滴吊坠","category":3,"cell":6,"color":"#d7a895"},{"id":"leaf","name":"叶子挂饰","short":"叶子挂饰","category":3,"cell":7,"color":"#d7a895"},{"id":"bell","name":"风铃","short":"风铃","category":3,"cell":8,"color":"#d7a895"},{"id":"tassel","name":"流苏","short":"流苏","category":3,"cell":9,"color":"#d7a895"},{"id":"daisy","name":"小花挂饰","short":"小花挂饰","category":3,"cell":10,"color":"#d7a895"},{"id":"heart","name":"爱心吊坠","short":"爱心吊坠","category":3,"cell":11,"color":"#d7a895"}]];
+export const MATERIALS = [...BEADS, ...[{"id":"sakura","name":"樱花吊坠","short":"樱花吊坠","category":3,"cell":0,"color":"#d7a895"},{"id":"butterfly","name":"蝴蝶挂饰","short":"蝴蝶挂饰","category":3,"cell":1,"color":"#d7a895"},{"id":"star","name":"星星吊坠","short":"星星吊坠","category":3,"cell":2,"color":"#d7a895"},{"id":"moon","name":"月亮挂饰","short":"月亮挂饰","category":3,"cell":3,"color":"#d7a895"},{"id":"bow","name":"蝴蝶结","short":"蝴蝶结","category":3,"cell":4,"color":"#d7a895"},{"id":"pearl","name":"珍珠坠","short":"珍珠坠","category":3,"cell":5,"color":"#d7a895"},{"id":"drop","name":"水滴吊坠","short":"水滴吊坠","category":3,"cell":6,"color":"#d7a895"},{"id":"leaf","name":"叶子挂饰","short":"叶子挂饰","category":3,"cell":7,"color":"#d7a895"},{"id":"bell","name":"风铃","short":"风铃","category":3,"cell":8,"color":"#d7a895"},{"id":"tassel","name":"流苏","short":"流苏","category":3,"cell":9,"color":"#d7a895"},{"id":"daisy","name":"小花挂饰","short":"小花挂饰","category":3,"cell":10,"color":"#d7a895"},{"id":"heart","name":"爱心吊坠","short":"爱心吊坠","category":3,"cell":11,"color":"#d7a895"}], ...EXTRA_MATERIALS];
 export const CLEAN_SPOTS = [
   { id: "box-left", kind: "clutter", name: "收走左边的旧纸箱", x: 18, y: 73 },
   { id: "box-right", kind: "clutter", name: "收走右边的旧纸箱", x: 82, y: 75 },

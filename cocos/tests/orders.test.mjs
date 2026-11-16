@@ -1,10 +1,12 @@
+import {MATERIALS as TEST_MATERIALS} from '../assets/scripts/content.ts';
+const MATERIAL_COUNT=TEST_MATERIALS.length;
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { ORDERS, RETURN_ORDERS } from '../assets/scripts/content.ts';
 import { freshSave, normalizeSave, currentOrder, checkOrder, deliver, draftCounts } from '../assets/scripts/model.ts';
 
 function finishStoryOrders() {
-  let save={...freshSave(),started:true,inventory:[...Array(6).fill(200),...Array(42).fill(0)]};
+  let save={...freshSave(),started:true,inventory:[...Array(6).fill(200),...Array(MATERIAL_COUNT-6).fill(0)]};
   for(const order of ORDERS)save=deliver({...save,draft:order.palette.slice(),charm:order.charm});
   return save;
 }

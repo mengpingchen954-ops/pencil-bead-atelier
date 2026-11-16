@@ -150,3 +150,10 @@ Web Mobile 构建可通过静态 HTTP 服务试玩。Android、iOS 和小游戏�
 图标和按钮统一提供按下轻压、暖色提亮与松开回弹；首页背景内的快捷入口、导航、章节、弹窗开关与材料格均可反馈，滑出或取消触摸不会触发操作。减少动效时保留颜色提示。音乐按曲目列表顺序播放，播完自动切到下一首并保存曲目。工坊新增珠子时保持各自尺寸，扩大线圈与托盘，珠子和饰品完整轮廓始终留在托盘第二道圆线内，普通珠保留间隙，材料格纵向排开；故事页仅保留一套标题与底部操作。
 
 `node scripts/test-cocos-ui-feedback.mjs` 使用真实触摸验证首页所有入口、导航、弹窗、材料格、滑出取消、减少动效，并通过实际音频播放结束验证切歌和保存。`node scripts/test-cocos-bead-sizes.mjs` 验证逐颗尺寸、拖动、撤销、保存、重做与出售。
+
+
+## 2026-11-16 · 新增三消与 DIY 材质
+
+从提供的十二张素材图中筛选并提取 105 款透明材质，相似外观及同款不同尺寸只取代表款。现有材质共 153 款，分类为珠宝 38、水晶 51、木质 15、饰品 49；DIY 和材料盒每页最多 12 格，可按类别翻页。新材质随三消关卡轮换，通过结算采集后解锁并用于 DIY、定制及上架。异形珠沿线转向，吊坠使用挂点；原有编号、作品、库存与比赛规则保留。
+
+验收：`node --test cocos/tests/*.test.mjs`、`node scripts/test-cocos-extra-materials.mjs`。素材筛选与提取记录：`cocos/assets/resources/art/extra-material-sources.json`，重制脚本：`cocos/tools/prepare-extra-materials.py`（读取本机原始十二张 PNG）。

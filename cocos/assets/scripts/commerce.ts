@@ -1,6 +1,6 @@
 import { MATERIALS, CHARMS } from './content.ts';
 
-import { materialStock, charmType, validMaterial, normalizeBeadSizes, normalizeBeadFacings, CRAFT_LIMIT } from './materials.ts';
+import { materialStock, charmType, validMaterial, normalizeBeadSizes, normalizeBeadFacings, CRAFT_LIMIT, isPaleMaterial } from './materials.ts';
 export const SALE_DELAY = 20000;
 const beadPrices = [12, 16, 18, 10, 14, 20];
 const buyers = ['林阿姨', '花店小满', '许老师', '隔壁邻居'];
@@ -11,7 +11,6 @@ export const CUSTOM_STYLES = [
   {id:'forest',name:'自然森系',rule:'至少6件珠材，木质占比不少于一半',reward:240,category:2,wish:'想要木质为主的自然森系，像在林间散步。'},
   {id:'charm',name:'灵动点缀',rule:'至少6件珠材，其中至少1件饰品',reward:210,category:3,wish:'想要带一点小饰品的手串，配色和排列交给你。'},
 ];
-const paleJewelry=[0,6,7,8,9,10];
 const customStyle=(id:string)=>CUSTOM_STYLES.find(style=>style.id===id);
 const requestId=(n:any)=>Number.isSafeInteger(n)&&n>0&&n<Number.MAX_SAFE_INTEGER-1;
 
@@ -135,7 +134,7 @@ export function customerFit(styleId:string,beads:any[],charm='none') {
   const style=customStyle(styleId),valid=Array.isArray(beads)&&Array.from(beads).every(type=>type===null||validMaterial(type));
   const parts=valid?beads.filter(type=>type!==null):[];
   if(charm!=='none'&&charmType(charm)>=0)parts.push(charmType(charm));
-  const matching=style?parts.filter(type=>style.id==='cream'?paleJewelry.includes(type):MATERIALS[type].category===style.category).length:0;
+  const matching=style?parts.filter(type=>style.id==='cream'?MATERIALS[type].category===0&&isPaleMaterial(type):MATERIALS[type].category===style.category).length:0;
   const required=styleId==='charm'?1:Math.max(3,Math.ceil(parts.length/2)),full=parts.length>=6,theme=matching>=required;
   return {total:parts.length,matching,required,full,theme,ok:!!style&&valid&&full&&theme};
 }
@@ -146,7 +145,7 @@ export function updateCustomers(save:any,now=Date.now(),random=Math.random) {
   if(now<state.nextAt||!requestId(state.nextId))return save;
   const stock=MATERIALS.flatMap((_,type)=>Array(Math.min(6,materialStock(save,type))).fill(type));
   const pool=CUSTOM_STYLES.filter(style=>{
-    const matching=stock.filter(type=>style.id==='cream'?paleJewelry.includes(type):MATERIALS[type].category===style.category).length;
+    const matching=stock.filter(type=>style.id==='cream'?MATERIALS[type].category===0&&isPaleMaterial(type):MATERIALS[type].category===style.category).length;
     return stock.length>=6&&matching>=(style.id==='charm'?1:3)||save.commerce.works.some((work:any)=>work.status==='ready'&&customerFit(style.id,work.beads,work.charm).ok);
   });
   const choices=pool.filter(style=>style.id!==state.lastStyle),options=choices.length?choices:pool.length?pool:[CUSTOM_STYLES[0]];

@@ -1,3 +1,5 @@
+import {MATERIALS as TEST_MATERIALS} from '../assets/scripts/content.ts';
+const MATERIAL_COUNT=TEST_MATERIALS.length;
 import test from "node:test";
 import assert from "node:assert/strict";
 import { ORDERS, CLEAN_SPOTS } from "../assets/scripts/content.ts";
@@ -156,7 +158,7 @@ test("handmade delivery conserves stock and grants its reward only once", () => 
   const s = freshSave(),
     o = ORDERS[0];
   assert.equal(deliver(s), null);
-  s.inventory = Array(6).fill(20);s.gatheredStock=Array(48).fill(20);s.charm="daisy";
+  s.inventory = Array(6).fill(20);s.gatheredStock=Array(MATERIAL_COUNT).fill(20);s.charm="daisy";
   s.draft = [...o.palette];
   assert.equal(
     canPlace({ ...s, inventory: [8, 20, 20, 20, 20, 20] }, 0, 0),
@@ -202,12 +204,12 @@ test("malformed saves are bounded and energy recovery respects time", () => {
     energy: 100,
     inventory: [NaN, Infinity, -3, 8],
     completed: ["daisy", "daisy", "evil"],
-    draft: [99, -2, "x", 1],
+    draft: [9999, -2, "x", 1],
     upgrades: { chair: 999 },
   });
   assert.equal(s.coins, 0);
   assert.equal(s.energy, 10);
-  assert.deepEqual(s.inventory, [0, 0, 0, 8, 0, 0,...Array(42).fill(0)]);
+  assert.deepEqual(s.inventory, [0, 0, 0, 8, 0, 0,...Array(MATERIAL_COUNT-6).fill(0)]);
   assert.deepEqual(s.completed, ["daisy"]);
   assert.equal(s.draft[0], null);
   assert.equal(s.upgrades.chair, 3);

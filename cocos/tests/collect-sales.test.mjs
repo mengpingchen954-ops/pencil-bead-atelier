@@ -1,3 +1,5 @@
+import {MATERIALS as TEST_MATERIALS} from '../assets/scripts/content.ts';
+const MATERIAL_COUNT=TEST_MATERIALS.length;
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import {createRequire} from 'node:module';
@@ -5,7 +7,7 @@ import {freshSave,normalizeSave} from '../assets/scripts/model.ts';
 import {finishWork,listWork,settleSales,collectSale,suggestedPrice,renameWork} from '../assets/scripts/commerce.ts';
 
 function listed(){
- let save={...freshSave(),started:true,reduced:true,inventory:Array(48).fill(20),gatheredStock:Array(48).fill(20)};
+ let save={...freshSave(),started:true,reduced:true,inventory:Array(MATERIAL_COUNT).fill(20),gatheredStock:Array(MATERIAL_COUNT).fill(20)};
  for(let i=0;i<4;i++){save=finishWork({...save,draft:[i]},1000+i);save=listWork(save,i+1,suggestedPrice([i]),2000);}
  return save;
 }

@@ -8,7 +8,7 @@ import {
 import { BEADS, MATERIALS, ORDERS, RETURN_ORDERS, CHAPTERS, STORIES, JOURNEY, FURNITURE, CHARMS, CLEAN_SPOTS, REPAIRS } from './content';
 import * as rules from './model';
 import { DAILY_REWARDS, ENERGY_EXCHANGE, dailyStatus, claimDaily } from './daily';
-import { materialStock, charmType, normalizeBeadSizes, normalizeBeadFacings, ringMaterials, materialPlacement, ringAngle, ringRadius, CRAFT_LIMIT } from './materials';
+import { materialStock, charmType, normalizeBeadSizes, normalizeBeadFacings, ringMaterials, materialPlacement, ringAngle, ringRadius, CRAFT_LIMIT, materialPage, materialPages } from './materials';
 import { craftChecks, finishWork, listWork, withdrawWork, settleSales, collectSale, collectAllSales, suggestedPrice, priceBounds, saleDuration, salesProgress, randomWorkName, renameWork, CUSTOM_STYLES, customerFit, updateCustomers, acceptCustomer, declineCustomer, deliverCustomer } from './commerce';
 import { pendingStory, storyUnlocked, finishStory, STORY_STOPS, storyRoute } from './story';
 import { BrowserAccessibility } from './BrowserAccessibility';
@@ -56,6 +56,8 @@ export class AtelierGame extends Component {
   private slot = -1;
   private craftMaterial = 0;
   private craftCategory = 0;
+  private craftPages = [0,0,0,0];
+  private inventoryPage = 0;
   private craftToolsOpen = false;
   private inventoryCategory = 0;
   private craftTap: {index:number;at:number} | null = null;
@@ -231,7 +233,7 @@ export class AtelierGame extends Component {
       packing: this.screen==='packing'?{beads:this.save.draft,beadSizes:normalizeBeadSizes(this.save.draft,this.save.draftSizes,this.save.beadSize),beadFacings:normalizeBeadFacings(this.save.draft,this.save.draftFacings),charm:this.save.charm,price:suggestedPrice(this.save.draft),checks:craftChecks(this.save)}:null,
       storyRoute: this.screen==='storyMap'?storyRoute(this.save):null,
       pause: this.modal==='pause'||this.modal==='pause-restart'||this.modal==='pause-leave'||this.musicFromPause?{context:this.screen,music:this.save.music.enabled,sound:this.save.sound,reduced:this.save.reduced}:null,
-      crafting: ['craft','contestCraft'].includes(this.screen)?{orderId:null,contestId:this.contestEntry?.id||null,material:this.craftMaterial,beads:this.workingDraft,beadSizes:this.workingSizes,beadFacings:this.workingFacings,charm:this.workingCharm,flights:Array.from(this.craftFlights.entries()).map(([index,f])=>({index,type:f.type,x:f.node.position.x+41,y:-f.node.position.y+41,angle:f.node.angle,scale:f.node.scale.x})),slots:this.slotNodes.map(n=>{const size=n.getComponent(UITransform)!.contentSize;return {x:n.position.x+size.width/2,y:-n.position.y+size.height/2};}),category:this.craftCategory,materials:MATERIALS.map((m,i)=>({type:i,x:146+(m.cell%4)*140,y:MATERIAL_TOP+34+Math.floor(m.cell/4)*MATERIAL_STEP,category:m.category,unlocked:this.save.materialUnlocked[i],stock:materialStock(this.save,i)}))}:null,
+      crafting: ['craft','contestCraft'].includes(this.screen)?{orderId:null,contestId:this.contestEntry?.id||null,material:this.craftMaterial,beads:this.workingDraft,beadSizes:this.workingSizes,beadFacings:this.workingFacings,charm:this.workingCharm,flights:Array.from(this.craftFlights.entries()).map(([index,f])=>({index,type:f.type,x:f.node.position.x+41,y:-f.node.position.y+41,angle:f.node.angle,scale:f.node.scale.x})),slots:this.slotNodes.map(n=>{const size=n.getComponent(UITransform)!.contentSize;return {x:n.position.x+size.width/2,y:-n.position.y+size.height/2};}),category:this.craftCategory,materialPage:this.contestEntry?0:this.craftPages[this.craftCategory],materials:MATERIALS.map((m,i)=>({type:i,x:146+(m.cell%4)*140,y:MATERIAL_TOP+34+Math.floor((m.cell%12)/4)*MATERIAL_STEP,page:Math.floor(m.cell/12),visible:m.category===this.craftCategory&&Math.floor(m.cell/12)===(this.contestEntry?0:this.craftPages[this.craftCategory]),category:m.category,unlocked:this.save.materialUnlocked[i],stock:materialStock(this.save,i)}))}:null,
       music:this.music?.snapshot(),
       story: this.modal === 'story' ? { id: STORIES[this.storyIndex].id, line: this.storyLine } : null };
   }
@@ -948,9 +950,10 @@ export class AtelierGame extends Component {
     const radius=this.craftRadius();let extent=0;
     this.workingDraft.forEach((type,i)=>{
       if(type===null)return;const d=this.craftDiameter(i);
-      if(!MATERIALS[type]?.id){extent=Math.max(extent,radius+d/2+6);return;}
+      if(!MATERIALS[type]?.id&&!MATERIALS[type]?.threaded){extent=Math.max(extent,radius+d/2+6);return;}
       const a=ringAngle(this.workingDraft,i,this.workingSizes),p=materialPlacement(type,a,this.workingFacings[i]),r=p.angle*Math.PI/180;
-      for(const x of [-p.anchorX*d,(1-p.anchorX)*d])for(const y of [-p.anchorY*d,(1-p.anchorY)*d]){
+      const bounds=MATERIALS[type]?.bounds||[0,0,1,1];
+      for(const x of [(bounds[0]-p.anchorX)*d,(bounds[2]-p.anchorX)*d])for(const y of [(1-bounds[3]-p.anchorY)*d,(1-bounds[1]-p.anchorY)*d]){
         extent=Math.max(extent,Math.hypot(Math.cos(a)*radius+x*Math.cos(r)-y*Math.sin(r),-Math.sin(a)*radius+x*Math.sin(r)+y*Math.cos(r))+6);
       }
     });return Math.max(266,extent/.89);
@@ -1075,9 +1078,18 @@ export class AtelierGame extends Component {
       this.hitButton(name,111+i*125,770,121,53,()=>{this.craftCategory=i;this.render();});
     });
     const panel=this.rect('Material tray',70,826,580,307,'#f8f5f0',this.page,16,'#d6bfb1');
-    MATERIALS.forEach((m,i)=>{
-      if(m.category!==this.craftCategory)return;
-      const x=83+(m.cell%4)*140,y=MATERIAL_TOP+Math.floor(m.cell/4)*MATERIAL_STEP;
+    const materialCount=materialPages(this.craftCategory,!!event),pageIndex=event?0:Math.min(this.craftPages[this.craftCategory],materialCount-1);
+    if(!event)this.craftPages[this.craftCategory]=pageIndex;
+    if(materialCount>1){
+      const turn=(direction:number)=>{this.craftPages[this.craftCategory]=Math.max(0,Math.min(materialCount-1,pageIndex+direction));this.render();};
+      this.button('‹',18,954,46,60,()=>turn(-1),this.page,false,pageIndex>0).name='Button: 上一页珠材';
+      this.button('›',656,954,46,60,()=>turn(1),this.page,false,pageIndex<materialCount-1).name='Button: 下一页珠材';
+      this.text((pageIndex+1)+'/'+materialCount,14,1018,54,26,17,MUTED,this.page,true);
+      this.accessibleButton('上一页珠材',()=>turn(-1),this.page,pageIndex>0);this.accessibleButton('下一页珠材',()=>turn(1),this.page,pageIndex<materialCount-1);
+    }
+    materialPage(this.craftCategory,pageIndex,!!event).forEach(i=>{
+      const m=MATERIALS[i],cell=m.cell%12;
+      const x=83+(cell%4)*140,y=MATERIAL_TOP+Math.floor(cell/4)*MATERIAL_STEP;
       const unlocked=!!event||this.save.materialUnlocked[i],stock=materialStock(this.save,i),available=Math.max(0,stock-(counts[i]||0));
       const selected=event&&m.id?this.workingCharm===m.id:this.craftMaterial===i;
       const n=this.rect('Bead material '+i,x,y,128,94,selected?'#e9ded1':'#f0e8e1',this.page,9,selected?'#9aab99':'#f0e8e1');
@@ -2483,12 +2495,18 @@ export class AtelierGame extends Component {
   }
   private inventory() {
     this.dialog('inventory','我的材料盒');
-    ['珠宝','水晶','木质','饰品'].forEach((name,c)=>this.button(name,98+c*133,333,124,45,()=>{this.inventoryCategory=c;this.inventory();},this.overlay,this.inventoryCategory===c));
-    MATERIALS.forEach((m,i)=>{if(m.category!==this.inventoryCategory)return;const x=104+(m.cell%4)*131,y=400+Math.floor(m.cell/4)*149;
+    ['珠宝','水晶','木质','饰品'].forEach((name,c)=>this.button(name,98+c*133,333,124,45,()=>{this.inventoryCategory=c;this.inventoryPage=0;this.inventory();},this.overlay,this.inventoryCategory===c));
+    const pages=materialPages(this.inventoryCategory);this.inventoryPage=Math.min(this.inventoryPage,pages-1);
+    materialPage(this.inventoryCategory,this.inventoryPage).forEach(i=>{const m=MATERIALS[i],cell=m.cell%12,x=104+(cell%4)*131,y=400+Math.floor(cell/4)*149;
       this.image(this.materialArt(i),x+20,y,76,76,this.overlay);this.text(m.name,x,y+78,120,30,18,INK,this.overlay,true);
       this.text(this.save.materialUnlocked[i]?'可用 '+materialStock(this.save,i):'未解锁',x,y+109,120,28,18,MUTED,this.overlay,true);
     });
-    this.text('三消获得后解锁 · 已用尽的材料可再次采集\n旧存档材料与成品已保留，DIY 仅使用采集所得',100,888,520,70,20,MUTED,this.overlay,true);
+    if(pages>1){
+      this.button('上一页',104,868,120,42,()=>{this.inventoryPage--;this.inventory();},this.overlay,false,this.inventoryPage>0);
+      this.text((this.inventoryPage+1)+' / '+pages,240,872,240,36,22,MUTED,this.overlay,true);
+      this.button('下一页',496,868,120,42,()=>{this.inventoryPage++;this.inventory();},this.overlay,false,this.inventoryPage<pages-1);
+    }
+    this.text('三消获得后解锁 · 已用尽的材料可再次采集\n旧存档材料与成品已保留，DIY 仅使用采集所得',100,921,520,52,19,MUTED,this.overlay,true);
     this.button('去采珠',130,989,460,59,()=>{this.closeModal();this.matchIntro();},this.overlay,true);
   }
   private settings() {

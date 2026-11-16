@@ -1,3 +1,5 @@
+import {MATERIALS as TEST_MATERIALS} from '../assets/scripts/content.ts';
+const MATERIAL_COUNT=TEST_MATERIALS.length;
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import {ORDERS} from '../assets/scripts/content.ts';
@@ -6,11 +8,11 @@ import {freshSave,normalizeSave,deliver,checkOrder,materialDeficits,supplyGoals,
 test('new game starts with locked materials and migration preserves old property without inventing gathered stock',()=>{
  const save=freshSave();assert.ok(save.inventory.every(n=>n===0));assert.ok(save.materialUnlocked.every(n=>!n));
  const legacy={...save,inventory:[3,1,0,2,0,0],draft:[0,3,...Array(10).fill(null)]};delete legacy.gatheredStock;delete legacy.materialUnlocked;
- const migrated=normalizeSave(legacy);assert.deepEqual(migrated.inventory,[3,1,0,2,0,0,...Array(42).fill(0)]);assert.deepEqual(migrated.draft,legacy.draft);assert.ok(migrated.gatheredStock.every(n=>n===0));
+ const migrated=normalizeSave(legacy);assert.deepEqual(migrated.inventory,[3,1,0,2,0,0,...Array(MATERIAL_COUNT-6).fill(0)]);assert.deepEqual(migrated.draft,legacy.draft);assert.ok(migrated.gatheredStock.every(n=>n===0));
 });
 
 test('early gathering uses exact missing colors, offers an immediate target-color move, and preserves earned stock once on failure',()=>{
- const first=deliver({...freshSave(),inventory:[10,0,0,5,2,0,...Array(42).fill(0)],charm:"daisy",draft:[...ORDERS[0].palette]});first.deliveryReceipt=null;
+ const first=deliver({...freshSave(),inventory:[10,0,0,5,2,0,...Array(MATERIAL_COUNT-6).fill(0)],charm:"daisy",draft:[...ORDERS[0].palette]});first.deliveryReceipt=null;
  const goals=supplyGoals(first);assert.deepEqual(goals,[{kind:'color',type:0,target:1},{kind:'color',type:2,target:6}]);
  for(let seed=1;seed<=40;seed++){
    const session=newSession(seed,1,ORDERS[1],first);assert.equal(session.supplyOnly,true);assert.deepEqual(session.objectives,goals);assert.ok(session.obstacles.every(x=>!x));

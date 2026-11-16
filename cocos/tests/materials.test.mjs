@@ -1,16 +1,18 @@
+import {MATERIALS as TEST_MATERIALS} from '../assets/scripts/content.ts';
+const MATERIAL_COUNT=TEST_MATERIALS.length;
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import {MATERIALS,BEADS} from '../assets/scripts/content.ts';
-import {materialPalette,materialStock,charmType,MATERIAL_DROPS} from '../assets/scripts/materials.ts';
+import {materialPalette,materialStock,charmType,MATERIAL_DROPS,isPaleMaterial} from '../assets/scripts/materials.ts';
 import {freshSave,normalizeSave,newSession,bankEarlyCollection,gatheredMaterials,canPlace,findMove,move,useTool,activateSpecial,createBoard,matches} from '../assets/scripts/model.ts';
 import {ORDERS} from '../assets/scripts/content.ts';
 import {craftChecks,finishWork} from '../assets/scripts/commerce.ts';
-test('all 48 supplied materials are reachable in weighted six-type match palettes',()=>{
- assert.equal(BEADS.length,36);assert.equal(MATERIALS.length,48);
- for(let c=0;c<4;c++)assert.equal(MATERIALS.filter(m=>m.category===c).length,12);
+test('all supplied materials are reachable in weighted six-type match palettes',()=>{
+ assert.equal(BEADS.length,36);assert.equal(MATERIALS.length,153);
+ for(let c=0;c<4;c++)assert.ok(MATERIALS.filter(m=>m.category===c).length>=12);
  assert.deepEqual(MATERIAL_DROPS,[0,0,0,0,0,0,0,0,1,1,1,2,2,2,2,3,4,4,5,5]);
- const all=new Set();for(let level=1;level<=12;level++){const types=materialPalette(level);assert.equal(new Set(types).size,6);assert.deepEqual(types.map(i=>MATERIALS[i].category),[0,1,0,1,2,3]);types.forEach(i=>all.add(i));assert.deepEqual(newSession(42,level).materialTypes,types);}
- assert.equal(all.size,48);assert.deepEqual(materialPalette(13),materialPalette(1));
+ const all=new Set();for(let level=1;level<=MATERIALS.length*2;level++){const types=materialPalette(level);assert.equal(new Set(types).size,6);assert.deepEqual(types.map(i=>MATERIALS[i].category),[0,1,0,1,2,3]);types.forEach(i=>all.add(i));assert.deepEqual(newSession(42,level).materialTypes,types);}
+ assert.equal(all.size,MATERIALS.length);
 });
 
 test('every level favors pale materials, caps dark draw weight at 20%, and retains category weights',()=>{
@@ -18,7 +20,7 @@ test('every level favors pale materials, caps dark draw weight at 20%, and retai
  const counts={light:0,dark:0};
  for(let level=1;level<=24;level++){
   const types=materialPalette(level),draws=MATERIAL_DROPS.map(slot=>types[slot]);
-  assert.ok([0,7,8,6,9,10].includes(types[0]));assert.ok([19,16,15,18].includes(types[1]));
+  assert.ok(isPaleMaterial(types[0]));assert.ok(isPaleMaterial(types[1]));
   assert.ok(draws.filter(type=>dark.has(type)).length<=4,'dark weight at level '+level);
   assert.deepEqual([0,1,2,3].map(category=>draws.filter(type=>MATERIALS[type].category===category).length),[12,4,2,2]);
   for(let seed=1;seed<=100;seed++){
@@ -37,14 +39,14 @@ test('only awarded materials unlock, bank once and survive failure and reload',(
  }
 });
 test('gifted and legacy inventory cannot bypass matching provenance in placement or completion',()=>{
- const old={...freshSave(),inventory:Array(48).fill(100),draft:Array(12).fill(0),coins:1234};delete old.gatheredStock;delete old.materialUnlocked;
+ const old={...freshSave(),inventory:Array(MATERIAL_COUNT).fill(100),draft:Array(12).fill(0),coins:1234};delete old.gatheredStock;delete old.materialUnlocked;
  let save=normalizeSave(old);assert.equal(save.coins,1234);assert.equal(save.inventory[0],100);assert.equal(materialStock(save,0),0);assert.equal(canPlace(save,0,0),false);assert.equal(finishWork(save),null);
- save={...save,inventory:save.inventory.map((n,i)=>n+(i===0?12:0)),gatheredStock:[12,...Array(47).fill(0)],materialUnlocked:[true,...Array(47).fill(false)]};
+ save={...save,inventory:save.inventory.map((n,i)=>n+(i===0?12:0)),gatheredStock:[12,...Array(MATERIAL_COUNT-1).fill(0)],materialUnlocked:[true,...Array(MATERIAL_COUNT-1).fill(false)]};
  assert.equal(canPlace(save,0,0),true);assert.ok(Object.values(craftChecks(save)).every(Boolean));
  const done=finishWork(save,100);assert.ok(done);assert.equal(done.inventory[0],100);assert.equal(done.gatheredStock[0],0);assert.equal(done.materialUnlocked[0],true);assert.equal(finishWork({...done,draft:Array(12).fill(0)},200),null);
 });
 test('gathered charms are optional, locked charms are rejected and a saved charm is consumed exactly once',()=>{
- let save={...freshSave(),inventory:[12,...Array(47).fill(0)],gatheredStock:[12,...Array(47).fill(0)],materialUnlocked:[true,...Array(47).fill(false)]};save.draft=Array(12).fill(0);save.charm='heart';
+ let save={...freshSave(),inventory:[12,...Array(MATERIAL_COUNT-1).fill(0)],gatheredStock:[12,...Array(MATERIAL_COUNT-1).fill(0)],materialUnlocked:[true,...Array(MATERIAL_COUNT-1).fill(false)]};save.draft=Array(12).fill(0);save.charm='heart';
  assert.equal(finishWork(save,100),null);
  const type=charmType('heart'),session=newSession(4,12),slot=session.materialTypes.indexOf(type);assert.ok(slot>=0);save.inventory[type]=save.gatheredStock[type]=1;save.materialUnlocked[type]=true;
  const done=finishWork(save,100);assert.ok(done);assert.equal(done.gatheredStock[type],0);assert.equal(done.inventory[type],0);assert.equal(done.commerce.works[0].charm,'heart');assert.equal(done.charm,'none');assert.equal(finishWork(done,100),null);
@@ -75,7 +77,7 @@ test('legacy order boards retain their original uniform generation',()=>{
 });
 
 test('chosen bead size is preserved in saved work and restored across reload',()=>{
- let save={...freshSave(),inventory:[12,...Array(47).fill(0)],gatheredStock:[12,...Array(47).fill(0)],materialUnlocked:[true,...Array(47).fill(false)]};
+ let save={...freshSave(),inventory:[12,...Array(MATERIAL_COUNT-1).fill(0)],gatheredStock:[12,...Array(MATERIAL_COUNT-1).fill(0)],materialUnlocked:[true,...Array(MATERIAL_COUNT-1).fill(false)]};
  save.draft=Array(12).fill(0);save.beadSize=10;delete save.draftSizes;const done=finishWork(save,100);
  assert.equal(done.commerce.works[0].beadSize,10);assert.deepEqual(done.commerce.works[0].beadSizes,Array(12).fill(10));assert.deepEqual(normalizeSave(done).commerce.works[0].beadSizes,Array(12).fill(10));
 });

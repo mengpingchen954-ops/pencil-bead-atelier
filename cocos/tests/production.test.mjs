@@ -1,3 +1,5 @@
+import {MATERIALS as TEST_MATERIALS} from '../assets/scripts/content.ts';
+const MATERIAL_COUNT=TEST_MATERIALS.length;
 import fs from 'node:fs';
 import path from 'node:path';
 import vm from 'node:vm';
@@ -43,33 +45,33 @@ test('Creator production bundle preserves collection iteration and complete game
   assert.deepEqual(Array.from(materials.MATERIAL_DROPS),[0,0,0,0,0,0,0,0,1,1,1,2,2,2,2,3,4,4,5,5]);
   for(let level=1;level<=12;level++){
     const types=materials.materialPalette(level),dark=[1,14,17,20,21,22,25,27,28,29,31,32,34,35];
-    assert.ok([0,7,8,6,9,10].includes(types[0]));assert.ok([19,16,15,18].includes(types[1]));
+    assert.equal(content.MATERIALS.length,MATERIAL_COUNT);assert.ok(materials.isPaleMaterial(types[0]));assert.ok(materials.isPaleMaterial(types[1]));
     assert.ok(Array.from(materials.MATERIAL_DROPS,slot=>types[slot]).filter(type=>dark.includes(type)).length<=4);
   }
   for(const level of [1,5,6,12,13,100]){const session=model.newSession(19,level);assert.deepEqual(Array.from(session.materialTypes,t=>content.MATERIALS[t].category),[0,1,0,1,2,3]);const targets=Array.from(session.objectives).filter(g=>g.kind==='color').map(g=>g.type);for(let t=0;t<6;t++)assert.equal(session.dropPool.filter(n=>n===t).length,materials.MATERIAL_DROPS.filter(n=>n===t).length*(targets.length?targets.includes(t)?3:2:1));}
   const trade=load([...definitions.keys()].find(n=>n.endsWith('/commerce.ts')));
-  let customer={...model.freshSave(),started:true,inventory:Array(48).fill(6),gatheredStock:Array(48).fill(6),draft:Array(6).fill(0)};
+  let customer={...model.freshSave(),started:true,inventory:Array(MATERIAL_COUNT).fill(6),gatheredStock:Array(MATERIAL_COUNT).fill(6),draft:Array(6).fill(0)};
   customer=trade.updateCustomers(customer,1000,()=>0);customer=trade.updateCustomers(customer,16000,()=>0);assert.equal(customer.customers.active.style,'jewelry');
   customer=trade.acceptCustomer(customer,1);customer=trade.finishWork(customer,17000);customer=trade.deliverCustomer(customer,1,1,18000,()=>0);
   assert.equal(customer.coins,280);assert.equal(customer.rep,12);assert.equal(customer.gatheredStock[0],0);assert.equal(customer.commerce.works[0].commission.id,1);
   assert.equal(model.normalizeSave(customer).commerce.works[0].buyer,'林阿姨');assert.equal(trade.deliverCustomer(customer,1,1,19000),null);assert.equal(trade.collectSale(customer,1),null);
 
-  const named=trade.finishWork({...model.freshSave(),draft:[0],inventory:Array(48).fill(2),gatheredStock:Array(48).fill(2),draftName:' 星河手作 '},1000);
+  const named=trade.finishWork({...model.freshSave(),draft:[0],inventory:Array(MATERIAL_COUNT).fill(2),gatheredStock:Array(MATERIAL_COUNT).fill(2),draftName:' 星河手作 '},1000);
   assert.equal(named.commerce.works[0].name,'星河手作');assert.equal(named.draftName,'');
   assert.equal(model.normalizeSave(trade.renameWork(named,1,'月光小梦')).commerce.works[0].name,'月光小梦');
   assert.notEqual(trade.randomWorkName('春日花信'),'春日花信');
-  const ringDraft={...model.freshSave(),inventory:Array(48).fill(2),gatheredStock:Array(48).fill(2),draft:[0,43,43,47],draftSizes:[7,9,11,8],draftFacings:['out','in','out','in']};
+  const ringDraft={...model.freshSave(),inventory:Array(MATERIAL_COUNT).fill(2),gatheredStock:Array(MATERIAL_COUNT).fill(2),draft:[0,43,43,47],draftSizes:[7,9,11,8],draftFacings:['out','in','out','in']};
   assert.equal(model.canPlace(ringDraft,43,4),false);
   const ringWork=trade.finishWork(ringDraft,1000);assert.ok(ringWork);assert.equal(ringWork.inventory[43],0);assert.equal(ringWork.gatheredStock[43],0);assert.equal(ringWork.inventory[47],1);
   assert.deepEqual(Array.from(model.normalizeSave(ringWork).commerce.works[0].beads),[0,43,43,47]);assert.deepEqual(Array.from(ringWork.commerce.works[0].beadSizes),[7,9,11,8]);
   assert.deepEqual(Array.from(model.normalizeSave(ringWork).commerce.works[0].beadFacings),['out','in','out','in']);
-  let free=trade.finishWork({...model.freshSave(),inventory:Array(48).fill(40),gatheredStock:Array(48).fill(40),materialUnlocked:Array(48).fill(true),draft:Array(12).fill(5),charm:'heart'},1000);
+  let free=trade.finishWork({...model.freshSave(),inventory:Array(MATERIAL_COUNT).fill(40),gatheredStock:Array(MATERIAL_COUNT).fill(40),materialUnlocked:Array(MATERIAL_COUNT).fill(true),draft:Array(12).fill(5),charm:'heart'},1000);
   assert.ok(free);assert.equal(free.coins,80);assert.equal(free.inventory[5],28);
   const price=trade.suggestedPrice(free.commerce.works[0].beads);
   free=trade.listWork(free,1,price,2000);assert.equal(free.coins,80);
   free=trade.settleSales(model.normalizeSave(free),50000);assert.equal(free.coins,80);assert.equal(free.commerce.works[0].claimed,false);free=trade.collectSale(model.normalizeSave(free),1);assert.equal(free.coins,80+price);assert.equal(trade.collectSale(free,1),null);assert.equal(free.commerce.works[0].status,'sold');
   assert.equal(trade.settleSales(free,60000),free);assert.equal(free.completed.length,0);
-  const sized=trade.finishWork({...model.freshSave(),inventory:Array(48).fill(40),gatheredStock:Array(48).fill(40),draft:[0,null,0,1],draftSizes:[6,12,10,8]},1000);
+  const sized=trade.finishWork({...model.freshSave(),inventory:Array(MATERIAL_COUNT).fill(40),gatheredStock:Array(MATERIAL_COUNT).fill(40),draft:[0,null,0,1],draftSizes:[6,12,10,8]},1000);
   assert.deepEqual(Array.from(sized.commerce.works[0].beadSizes),[6,10,8]);
   assert.deepEqual(Array.from(model.normalizeSave(sized).commerce.works[0].beadSizes),[6,10,8]);
   assert.equal(typeof model.activateSpecial,'function');
