@@ -20,10 +20,10 @@ try{
   const inspect=async listing=>game((g,cc,listing)=>{
    const group=(listing?g.overlay:g.page).getChildByName(listing?'Listing work':'Packed work');if(!group)throw Error('Missing fitted preview');
    const origin=(listing?g.overlay:g.page).getComponent(cc.UITransform),shift=listing?-g.overlay.getChildByName('Dialog paper').position.y-230:0;
-   const limits=listing?{left:165,right:555,top:354+shift,bottom:614+shift}:{left:245,right:475,top:447,bottom:613};let corners=0;
+   const limits=listing?{left:165,right:555,top:354+shift,bottom:614+shift}:{left:238,right:482,top:430,bottom:610};let corners=0;
    for(const n of group.children){const t=n.getComponent(cc.UITransform);for(const x of [-t.anchorPoint.x*t.width,(1-t.anchorPoint.x)*t.width])for(const y of [-t.anchorPoint.y*t.height,(1-t.anchorPoint.y)*t.height]){
     const p=origin.convertToNodeSpaceAR(t.convertToWorldSpaceAR(new cc.Vec3(x,y)));if(p.x<limits.left-.02||p.x>limits.right+.02||-p.y<limits.top-.02||-p.y>limits.bottom+.02)throw Error('Overflow '+n.name+' '+p.x+','+-p.y);corners++;
-   }}if(group.getComponent(cc.Mask))throw Error('Preview was clipped');return {corners,materials:group.children.filter(n=>n.getComponent(cc.Sprite)).length};
+   }}if(group.children.some(n=>/shadow/i.test(n.name)))throw Error('Unexpected jewelry shadow');if(group.getComponent(cc.Mask))throw Error('Preview was clipped');return {corners,materials:group.children.filter(n=>n.getComponent(cc.Sprite)).length};
   },listing);
   await button('自由 DIY');const stock=(await state()).save.inventory,coins=(await state()).save.coins;await button('完成制作');assert.equal((await state()).screen,'packing');assert.ok((await inspect(false)).materials>=draft.length);
   assert.equal(await game(g=>!!g.page.getChildByName('pencil-frame')),false);await page.screenshot({path:dir+'/packing-'+width+'.png'});
@@ -31,8 +31,19 @@ try{
   if(width===390){
    const tested=await game((g,cc,count)=>{const original=JSON.stringify(g.save);let cases=0;for(let type=0;type<count;type++)for(const facing of ['in','out']){
     g.save.draft=[type];g.save.draftSizes=[12];g.save.draftFacings=[facing];g.save.charm=type%2?'heart':'none';g.render();const n=g.page.getChildByName('Packed work');if(!n||!Number.isFinite(n.scale.x))throw Error('Invalid fit');
-    const origin=g.page.getComponent(cc.UITransform);for(const child of n.children){const t=child.getComponent(cc.UITransform),r=t.getBoundingBoxToWorld();for(const x of [r.xMin,r.xMax])for(const y of [r.yMin,r.yMax]){const p=origin.convertToNodeSpaceAR(new cc.Vec3(x,y));if(p.x<244.9||p.x>475.1||-p.y<446.9||-p.y>613.1)throw Error('Variant overflow '+type+' '+facing);}}cases++;
+    const origin=g.page.getComponent(cc.UITransform);for(const child of n.children){const t=child.getComponent(cc.UITransform),r=t.getBoundingBoxToWorld();for(const x of [r.xMin,r.xMax])for(const y of [r.yMin,r.yMax]){const p=origin.convertToNodeSpaceAR(new cc.Vec3(x,y));if(p.x<237.9||p.x>482.1||-p.y<429.9||-p.y>610.1)throw Error('Variant overflow '+type+' '+facing);}}cases++;
    }g.save=JSON.parse(original);g.render();return cases;},MATERIALS.length);assert.equal(tested,MATERIALS.length*2);await inspect(false);
+  }
+  if(width===390||width===1440){
+   const original=await game(g=>JSON.stringify(g.save));
+   for(const eligible of [false,true]){
+    await game((g,cc,eligible)=>{g.save.draft=Array(6).fill(eligible?0:24);g.save.draftSizes=Array(6).fill(8);g.save.draftFacings=Array(6).fill('out');g.save.customers.active={id:1,style:'cream',buyer:'林阿姨',status:'accepted',createdAt:Date.now()};g.render();},eligible);
+    await inspect(false);
+    await game((g,cc,eligible)=>{const n=g.page.getChildByName('Button: '+(eligible?'保存并交付定制':'查看定制要求')),save=g.page.getChildByName('Button: 保存作品'),t=n.getComponent(cc.UITransform);if(t.height<64||-n.position.y+t.height>-save.position.y-24)throw Error('Crowded commission actions');},eligible);
+    await page.screenshot({path:dir+'/packing-'+(eligible?'eligible':'requirements')+'-'+width+'.png'});
+    if(!eligible){await button('查看定制要求');assert.equal((await state()).modal,'customer');await game(g=>g.closeModal());}
+   }
+   await game((g,cc,original)=>{g.save=JSON.parse(original);g.render();},original);
   }
   await button('保存并上架');assert.equal((await state()).modal,'listing');await page.waitForTimeout(150);await inspect(true);await page.screenshot({path:dir+'/listing-'+width+'.png'});
   const work=(await state()).save.commerce.works[0],bounds=priceBounds(work.beads,320),price=()=>game((g,cc)=>Number(g.overlay.getChildByName('Listing price').getComponent(cc.Label).string));

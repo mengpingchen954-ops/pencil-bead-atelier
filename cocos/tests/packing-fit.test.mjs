@@ -10,12 +10,12 @@ function fixture(){
 function contained(g){
  const before=JSON.stringify(g.save);g.render();assert.equal(JSON.stringify(g.save),before);
  assert.equal(g.page.getChildByName('pencil-frame'),null);assert.ok(g.page.getChildByName('Packing border'));assert.ok(g.page.getChildByName('Packing border lining'));
- const work=g.page.getChildByName('Packed work');assert.ok(work);assert.equal(work.scale.x,work.scale.y);
+ const work=g.page.getChildByName('Packed work');assert.ok(work);assert.equal(work.scale.x,work.scale.y);assert.equal(work.children.some(n=>/shadow/i.test(n.name)),false);
  for(const n of work.children){
   const t=n.getComponent(UITransform),a=(n.angle||0)*Math.PI/180;
   for(const x of [-t.anchorPoint.x*t.contentSize.width,(1-t.anchorPoint.x)*t.contentSize.width])for(const y of [-t.anchorPoint.y*t.contentSize.height,(1-t.anchorPoint.y)*t.contentSize.height]){
    const px=work.position.x+(n.position.x+x*Math.cos(a)-y*Math.sin(a))*work.scale.x,py=-work.position.y-(n.position.y+x*Math.sin(a)+y*Math.cos(a))*work.scale.y;
-   assert.ok(px>=245-1e-8&&px<=475+1e-8&&py>=447-1e-8&&py<=613+1e-8,n.name+' '+px+','+py);
+   assert.ok(px>=238-1e-8&&px<=482+1e-8&&py>=430-1e-8&&py<=610+1e-8,n.name+' '+px+','+py);
   }
  }
  return work;

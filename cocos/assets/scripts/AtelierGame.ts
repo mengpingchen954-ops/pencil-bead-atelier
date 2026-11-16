@@ -989,12 +989,11 @@ export class AtelierGame extends Component {
   }
   private bracelet(beads: (number|null)[], cx: number, cy: number, r: number, parent=this.page, beadSize=8, beadSizes?:number[],charm='none',beadFacings?:string[]) {
     const ring=ringMaterials(beads,beadSizes,charm,beadSize,beadFacings);beads=ring.beads;const sizes=ring.sizes;
-    this.ellipse('Bracelet shadow',cx,cy+r*.7,r*1.05,r*.37,'#9a7f4d19',parent);
     const wire=this.box('Bracelet wire',cx-r,cy-r,r*2,r*2,parent).addComponent(Graphics);
     wire.lineWidth=4;wire.strokeColor=color(GOLD);wire.ellipse(r,-r,r,r*.95);wire.stroke();
     const diameter=r*76/150,layoutRadius=ringRadius(beads,sizes,76,150,.95),fit=150/layoutRadius;
     beads.forEach((t,i)=>{const a=ringAngle(beads,i,sizes),x=cx+Math.cos(a)*r,y=cy+Math.sin(a)*r*.95;
-      if(t!==null){const d=diameter*sizes[i]/8*fit,p=materialPlacement(t,Math.atan2(Math.sin(a)*.95,Math.cos(a)),ring.facings[i]);this.ellipse('Bead shadow',x+d*p.offsetX+2,y+d*p.offsetY+d*.27,d*.42,d*.2,'#8b705535',parent);this.materialOnWire(t,x,y,d,p,parent);}
+      if(t!==null){const d=diameter*sizes[i]/8*fit,p=materialPlacement(t,Math.atan2(Math.sin(a)*.95,Math.cos(a)),ring.facings[i]);this.materialOnWire(t,x,y,d,p,parent);}
     });
   }
   private fitBracelet(work:Node,x:number,y:number,width:number,height:number) {
@@ -1494,16 +1493,15 @@ export class AtelierGame extends Component {
     this.image('pencil-packing-box',40,190,640,540);
     const work=this.box('Packed work',0,0,0,0);
     this.bracelet(this.save.draft.filter(t=>t!==null),0,0,119,work,8,normalizeBeadSizes(this.save.draft,this.save.draftSizes,this.save.beadSize).filter((_,i)=>this.save.draft[i]!==null),this.save.charm,normalizeBeadFacings(this.save.draft,this.save.draftFacings).filter((_,i)=>this.save.draft[i]!==null));
-    // Fit the entire preview, including rotated charms and shadows, inside the box cushion.
-    this.fitBracelet(work,245,447,230,166);
+    // Fit the entire preview, including rotated charms, inside the box cushion.
+    this.fitBracelet(work,238,430,244,180);
     this.text('给这份手作起个名字',140,750,440,55,32,INK,this.page,true);
     this.nameField(this.save.draftName||'',824,this.page,value=>{this.save.draftName=value;this.persist();});
-    this.text('手动输入或随机取名 · 最多 24 个字\n留空将使用默认名称，保存后仍可改名',100,903,520,70,22,MUTED,this.page,true);
-    this.text(this.save.draft.filter(t=>t!==null).length+' 件串珠与饰品 · 建议 '+price+' 金币',100,988,520,40,25,SAGE,this.page,true);
-    this.text('保存扣除用料，售出后到「已售」点击收钱。',80,1046,560,42,22,MUTED,this.page,true);
+    this.text('留空自动命名 · 保存后可修改',100,903,520,32,22,MUTED,this.page,true);
+    this.text(this.save.draft.filter(t=>t!==null).length+' 件材质 · 建议 '+price+' 金币',100,960,520,40,25,SAGE,this.page,true);
     if(this.save.customers?.active?.status==='accepted'){
       const fit=customerFit(this.save.customers.active.style,this.save.draft,this.save.charm);
-      this.button(fit.ok?'保存并交付定制':'查看定制要求',185,1090,350,36,()=>fit.ok?this.completeCustomerPacking():this.customerDialog(),this.page,fit.ok);
+      this.button(fit.ok?'保存并交付定制':'查看定制要求',100,1030,520,64,()=>fit.ok?this.completeCustomerPacking():this.customerDialog(),this.page,fit.ok);
     }
     this.button('保存作品',62,1130,284,82,()=>this.completePacking(),this.page);
     this.button('保存并上架',374,1130,284,82,()=>this.completePacking(true),this.page,true);
