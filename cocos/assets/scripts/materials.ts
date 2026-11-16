@@ -4,8 +4,7 @@ const legacyTones=['white','red','blue','green','yellow','purple','purple','pink
 const tone=(i:number)=>MATERIALS[i].tone||legacyTones[i]||'brown';
 const deep=(i:number)=>MATERIALS[i].deep||[1,14,17,20,21,22,25,27,28,29,31,32,34,35].includes(i);
 export const isPaleMaterial=(i:number)=>!!MATERIALS[i]?.pale||[0,6,7,8,9,10,15,16,18,19].includes(i);
-export const materialPage=(category:number,page=0,contest=false)=>MATERIALS.flatMap((m,i)=>m.category===category&&(!contest||i<48)?[i]:[]).sort((a,b)=>MATERIALS[a].cell-MATERIALS[b].cell).slice(page*12,page*12+12);
-export const materialPages=(category:number,contest=false)=>Math.ceil(MATERIALS.filter((m,i)=>m.category===category&&(!contest||i<48)).length/12);
+export const categoryMaterials=(category:number,contest=false)=>MATERIALS.flatMap((m,i)=>m.category===category&&(!contest||i<48)?[i]:[]).sort((a,b)=>MATERIALS[a].cell-MATERIALS[b].cell);
 export const materialPalette = (level:number) => {
   const step=Math.max(1,Math.floor(level))-1,accent=groups[0][step%groups[0].length];
   let crystal=groups[1][step%groups[1].length],wood=groups[2][step%groups[2].length];

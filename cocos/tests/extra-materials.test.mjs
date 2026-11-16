@@ -3,7 +3,7 @@ import assert from 'node:assert/strict';
 import fs from 'node:fs';
 import {createRequire} from 'node:module';
 import {MATERIALS} from '../assets/scripts/content.ts';
-import {materialPage,materialPages,materialPalette,materialPlacement,ringAngle} from '../assets/scripts/materials.ts';
+import {categoryMaterials,materialPalette,materialPlacement,ringAngle} from '../assets/scripts/materials.ts';
 import {freshSave,normalizeSave,newSession,bankEarlyCollection,canPlace} from '../assets/scripts/model.ts';
 import {finishWork,listWork,suggestedPrice,customerFit} from '../assets/scripts/commerce.ts';
 const plain=v=>JSON.parse(JSON.stringify(v)),count=MATERIALS.length;
@@ -15,7 +15,7 @@ function fixture(){
  g.accessibility={clear(){actions.clear();},text(){},button(name,fn,modal,enabled){if(enabled)actions.set(name,fn);},showDialog(){},closeDialog(){}};
  g.save={...freshSave(),started:true,reduced:true,draft:[],inventory:Array(count).fill(4),gatheredStock:Array(count).fill(4),materialUnlocked:Array(count).fill(true)};g.navigate('craft');return {g,actions};
 }
-test('the distinct supplied crops have unique names, assets, transparency metadata and complete category pages',()=>{
+test('the distinct supplied crops have unique names, assets, transparency metadata and complete categories',()=>{
  const records=JSON.parse(fs.readFileSync(root+'/assets/resources/art/extra-material-sources.json','utf8'));
  assert.equal(records.length,105);assert.equal(new Set(MATERIALS.map(m=>m.name)).size,count);assert.equal(new Set(records.map(r=>r.asset)).size,105);
  for(const r of records){const m=MATERIALS[r.type],file=root+'/assets/resources/'+(m.id?'art/':'beads/')+r.asset;
@@ -23,9 +23,9 @@ test('the distinct supplied crops have unique names, assets, transparency metada
   assert.ok(m.bounds.every(v=>v>=0&&v<=1));assert.ok(m.bounds[2]>m.bounds[0]&&m.bounds[3]>m.bounds[1]);
  }
  for(let category=0;category<4;category++){
-  const ids=[];for(let page=0;page<materialPages(category);page++){const items=materialPage(category,page);assert.ok(items.length>0&&items.length<=12);ids.push(...items);assert.equal(new Set(items.map(i=>MATERIALS[i].cell%12)).size,items.length);}
+  const ids=categoryMaterials(category);
   assert.deepEqual(ids,MATERIALS.flatMap((m,i)=>m.category===category?[i]:[]).sort((a,b)=>MATERIALS[a].cell-MATERIALS[b].cell));
-  assert.equal(materialPages(category,true),1);assert.ok(materialPage(category,0,true).every(i=>i<48));
+  assert.equal(categoryMaterials(category,true).length,12);assert.ok(categoryMaterials(category,true).every(i=>i<48));
  }
 });
 test('old inventory, draft and listed works keep their original IDs while new materials start locked',()=>{
@@ -47,17 +47,16 @@ test('every new material is earned at its actual ID once and can complete and re
  }assert.equal(reached.size,105);
  const pale=MATERIALS.findIndex((m,i)=>i>=48&&m.category===0&&m.pale);assert.equal(customerFit('cream',Array(6).fill(pale),'none').ok,true);
 });
-test('native DIY pagination selects new beads and accessories, preserves dimensions on deletion and undo',()=>{
+test('native continuous DIY categories select new beads and accessories, preserves dimensions on deletion and undo',()=>{
  const {g,actions}=fixture(),seen=new Set();
  for(let category=0;category<4;category++){
-  g.craftCategory=category;g.craftPages[category]=0;g.render();
-  for(let page=0;page<materialPages(category);page++){
-   const ids=g.page.children.filter(n=>n.name.startsWith('Bead material ')).map(n=>Number(n.name.slice(14)));assert.deepEqual(ids,materialPage(category,page));ids.forEach(id=>seen.add(id));
-   if(page+1<materialPages(category))actions.get('下一页珠材')();
-  }
+  g.craftCategory=category;g.render();
+  const ids=g.page.getChildByName('Material viewport').getChildByName('Material content').children.filter(n=>n.name.startsWith('Bead material ')).map(n=>Number(n.name.slice(14)));
+  assert.deepEqual(ids,categoryMaterials(category));ids.forEach(id=>seen.add(id));
+  assert.equal(actions.has('下一页珠材'),false);assert.equal(actions.has('上一页珠材'),false);
  }assert.equal(seen.size,count);
  for(const type of [52,64,112,142]){
-  const m=MATERIALS[type];g.slot=-1;g.craftCategory=m.category;g.craftPages[m.category]=Math.floor(m.cell/12);g.render();actions.get((m.id?'选择':'放入')+m.name)();assert.equal(g.save.draft.at(-1),type);
+  const m=MATERIALS[type];g.slot=-1;g.craftCategory=m.category;g.render();actions.get((m.id?'选择':'放入')+m.name)();assert.equal(g.save.draft.at(-1),type);
  }
  const stock=plain(g.save.inventory);g.save.draftSizes=[6,8,10,12];g.save.draftFacings=['out','out','in','out'];g.slot=2;g.render();actions.get('移除')();assert.deepEqual(plain(g.save.draft),[52,64,142]);assert.deepEqual(plain(g.save.draftSizes),[6,8,12]);
  actions.get('撤销')();assert.deepEqual(plain(g.save.draft),[52,64,112,142]);assert.deepEqual(plain(g.save.draftSizes),[6,8,10,12]);assert.equal(g.save.draftFacings[2],'in');assert.deepEqual(plain(g.save.inventory),stock);

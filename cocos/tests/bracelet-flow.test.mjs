@@ -22,9 +22,9 @@ test('adding beads expands their centers, retains every bead diameter, and leave
   const bottom=game.craftCenterY()+radius+38;assert.ok(bottom<770);
   assert.ok(game.slotNodes.every(n=>n.children.find(c=>c.name.startsWith('bead-')).getComponent(UITransform).contentSize.width===76));
  }
- const tiles=game.page.children.filter(n=>n.name.startsWith('Bead material ')),last=tiles.at(-1),tray=game.page.getChildByName('Material tray');
- const rows=[...new Set(tiles.map(n=>-n.position.y))].sort((a,b)=>a-b);assert.deepEqual(rows,[834,934,1034]);
- assert.ok(-tray.position.y+tray.getComponent(UITransform).contentSize.height-Math.max(...tiles.map(n=>-n.position.y+n.getComponent(UITransform).contentSize.height))<10);
+ const viewport=game.page.getChildByName('Material viewport'),tiles=viewport.getChildByName('Material content').children.filter(n=>n.name.startsWith('Bead material '));
+ const rows=[...new Set(tiles.map(n=>-n.position.y))].sort((a,b)=>a-b);assert.deepEqual(rows.slice(0,3),[0,100,200]);
+ assert.equal(-viewport.position.y,834);assert.equal(viewport.getComponent(UITransform).contentSize.height,294);
  game.screen='storyMap';game.render();
  assert.equal(game.page.children.flatMap(n=>n.components.filter(c=>c instanceof Label)).filter(c=>c.string==='我们的故事').length,1);
  assert.equal(game.page.children.some(n=>n.name==='Button: 制作手串'),false);

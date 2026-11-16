@@ -14,7 +14,7 @@ function fixture(type=0){
  game.accessibility={clear(){actions.clear();},text(){},button(name,fn,modal,enabled){if(enabled)actions.set(name,fn);},showDialog(){},closeDialog(){}};
  game.save={...rules.freshSave(),started:true,reduced:true,inventory:Array(MATERIAL_COUNT).fill(20),gatheredStock:Array(MATERIAL_COUNT).fill(20),materialUnlocked:Array(MATERIAL_COUNT).fill(true),draft:[1,...Array(11).fill(null)],draftSizes:[12,...Array(11).fill(8)]};
  game.screen='craft';game.craftCategory=MATERIALS[type].category;game.render();
- const tile=()=>game.page.children.find(n=>n.name==='Bead material '+type);
+ const tile=()=>game.page.getChildByName('Material viewport').getChildByName('Material content').children.find(n=>n.name==='Bead material '+type);
  const start=()=>{const m=MATERIALS[type];tile().events.start(touch(146+m.cell%4*140,805+Math.floor(m.cell/4)*92));};
  return {game,actions,tile,start,message:()=>message};
 }

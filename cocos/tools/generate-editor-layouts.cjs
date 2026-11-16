@@ -42,6 +42,8 @@ for(const op of ['moveTo','lineTo','bezierCurveTo','roundRect','rect','ellipse',
 class Label {}
 Label.Overflow={SHRINK:2};Label.HorizontalAlign={LEFT:0,CENTER:1};Label.VerticalAlign={TOP:0,CENTER:1};
 class Sprite {}
+class ScrollView {constructor(){this.enabled=true;}stopAutoScroll(){} scrollToOffset(p){this.content.setPosition(0,p.y);this.node.events?.scrolling?.();}}
+ScrollView.EventType={SCROLLING:'scrolling'};
 class Mask {}
 Mask.Type={GRAPHICS_STENCIL:2};
 class UIOpacity {}
@@ -65,7 +67,7 @@ class Node {
 }
 Node.EventType={TOUCH_END:'end',TOUCH_START:'start',TOUCH_MOVE:'move',TOUCH_CANCEL:'cancel'};
 const decorator=(...args)=>args.length===1&&typeof args[0]==='function'?args[0]:()=>{};
-const cc={KeyCode:{DELETE:46,ESCAPE:27,KEY_F:70},_decorator:{ccclass:()=>x=>x,property:decorator,executeInEditMode:x=>x},Component,Node,UITransform,Graphics,Color,Label,Sprite,Mask,UIOpacity,EditBox,Vec3,Enum:x=>x,Layers:{Enum:{UI_2D:1<<25}},SpriteFrame:class{},AudioSource:class{},BlockInputEvents:class{},Tween:{stopAllByTarget(){}}};
+const cc={sys:{isMobile:false},KeyCode:{DELETE:46,ESCAPE:27,KEY_F:70},_decorator:{ccclass:()=>x=>x,property:decorator,executeInEditMode:x=>x},Component,Node,UITransform,Graphics,Color,Label,Sprite,Mask,ScrollView,Vec2:Vec3,UIOpacity,EditBox,Vec3,Enum:x=>x,Layers:{Enum:{UI_2D:1<<25}},SpriteFrame:class{},AudioSource:class{},BlockInputEvents:class{},Tween:{stopAllByTarget(){}}};
 const cache={};
 function load(file){
   if(file==='cc')return cc;if(file==='cc/env')return {EDITOR:false};
