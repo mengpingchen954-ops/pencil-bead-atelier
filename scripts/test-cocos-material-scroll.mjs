@@ -32,7 +32,7 @@ try{
    await page.waitForTimeout(1000);let s=await state();assert.ok(s.crafting.scrollOffset>40,'native scroll category '+c);assert.deepEqual(s.save.draft,[]);assert.deepEqual(s.save.inventory,stock);assert.equal(s.crafting.flights.length,0);
    await button(['珠宝','水晶','木质','饰品'][(c+1)%4]);const remembered=await game((g,cc,c)=>g.craftScroll[c],c);await button(['珠宝','水晶','木质','饰品'][c]);assert.ok(Math.abs((await state()).crafting.scrollOffset-remembered)<2,'category offset retained');
    const max=(await state()).crafting.maxScroll;for(let value=0;value<=max+299;value+=300){await scrollTo(Math.min(value,max));s=await state();s.crafting.materials.filter(m=>m.visible).forEach(m=>seen.add(m.type));}
-   const last=categoryMaterials(c).at(-1);assert.equal((await state()).crafting.materials[last].visible,true,'last material visible in category '+c);await page.screenshot({path:dir+'/category-'+c+'-bottom-'+width+'.png'});
+   const last=categoryMaterials(c,false,(await state()).save).at(-1);assert.equal((await state()).crafting.materials[last].visible,true,'last material visible in category '+c);await page.screenshot({path:dir+'/category-'+c+'-bottom-'+width+'.png'});
   }assert.equal(seen.size,MATERIALS.length);
   // A quick swipe leaving the tray cannot become a bead dropped into the plate.
   await button('水晶');await scrollTo(0);if(mobile){await pointer({x:286,y:970},{x:360,y:430});await page.waitForTimeout(900);assert.deepEqual((await state()).save.draft,[]);}

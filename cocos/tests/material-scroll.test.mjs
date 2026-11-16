@@ -39,3 +39,18 @@ test('short taps still place materials and native cancellation releases a held s
  const {g,timers,viewport,tile}=fixture(true),n=tile(),scroll=viewport().getComponent(cc.ScrollView);n.events.start(touch(146,868));for(const fn of timers)fn();n.events.cancel(touch(360,430));assert.equal(scroll.enabled,true);assert.equal(timers.size,0);assert.deepEqual(plain(g.save.draft),[]);
  n.events.start(touch(146,868));n.events.end(touch(146,868));assert.deepEqual(plain(g.save.draft),[0]);assert.equal(timers.size,0);
 });
+
+test('DIY, inventory, onboarding and the text snapshot follow the sorted material cells',()=>{
+ const {g}=fixture();g.save.materialUnlocked.fill(false);g.save.materialUnlockOrder=[];
+ for(let c=0;c<4;c++){
+  const ids=MATERIALS.flatMap((m,i)=>m.category===c?[i]:[]).slice(-3).reverse();
+  ids.forEach(i=>g.save.materialUnlocked[i]=true);g.save.materialUnlockOrder.push(...ids);g.craftCategory=c;g.render();
+  const content=g.page.getChildByName('Material viewport').getChildByName('Material content');
+  assert.deepEqual(plain(content.children.slice(0,3).map(n=>Number(n.name.slice(14)))),plain(ids));
+  ids.forEach((id,cell)=>{const n=content.getChildByName('Bead material '+id),state=g.snapshot().crafting.materials[id];
+   assert.equal(n.position.x,cell*140);assert.equal(Math.abs(n.position.y),0);assert.equal(state.x,146+cell*140);assert.equal(state.y,868);assert.equal(state.visible,true);
+  });assert.ok(g.guideNode);
+  g.inventoryCategory=c;g.inventory();const list=g.overlay.getChildByName('Inventory material viewport').getChildByName('Inventory material content');
+  ids.forEach((id,cell)=>{const n=list.getChildByName(MATERIALS[id].name);assert.equal(n.position.x,cell*131);assert.equal(n.position.y,-78);});g.closeModal();
+ }
+});

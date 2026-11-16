@@ -8,7 +8,7 @@ import { freshSeaHeart, normalizeSeaHeart } from "./heart.ts";
 import { freshCompetitions, normalizeCompetitions } from "./competition.ts";
 import { normalizeMusic } from "./music-settings.ts";
 import { freshCommerce, normalizeCommerce, salesProgress, workName, freshCustomers, normalizeCustomers } from "./commerce.ts";
-import { materialPalette, MATERIAL_DROPS, materialStock, validMaterial, normalizeBeadSizes, normalizeBeadFacings, CRAFT_LIMIT } from './materials.ts';
+import { materialPalette, MATERIAL_DROPS, materialStock, materialUnlockOrder, validMaterial, normalizeBeadSizes, normalizeBeadFacings, CRAFT_LIMIT } from './materials.ts';
 import { freshDaily, normalizeDaily } from './daily.ts';
 export const SAVE_KEY = "pencil-bead-atelier-v1";
 export function rng(seed = 1) {
@@ -175,10 +175,11 @@ export function bankEarlyCollection(save,session) {
   const gathered=gatheredMaterials(session),previous=session.banked||Array(6).fill(0);
   if(gathered.every((n,i)=>n<=previous[i]))return {save,session};
   const inventory=Array.from({length:MATERIALS.length},(_,i)=>save.inventory[i]||0), gatheredStock=Array.from({length:MATERIALS.length},(_,i)=>save.gatheredStock?.[i]||0), materialUnlocked=Array.from({length:MATERIALS.length},(_,i)=>save.materialUnlocked?.[i]===true);
+  const unlockOrder=materialUnlockOrder(materialUnlocked,save.materialUnlockOrder);
   gathered.forEach((n,i)=>{const amount=Math.max(0,n-previous[i]),type=(session.materialTypes||[0,1,2,3,4,5])[i];
-    if(amount&&MATERIALS[type]){inventory[type]+=amount;gatheredStock[type]+=amount;materialUnlocked[type]=true;}
+    if(amount&&MATERIALS[type]){inventory[type]+=amount;gatheredStock[type]+=amount;if(!materialUnlocked[type])unlockOrder.push(type);materialUnlocked[type]=true;}
   });
-  return {save:{...save,inventory,gatheredStock,materialUnlocked},session:{...session,banked:[...gathered]}};
+  return {save:{...save,inventory,gatheredStock,materialUnlocked,materialUnlockOrder:unlockOrder},session:{...session,banked:[...gathered]}};
 }
 export function goalProgress(session) {
   const objectives = session.objectives || [{ kind: 'total', target: session.target }];
@@ -389,6 +390,7 @@ export function freshSave() {
     inventory: Array(MATERIALS.length).fill(0),
     gatheredStock: Array(MATERIALS.length).fill(0),
     materialUnlocked: Array(MATERIALS.length).fill(false),
+    materialUnlockOrder: [],
     beadSize: 8,
     draftName: '',
     draftSizes: Array(12).fill(8),
@@ -453,6 +455,7 @@ export function normalizeSave(input) {
   );
   s.gatheredStock = s.inventory.map((n,i)=>Math.min(n,bounded(input.gatheredStock?.[i])));
   s.materialUnlocked = s.inventory.map((_,i)=>input.materialUnlocked?.[i]===true||s.gatheredStock[i]>0);
+  s.materialUnlockOrder = materialUnlockOrder(s.materialUnlocked,input.materialUnlockOrder);
   s.beadSize = [6,7,8,9,10,11,12].includes(input.beadSize)?input.beadSize:8;
   s.completed = Array.from(
     new Set(

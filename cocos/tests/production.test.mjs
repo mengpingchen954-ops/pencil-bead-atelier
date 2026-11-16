@@ -42,6 +42,11 @@ test('Creator production bundle preserves collection iteration and complete game
   assert.equal(daily.claimDaily(model.normalizeSave(signed),Date.parse('2026-11-04T03:00:00Z')),null);
   const content=load([...definitions.keys()].find(n=>n.endsWith('/content.ts')));
   const materials=load([...definitions.keys()].find(n=>n.endsWith('/materials.ts')));
+  const unlocks=Array.from(exchanged.save.materialUnlockOrder);
+  assert.deepEqual(unlocks,Array.from(exchange.materialTypes).filter((_,i)=>[0,0,0,4,5,5][i]>0));
+  assert.deepEqual(Array.from(model.normalizeSave(JSON.parse(JSON.stringify(exchanged.save))).materialUnlockOrder),unlocks);
+  const ordered={...exchanged.save,materialUnlockOrder:unlocks.toReversed()};
+  for(let category=0;category<4;category++)assert.deepEqual(Array.from(materials.categoryMaterials(category,false,ordered)).slice(0,unlocks.filter(i=>content.MATERIALS[i].category===category).length),unlocks.toReversed().filter(i=>content.MATERIALS[i].category===category));
   assert.deepEqual(Array.from(materials.MATERIAL_DROPS),[0,0,0,0,0,0,0,0,1,1,1,2,2,2,2,3,4,4,5,5]);
   for(let level=1;level<=12;level++){
     const types=materials.materialPalette(level),dark=[1,14,17,20,21,22,25,27,28,29,31,32,34,35];

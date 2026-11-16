@@ -18,7 +18,7 @@ try{
   const tap=async(x,y)=>{const p=await xy(x,y);if(mobile)await page.touchscreen.tap(p.x,p.y);else await page.mouse.click(p.x,p.y);await page.waitForTimeout(90);};
   const button=async name=>{const p=await game((g,cc,name)=>{const search=n=>{if(!n.active)return null;if(n.name==='Button: '+name)return n;for(const c of n.children){const r=search(c);if(r)return r;}return null;};const n=search(g.modal?g.overlay:g.page);if(!n)throw Error('Missing '+name+' '+g.screen+'/'+g.modal);const t=n.getComponent(cc.UITransform),p=t.convertToWorldSpaceAR(new cc.Vec3(t.width/2,-t.height/2));return {x:p.x+360,y:640-p.y};},name);await tap(p.x,p.y);};
   const scrollTo=async value=>{await game((g,cc,value)=>g.page.getChildByName('Material viewport').getComponent(cc.ScrollView).scrollToOffset(new cc.Vec2(0,value),.02),value);await page.waitForTimeout(150);};
-  const reveal=async type=>{await button(['珠宝','水晶','木质','饰品'][MATERIALS[type].category]);await scrollTo(Math.min((await state()).crafting.maxScroll,Math.floor(MATERIALS[type].cell/4)*100));};
+  const reveal=async type=>{const category=MATERIALS[type].category;await button(['珠宝','水晶','木质','饰品'][category]);const s=await state(),cell=categoryMaterials(category,false,s.save).indexOf(type);await scrollTo(Math.min(s.crafting.maxScroll,Math.floor(cell/4)*100));};
   await button('消除采珠');const label=await page.getByRole('button',{name:/^开始采珠 · /}).textContent();await button(label);
   let s=await state();assert.ok(s.session.materialTypes.some(t=>t>=48));await page.screenshot({path:dir+'/match-'+width+'.png'});
   for(let turn=0;turn<32;turn++){

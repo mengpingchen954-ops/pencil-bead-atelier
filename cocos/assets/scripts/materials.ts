@@ -4,7 +4,18 @@ const legacyTones=['white','red','blue','green','yellow','purple','purple','pink
 const tone=(i:number)=>MATERIALS[i].tone||legacyTones[i]||'brown';
 const deep=(i:number)=>MATERIALS[i].deep||[1,14,17,20,21,22,25,27,28,29,31,32,34,35].includes(i);
 export const isPaleMaterial=(i:number)=>!!MATERIALS[i]?.pale||[0,6,7,8,9,10,15,16,18,19].includes(i);
-export const categoryMaterials=(category:number,contest=false)=>MATERIALS.flatMap((m,i)=>m.category===category&&(!contest||i<48)?[i]:[]).sort((a,b)=>MATERIALS[a].cell-MATERIALS[b].cell);
+export function materialUnlockOrder(unlocked:boolean[],order:unknown) {
+  const known=Array.isArray(order)?order.filter(i=>Number.isInteger(i)&&i>=0&&i<MATERIALS.length&&unlocked[i]===true):[];
+  // Older saves have no unlock history; keep their existing catalog order.
+  const legacy=MATERIALS.flatMap((_,i)=>unlocked[i]===true?[i]:[]).sort((a,b)=>MATERIALS[a].category-MATERIALS[b].category||MATERIALS[a].cell-MATERIALS[b].cell);
+  return Array.from(new Set([...known,...legacy]));
+}
+export function categoryMaterials(category:number,contest=false,save?:any) {
+  const types=MATERIALS.flatMap((m,i)=>m.category===category&&(!contest||i<48)?[i]:[]).sort((a,b)=>MATERIALS[a].cell-MATERIALS[b].cell);
+  if(!save||contest)return types;
+  const order=materialUnlockOrder(save.materialUnlocked||[],save.materialUnlockOrder),rank=new Map(order.map((type,index)=>[type,index]));
+  return types.sort((a,b)=>(rank.get(a)??MATERIALS.length)-(rank.get(b)??MATERIALS.length));
+}
 export const materialPalette = (level:number) => {
   const step=Math.max(1,Math.floor(level))-1,accent=groups[0][step%groups[0].length];
   let crystal=groups[1][step%groups[1].length],wood=groups[2][step%groups[2].length];

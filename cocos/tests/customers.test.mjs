@@ -5,7 +5,7 @@ import assert from 'node:assert/strict';
 import {createRequire} from 'node:module';
 import {freshSave,normalizeSave} from '../assets/scripts/model.ts';
 import {CUSTOM_STYLES,customerFit,updateCustomers,acceptCustomer,declineCustomer,deliverCustomer,finishWork,collectSale,settleSales,listWork,salesProgress} from '../assets/scripts/commerce.ts';
-const stock=()=>({...freshSave(),started:true,inventory:Array(MATERIAL_COUNT).fill(20),gatheredStock:Array(MATERIAL_COUNT).fill(20),materialUnlocked:Array(MATERIAL_COUNT).fill(true)});
+const stock=()=>normalizeSave({...freshSave(),started:true,inventory:Array(MATERIAL_COUNT).fill(20),gatheredStock:Array(MATERIAL_COUNT).fill(20),materialUnlocked:Array(MATERIAL_COUNT).fill(true)});
 const request=(save=stock(),style='cream')=>({...save,customers:{nextId:2,nextAt:1000,lastStyle:'',active:{id:1,buyer:'林阿姨',style,status:'accepted',createdAt:1000}}});
 
 test('random visits are scheduled and saved, select feasible styles, and never replace an outstanding wish',()=>{

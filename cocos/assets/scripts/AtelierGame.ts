@@ -216,6 +216,7 @@ export class AtelierGame extends Component {
   }
 
   private snapshot() {
+    const cells=new Map([0,1,2,3].flatMap(c=>categoryMaterials(c,!!this.contestEntry,this.save).map((type,cell)=>[type,cell] as [number,number])));
     return { engine: 'Cocos Creator 3.8.2', screen: this.screen, modal: this.modal, busy: this.busy,
       coordinates: { origin:'top-left', width:720, height:1280, board:{x:48,y:BOARD_Y,step:CELL,cell:72} },
       goals: this.session ? rules.goalProgress(this.session) : [],
@@ -233,7 +234,7 @@ export class AtelierGame extends Component {
       packing: this.screen==='packing'?{beads:this.save.draft,beadSizes:normalizeBeadSizes(this.save.draft,this.save.draftSizes,this.save.beadSize),beadFacings:normalizeBeadFacings(this.save.draft,this.save.draftFacings),charm:this.save.charm,price:suggestedPrice(this.save.draft),checks:craftChecks(this.save)}:null,
       storyRoute: this.screen==='storyMap'?storyRoute(this.save):null,
       pause: this.modal==='pause'||this.modal==='pause-restart'||this.modal==='pause-leave'||this.musicFromPause?{context:this.screen,music:this.save.music.enabled,sound:this.save.sound,reduced:this.save.reduced}:null,
-      crafting: ['craft','contestCraft'].includes(this.screen)?{orderId:null,contestId:this.contestEntry?.id||null,material:this.craftMaterial,beads:this.workingDraft,beadSizes:this.workingSizes,beadFacings:this.workingFacings,charm:this.workingCharm,flights:Array.from(this.craftFlights.entries()).map(([index,f])=>({index,type:f.type,x:f.node.position.x+41,y:-f.node.position.y+41,angle:f.node.angle,scale:f.node.scale.x})),slots:this.slotNodes.map(n=>{const size=n.getComponent(UITransform)!.contentSize;return {x:n.position.x+size.width/2,y:-n.position.y+size.height/2};}),category:this.craftCategory,scrollOffset:this.contestEntry?0:this.craftScroll[this.craftCategory],maxScroll:Math.max(0,Math.ceil(categoryMaterials(this.craftCategory,!!this.contestEntry).length/4)*MATERIAL_STEP-300),materials:MATERIALS.map((m,i)=>({type:i,x:146+(m.cell%4)*140,y:MATERIAL_TOP+34+Math.floor(m.cell/4)*MATERIAL_STEP-(this.contestEntry?0:this.craftScroll[this.craftCategory]),visible:m.category===this.craftCategory&&(!this.contestEntry||i<48)&&Math.floor(m.cell/4)*MATERIAL_STEP+.5>=(this.contestEntry?0:this.craftScroll[this.craftCategory])&&Math.floor(m.cell/4)*MATERIAL_STEP+93.5<=(this.contestEntry?0:this.craftScroll[this.craftCategory])+294,category:m.category,unlocked:this.save.materialUnlocked[i],stock:materialStock(this.save,i)}))}:null,
+      crafting: ['craft','contestCraft'].includes(this.screen)?{orderId:null,contestId:this.contestEntry?.id||null,material:this.craftMaterial,beads:this.workingDraft,beadSizes:this.workingSizes,beadFacings:this.workingFacings,charm:this.workingCharm,flights:Array.from(this.craftFlights.entries()).map(([index,f])=>({index,type:f.type,x:f.node.position.x+41,y:-f.node.position.y+41,angle:f.node.angle,scale:f.node.scale.x})),slots:this.slotNodes.map(n=>{const size=n.getComponent(UITransform)!.contentSize;return {x:n.position.x+size.width/2,y:-n.position.y+size.height/2};}),category:this.craftCategory,scrollOffset:this.contestEntry?0:this.craftScroll[this.craftCategory],maxScroll:Math.max(0,Math.ceil(categoryMaterials(this.craftCategory,!!this.contestEntry).length/4)*MATERIAL_STEP-300),materials:MATERIALS.map((m,i)=>({type:i,x:146+((cells.get(i)??m.cell)%4)*140,y:MATERIAL_TOP+34+Math.floor((cells.get(i)??m.cell)/4)*MATERIAL_STEP-(this.contestEntry?0:this.craftScroll[this.craftCategory]),visible:m.category===this.craftCategory&&(!this.contestEntry||i<48)&&Math.floor((cells.get(i)??m.cell)/4)*MATERIAL_STEP+.5>=(this.contestEntry?0:this.craftScroll[this.craftCategory])&&Math.floor((cells.get(i)??m.cell)/4)*MATERIAL_STEP+93.5<=(this.contestEntry?0:this.craftScroll[this.craftCategory])+294,category:m.category,unlocked:this.save.materialUnlocked[i],stock:materialStock(this.save,i)}))}:null,
       music:this.music?.snapshot(),
       story: this.modal === 'story' ? { id: STORIES[this.storyIndex].id, line: this.storyLine } : null };
   }
@@ -576,7 +577,7 @@ export class AtelierGame extends Component {
     if(this.screen==='match'&&this.session?.level===1&&this.session.moves===rules.levelConfig(1).moves){const pair=rules.findMove(this.session.board);if(pair){this.hint=pair;this.guide(this.boardNodes[pair[0]],'交换这两颗相邻珠子，试试第一次消除。');}}
     if(this.screen==='craft'&&!this.save.commerce.works.length){
       if(this.workingDraft.every(t=>t===null)){
-        const offset=this.craftScroll[this.craftCategory],type=MATERIALS.findIndex((m,i)=>m.category===this.craftCategory&&materialStock(this.save,i)>0&&Math.floor(m.cell/4)*MATERIAL_STEP>=offset&&Math.floor(m.cell/4)*MATERIAL_STEP+94<=offset+294);
+        const offset=this.craftScroll[this.craftCategory],type=categoryMaterials(this.craftCategory,false,this.save).find((i,cell)=>materialStock(this.save,i)>0&&Math.floor(cell/4)*MATERIAL_STEP>=offset&&Math.floor(cell/4)*MATERIAL_STEP+94<=offset+294);
         this.guide(find('Material viewport')?.getChildByName('Material content')?.getChildByName('Bead material '+type),this.availableMaterials?'上下滑动找珠材，轻点放入；长按可拖入。':'先去采珠，获得材料后就能开始。');
       }
       else this.guide(find('Button: 完成制作'),'搭配好了，就点完成制作，保存第一件作品。');
@@ -1081,12 +1082,12 @@ export class AtelierGame extends Component {
       this.hitButton(name,111+i*125,770,121,53,()=>{this.craftCategory=i;this.render();});
     });
     const panel=this.rect('Material tray',70,826,580,307,'#f8f5f0',this.page,16,'#d6bfb1');
-    const category=this.craftCategory,types=categoryMaterials(category,!!event),offset=event?0:this.craftScroll[category];
+    const category=this.craftCategory,types=categoryMaterials(category,!!event,this.save),offset=event?0:this.craftScroll[category];
     const list=this.materialList('Material',83,MATERIAL_TOP,548,294,Math.ceil(types.length/4)*MATERIAL_STEP-6,offset,
       value=>{if(!event)this.craftScroll[category]=value;});
     this.accessibility?.text('上下滑动浏览珠材，轻点放入；手机长按后可拖入盘中。',false);
-    types.forEach(i=>{
-      const m=MATERIALS[i],x=(m.cell%4)*140,y=Math.floor(m.cell/4)*MATERIAL_STEP;
+    types.forEach((i,cell)=>{
+      const m=MATERIALS[i],x=(cell%4)*140,y=Math.floor(cell/4)*MATERIAL_STEP;
       const unlocked=!!event||this.save.materialUnlocked[i],stock=materialStock(this.save,i),available=Math.max(0,stock-(counts[i]||0));
       const selected=event&&m.id?this.workingCharm===m.id:this.craftMaterial===i;
       const n=this.rect('Bead material '+i,x,y,128,94,selected?'#e9ded1':'#f0e8e1',list.content,9,selected?'#9aab99':'#f0e8e1');
@@ -1273,7 +1274,8 @@ export class AtelierGame extends Component {
   }
   private clearCraftFlights() {this.craftFlights.forEach((flight,index)=>this.clearCraftFlight(index));}
   private launchCraftBead(index:number,type:number) {
-    const m=MATERIALS[type],n=this.box('Bouncing bead '+index,105+(m.cell%4)*140,MATERIAL_TOP+Math.floor(m.cell/4)*MATERIAL_STEP,82,82,this.craftMotion);
+    const cell=categoryMaterials(MATERIALS[type].category,!!this.contestEntry,this.save).indexOf(type),offset=this.contestEntry?0:this.craftScroll[MATERIALS[type].category];
+    const n=this.box('Bouncing bead '+index,105+(cell%4)*140,MATERIAL_TOP+Math.floor(cell/4)*MATERIAL_STEP-offset,82,82,this.craftMotion);
     const pose=this.craftPose(index);
     this.ellipse('Flight shadow',43+82*pose.offsetX,66+82*pose.offsetY,29,10,'#82634235',n);this.materialOnWire(type,41,41,82,pose,n);
     n.setScale(.72,.72,1);this.craftFlights.set(index,{node:n,type});
@@ -2512,9 +2514,9 @@ export class AtelierGame extends Component {
   private inventory() {
     this.dialog('inventory','我的材料盒');
     ['珠宝','水晶','木质','饰品'].forEach((name,c)=>this.button(name,98+c*133,333,124,45,()=>{this.inventoryCategory=c;this.inventory();},this.overlay,this.inventoryCategory===c));
-    const category=this.inventoryCategory,types=categoryMaterials(category),list=this.materialList('Inventory material',104,400,513,436,Math.ceil(types.length/4)*149-11,
+    const category=this.inventoryCategory,types=categoryMaterials(category,false,this.save),list=this.materialList('Inventory material',104,400,513,436,Math.ceil(types.length/4)*149-11,
       this.inventoryScroll[category],value=>{this.inventoryScroll[category]=value;},this.overlay);
-    types.forEach(i=>{const m=MATERIALS[i],x=(m.cell%4)*131,y=Math.floor(m.cell/4)*149;
+    types.forEach((i,cell)=>{const m=MATERIALS[i],x=(cell%4)*131,y=Math.floor(cell/4)*149;
       this.image(this.materialArt(i),x+20,y,76,76,list.content);this.text(m.name,x,y+78,120,30,18,INK,list.content,true);
       this.text(this.save.materialUnlocked[i]?'可用 '+materialStock(this.save,i):'未解锁',x,y+109,120,28,18,MUTED,list.content,true);
     });
