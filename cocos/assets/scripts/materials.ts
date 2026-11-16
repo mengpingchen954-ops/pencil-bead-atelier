@@ -71,8 +71,14 @@ export function ringMaterials(beads:(number|null)[],sizes:number[]|undefined,cha
 }
 export const normalizeBeadSizes = (beads:any[],sizes:any,fallback=8) =>
   Array.from(beads,(_,i)=>[6,7,8,9,10,11,12].includes(sizes?.[i])?sizes[i]:[6,7,8,9,10,11,12].includes(fallback)?fallback:8);
+export function canRotateMaterial(type:number) {
+  const material=MATERIALS[type],b=material?.bounds;
+  return !!((material?.threaded||['new-bamboo-plaque','new-gold-plaque'].includes(material?.id))&&b&&Math.max((b[2]-b[0])/(b[3]-b[1]),(b[3]-b[1])/(b[2]-b[0]))>1.25);
+}
+// Keep per-piece quarter turns in the existing saved direction array.
+export const materialTurn = (facing:string) => ['out','turn90','turn180','turn270'].indexOf(facing)>0?Number(facing.slice(4)):0;
 export const normalizeBeadFacings = (beads:any[],facings:any) =>
-  Array.from(beads,(type,i)=>MATERIALS[type]?.id&&facings?.[i]==='in'?'in':'out');
+  Array.from(beads,(type,i)=>canRotateMaterial(type)&&['turn90','turn180','turn270'].includes(facings?.[i])?facings[i]:MATERIALS[type]?.id&&facings?.[i]==='in'?'in':'out');
 // Hole and body points measured on the existing 192px charm sprites; bow threads through its knot.
 const CHARM_POINTS:Record<string,number[]> = {
   sakura:[130,32,90,105],butterfly:[99,32,99,118],star:[99,31,99,118],moon:[99,31,83,120],
@@ -81,9 +87,9 @@ const CHARM_POINTS:Record<string,number[]> = {
 };
 export function materialPlacement(type:number,radialAngle:number,facing='out') {
   const material=MATERIALS[type],points=material?.attachment||CHARM_POINTS[material?.id];
-  if(material?.threaded)return {anchorX:.5,anchorY:.5,angle:-radialAngle*180/Math.PI-90,offsetX:0,offsetY:0};
+  if(material?.threaded)return {anchorX:.5,anchorY:.5,angle:-radialAngle*180/Math.PI-90-materialTurn(facing),offsetX:0,offsetY:0};
   if(!points)return {anchorX:.5,anchorY:.5,angle:0,offsetX:0,offsetY:0};
-  const [hx,hy,bx,by]=points,angle=Math.atan2(by-hy,bx-hx)-radialAngle-(facing==='in'?Math.PI:0),dx=.5-hx/192,dy=.5-hy/192;
+  const [hx,hy,bx,by]=points,angle=Math.atan2(by-hy,bx-hx)-radialAngle-(facing==='in'?Math.PI:materialTurn(facing)*Math.PI/180),dx=.5-hx/192,dy=.5-hy/192;
   return {anchorX:hx/192,anchorY:1-hy/192,angle:angle*180/Math.PI,
     offsetX:Math.cos(angle)*dx+Math.sin(angle)*dy,offsetY:-Math.sin(angle)*dx+Math.cos(angle)*dy};
 }

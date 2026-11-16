@@ -511,7 +511,8 @@ export const EXTRA_MATERIALS = [
       93.82,
       100.18,
       104.97
-    ]
+    ],
+    "retired": true
   },
   {
     "name": "银瓣花坠",
@@ -574,13 +575,14 @@ export const EXTRA_MATERIALS = [
     "cell": 16,
     "color": "#d4b676",
     "bounds": [
+      0.2917,
       0.0104,
-      0.0156,
-      0.9844,
-      0.9844
+      0.7083,
+      0.9896
     ],
     "tone": "metal",
-    "id": "new-gold-spacer"
+    "id": "new-gold-spacer",
+    "threaded": true
   },
   {
     "name": "孔雀石",
@@ -855,13 +857,14 @@ export const EXTRA_MATERIALS = [
     "cell": 19,
     "color": "#d4b676",
     "bounds": [
+      0.125,
       0.0104,
-      0.1823,
-      0.9896,
-      0.8125
+      0.875,
+      0.9896
     ],
     "tone": "metal",
-    "id": "new-gold-flower-cap"
+    "id": "new-gold-flower-cap",
+    "threaded": true
   },
   {
     "name": "银花托",
@@ -1052,7 +1055,8 @@ export const EXTRA_MATERIALS = [
       121.79,
       126.45,
       97.96
-    ]
+    ],
+    "retired": true
   },
   {
     "name": "龙虾扣",
@@ -1067,7 +1071,8 @@ export const EXTRA_MATERIALS = [
       0.9896
     ],
     "tone": "metal",
-    "id": "new-clasp"
+    "id": "new-clasp",
+    "retired": true
   },
   {
     "name": "连接金环",
@@ -1463,13 +1468,14 @@ export const EXTRA_MATERIALS = [
     "cell": 46,
     "color": "#d4b676",
     "bounds": [
-      0.0469,
+      0.4583,
       0.0104,
-      0.9531,
+      0.5417,
       0.9896
     ],
     "tone": "metal",
-    "id": "new-bamboo-ring"
+    "id": "new-bamboo-ring",
+    "threaded": true
   },
   {
     "name": "暖棕木珠",

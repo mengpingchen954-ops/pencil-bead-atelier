@@ -8,7 +8,7 @@ import {
 import { BEADS, MATERIALS, ORDERS, RETURN_ORDERS, CHAPTERS, STORIES, JOURNEY, FURNITURE, CHARMS, CLEAN_SPOTS, REPAIRS } from './content';
 import * as rules from './model';
 import { DAILY_REWARDS, ENERGY_EXCHANGE, dailyStatus, claimDaily } from './daily';
-import { materialStock, charmType, normalizeBeadSizes, normalizeBeadFacings, ringMaterials, materialPlacement, ringAngle, ringRadius, CRAFT_LIMIT, categoryMaterials } from './materials';
+import { materialStock, charmType, normalizeBeadSizes, normalizeBeadFacings, ringMaterials, materialPlacement, canRotateMaterial, materialTurn, ringAngle, ringRadius, CRAFT_LIMIT, categoryMaterials } from './materials';
 import { craftChecks, finishWork, listWork, withdrawWork, settleSales, collectSale, collectAllSales, suggestedPrice, priceBounds, saleDuration, salesProgress, randomWorkName, renameWork, CUSTOM_STYLES, customerFit, updateCustomers, acceptCustomer, declineCustomer, deliverCustomer } from './commerce';
 import { pendingStory, storyUnlocked, finishStory, STORY_STOPS, storyRoute } from './story';
 import { BrowserAccessibility } from './BrowserAccessibility';
@@ -584,7 +584,7 @@ export class AtelierGame extends Component {
         const offset=this.craftScroll[this.craftCategory],type=categoryMaterials(this.craftCategory,false,this.save).find((i,cell)=>materialStock(this.save,i)>0&&Math.floor(cell/4)*MATERIAL_STEP>=offset&&Math.floor(cell/4)*MATERIAL_STEP+94<=offset+294);
         this.guide(find('Material viewport')?.getChildByName('Material content')?.getChildByName('Bead material '+type),this.availableMaterials?'上下滑动找珠材，轻点放入；长按可拖入。':'先去采珠，获得材料后就能开始。');
       }
-      else this.guide(find('Button: 完成制作'),'搭配好了，就点完成制作，保存第一件作品。');
+      else if(this.slot<0&&!this.craftToolsOpen)this.guide(find('Button: 完成制作'),'搭配好了，就点完成制作，保存第一件作品。');
     }
     if(this.screen==='orders'&&this.save.commerce.works.length===1&&this.save.commerce.works[0].status==='ready')this.guide(find('Button: 上架橱窗 · '+this.save.commerce.works[0].id),'给作品设个价格，让第一位顾客看见它。');
     if(this.screen==='decor'&&this.save.renovation.cleared.length<3){const spot=CLEAN_SPOTS.find(s=>!this.save.renovation.cleared.includes(s.id));if(spot)this.guide(find('Clean '+spot.id),'先收好三处杂物，再擦窗、扫灰。打扫免费。');}
@@ -1171,7 +1171,12 @@ export class AtelierGame extends Component {
     [6,7,8,9,10,11,12].forEach(value=>this.accessibleButton('选中珠子设为'+value+'毫米',()=>resize(value),this.page,selected));
     this.button('+',509,SIZE_Y,42,39,()=>resize(this.workingSizes[this.slot]+1));
     }
-    if(!event&&selected&&!this.craftToolsOpen&&MATERIALS[this.workingDraft[this.slot]]?.id){
+    if(!event&&selected&&!this.craftToolsOpen&&canRotateMaterial(this.workingDraft[this.slot])){
+      this.button('旋转',420,1188,214,34,()=>{
+        this.clearCraftFlights();this.remember();const facings=this.workingFacings,turn=(materialTurn(facings[this.slot])+90)%360;
+        facings[this.slot]=turn?'turn'+turn:'out';this.workingFacings=facings;this.persist();this.render();
+      });
+    }else if(!event&&selected&&!this.craftToolsOpen&&MATERIALS[this.workingDraft[this.slot]]?.id){
       const facing=this.workingFacings[this.slot];
       for(const [i,value] of ['in','out'].entries())this.button(value==='in'?'朝内':'朝外',420+i*111,1188,103,34,()=>{
         if(this.workingFacings[this.slot]===value)return;
@@ -1355,7 +1360,7 @@ export class AtelierGame extends Component {
     let start: Vec3|null=null, original: Vec3|null=null, dragged=false;
     let baseFacing='out',shownFacing='out';
     const dragFacing=(p:Vec3)=>{
-      if(this.contestEntry||!MATERIALS[this.workingDraft[index]]?.id)return null;
+      if(this.contestEntry||!MATERIALS[this.workingDraft[index]]?.id||canRotateMaterial(this.workingDraft[index]))return null;
       const half=n.getComponent(UITransform)!.contentSize.width/2,rx=original.x+half-360,ry=original.y-half+this.craftCenterY(),dx=p.x-start.x,dy=p.y-start.y;
       const radius=this.craftRadius(),radial=(dx*rx+dy*ry)/radius,tangent=(-dx*ry+dy*rx)/radius,change=Math.hypot(rx+dx,ry+dy)-radius;
       return Math.abs(change)>18&&Math.abs(radial)>Math.abs(tangent)?change<0?'in':'out':null;

@@ -21,6 +21,26 @@
     "retired": true
   },
   {
+    "type": 85,
+    "name": "金纹隔珠",
+    "source": "Dreamina text2image 842e29eb-2e59-4058-9d1e-38c974fff784",
+    "method": "Strict 90-degree side orthographic generation; chroma backdrop removed; complete silhouette uniformly fitted with transparent margins",
+    "submit_id": "842e29eb-2e59-4058-9d1e-38c974fff784",
+    "status": "success",
+    "threaded": true,
+    "prompt": "手串手游材质精灵，严格90度纯侧面工业正投影，零透视、零俯视、零微斜。金纹隔珠：小圆柱金属隔珠，穿线轴从左到右水平。只画完整圆柱的侧壁，竖向圆角矩形轮廓，高度约为宽度的1.5倍。浅金色浮雕卷草和小花纹，两端细金边。不可见顶部圆孔、端面、椭圆口。完整主体居中，长边占画布约72%，四周留白，不裁掉任何轮廓。浅淡水彩和彩铅手绘风，精细淡金金属质感，绝不做产品照片。只画一个物体，无投影、无文字、无辅助线、无绳线。背景必须均匀纯品红RGB255,0,255，物体不反射品红。禁止正面、三分之二视角、截面、可见上表面。"
+  },
+  {
+    "type": 104,
+    "name": "金花托",
+    "source": "Dreamina text2image ac562404-5348-4dc3-b5a1-7e04aa4a0e69",
+    "method": "Strict 90-degree side orthographic generation; chroma backdrop removed; complete silhouette uniformly fitted with transparent margins",
+    "submit_id": "ac562404-5348-4dc3-b5a1-7e04aa4a0e69",
+    "status": "success",
+    "threaded": true,
+    "prompt": "二维游戏图标：金花托的绝对正交侧视图。只画金色珠帽的外侧壁。一枚向右扩口的浅金小喇叭珠帽，外轮廓是实心圆润梯形：左边竖线短，右边竖线长，上下两条斜边镜像。特别注意右边只有一条竖直的花瓣波浪线，不允许出现椭圆、圆环、开口、杯口、内壁或内部凹面。珠帽朝右，轴线严格水平，外侧壁上有金色花瓣和水滴形镂空刻纹。相机完全平行于轴线的垂直侧面，仅见一个侧壁，零透视，绝对不见右端面。宽度约为高度的一半。不是长鼓，不是花朵正面，不是半切开的物体。浅淡金色水彩彩铅手绘风格，单独完整图标，主体居中长边占70%，四周留白。背景纯品红RGB255,0,255。无文字，无阴影，无辅助线，无绳线。"
+  },
+  {
     "type": 105,
     "name": "银花托",
     "source": "Dreamina text2image 05e3ed02-b90c-4f8c-824e-83ed65138386",
@@ -118,6 +138,16 @@
     "status": "success",
     "threaded": true,
     "prompt": "为手串手游生成一张严格纯侧面的材质图，绝不是纯正面图。工业正投影90度侧视，零透视、零俯视、零仰视、零微斜。镜头正对材质侧壁，穿线方向在画面里从左到右水平。具体物体：金管珠的纯侧面。穿线轴从左到右水平，细长金属圆管横躺，轮廓为左右平头的细长横向圆角矩形，长度是高度的3倍。可见的只有浅金色管子的外侧壁，带平行横向刻纹。不见管口、不见圆形端面、不见椭圆。。完整物体居中，保留所有轮廓、镂空、装饰边缘，主体长边占画布约72%，四周留白。浅淡水彩与彩铅手绘游戏精灵风格，精细自然纹理，光柔和，绝不做写实产品照片。没有其他物体、没有文字、没有投影、没有线绳。背景必须是均匀纯品红色RGB255,0,255方便抠图，物体上不要品红反光。不要画方向轴线、辅助线、穿线绳或穿出物体外的线条，方向描述仅用来理解角度。禁止剖切或截面，完整物体不能切半。注意：要严格90度侧面，只看到侧壁，不可微侧，不可三分之二视角，不可看到正面或顶部，不可出现圆形或椭圆形的孔口和端面。"
+  },
+  {
+    "type": 138,
+    "name": "竹节金环",
+    "source": "Dreamina text2image 52c2f583-6de6-4e53-9af0-0ea7c763c1f6",
+    "method": "Strict 90-degree side orthographic generation; chroma backdrop removed; complete silhouette uniformly fitted with transparent margins",
+    "submit_id": "52c2f583-6de6-4e53-9af0-0ea7c763c1f6",
+    "status": "success",
+    "threaded": true,
+    "prompt": "手串手游材质精灵，严格90度纯侧面工业正投影，零透视、零俯视、零微斜。竹节金环：严格侧面看一枚薄金色圆环的边缘，圆环轴从左到右水平，镜头完全垂直对准圆环侧壁。侧轮廓为一条竖直细长的金色圆角窄条，高度约为宽度的5倍，沿边有细小竹节凸点和金色圆珠结节。只见薄环的外侧边缘，不可见正面圆圈和中心圆孔，不可椭圆斜视。完整主体居中，长边占画布约72%，四周留白，不裁掉任何轮廓。浅淡水彩和彩铅手绘风，精细淡金金属质感，绝不做产品照片。只画一个物体，无投影、无文字、无辅助线、无绳线。背景必须均匀纯品红RGB255,0,255，物体不反射品红。禁止正面、三分之二视角、截面、可见上表面。"
   },
   {
     "type": 142,

@@ -187,6 +187,7 @@ for index,item in enumerate(items,48):
     meta_path.write_text(json.dumps(meta,ensure_ascii=False,indent=2)+'\n',encoding='utf-8')
     category=item['category'];entry=dict(name=item['name'],short=item['name'],category=category,cell=counts[category],color=['#d6b0a1','#b1c8cc','#a58160','#d4b676'][category])
     entry['bounds']=[round(v/192,4) for v in canvas.getchannel('A').point(lambda a:255 if a>64 else 0).getbbox()]
+    if item.get('id') in ['new-leaf-chain','new-gold-chain','new-clasp']:entry['retired']=True
     entry['tone']=tones.get(item['name'],'metal')
     if item['name'] in ['银曜石','金曜石','金星青金石','墨绿晶','葡萄紫晶','烟茶水晶']:entry['deep']=True
     for key in ['id','pale','threaded']:

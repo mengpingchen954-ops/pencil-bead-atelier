@@ -510,14 +510,8 @@
     "asset": "charm-new-gold-spacer.png",
     "name": "金纹隔珠",
     "category": 3,
-    "source": "04dc20dd4b437e3c64361d1622cc79d4.png",
-    "crop": [
-      804,
-      126,
-      928,
-      253
-    ],
-    "method": "Original alpha retained; isolated sprite; similar views/sizes represented once"
+    "source": "Dreamina text2image 842e29eb-2e59-4058-9d1e-38c974fff784",
+    "method": "Strict 90-degree side orthographic generation; chroma backdrop removed; complete silhouette uniformly fitted with transparent margins"
   },
   {
     "type": 86,
@@ -776,14 +770,8 @@
     "asset": "charm-new-gold-flower-cap.png",
     "name": "金花托",
     "category": 3,
-    "source": "8d48fb6f9f6a6ec92555f105a7521661.png",
-    "crop": [
-      207,
-      775,
-      321,
-      844
-    ],
-    "method": "Original alpha retained; isolated sprite; similar views/sizes represented once"
+    "source": "Dreamina text2image ac562404-5348-4dc3-b5a1-7e04aa4a0e69",
+    "method": "Strict 90-degree side orthographic generation; chroma backdrop removed; complete silhouette uniformly fitted with transparent margins"
   },
   {
     "type": 105,
@@ -1192,14 +1180,8 @@
     "asset": "charm-new-bamboo-ring.png",
     "name": "竹节金环",
     "category": 3,
-    "source": "82f545d68b0ba04ba09555fedb1eb16f.png",
-    "crop": [
-      234,
-      883,
-      447,
-      1082
-    ],
-    "method": "Original alpha retained; isolated sprite; similar views/sizes represented once"
+    "source": "Dreamina text2image 52c2f583-6de6-4e53-9af0-0ea7c763c1f6",
+    "method": "Strict 90-degree side orthographic generation; chroma backdrop removed; complete silhouette uniformly fitted with transparent margins"
   },
   {
     "type": 139,
