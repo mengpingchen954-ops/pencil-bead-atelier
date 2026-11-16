@@ -520,7 +520,11 @@ export class AtelierGame extends Component {
     this.boardNodes = []; this.slotNodes = [];
     this.rect('Paper', 0, 0, 720, 1280, PAPER);
     for(let y=0;y<1280;y+=720*112/680)this.image('pencil-paper',0,y,720,720*112/680);
-    if(['delivery','dialogue','packing'].includes(this.screen))this.image('pencil-frame',0,0,720,1280);
+    if(['delivery','dialogue'].includes(this.screen))this.image('pencil-frame',0,0,720,1280);
+    if(this.screen==='packing'){
+      this.rect('Packing border',24,24,672,1232,'#00000000',this.page,2,'#b49673');
+      this.rect('Packing border lining',30,30,660,1220,'#00000000',this.page,2,'#d8c6ad');
+    }
     // Subtle stationary paper grain, generated once per page instead of every frame.
     const grain = this.box('Paper fibres', 0, 0, 720, 1280).addComponent(Graphics);
     grain.strokeColor = color('#b6a17b14'); grain.lineWidth = 1;
@@ -877,25 +881,41 @@ export class AtelierGame extends Component {
   private listingDialog(id:number,price?:number) {
     const work=this.save.commerce.works.find(w=>w.id===id);if(!work||work.status!=='ready')return;
     const bounds=priceBounds(work.beads,this.save.rep);price=price===undefined?suggestedPrice(work.beads):Math.max(bounds.min,Math.min(bounds.max,price));
-    this.dialog('listing','把作品挂进橱窗');this.bracelet(work.beads,360,484,115,this.overlay,work.beadSize,work.beadSizes,work.charm,work.beadFacings);
-    this.text(work.name,110,662,500,42,28,INK,this.overlay,true);
-    const priceLabel=this.text('售价 '+price+' 金币',220,733,280,55,32,GOLD,this.overlay,true);
-    this.button('降价 10',106,734,108,52,()=>this.listingDialog(id,price!-10),this.overlay);
-    this.button('加价 10',506,734,108,52,()=>this.listingDialog(id,price!+10),this.overlay);
-    const duration=this.text('',105,898,510,55,21,MUTED,this.overlay,true),slider=this.box('Listing price slider',160,795,400,42,this.overlay);
+    this.dialog('listing','上架作品');
+    this.text('为这份手作，等一位有缘人',112,315,496,30,22,MUTED,this.overlay,true);
+    const preview=this.box('Listing work',0,0,0,0,this.overlay);
+    this.bracelet(work.beads,0,0,119,preview,work.beadSize,work.beadSizes,work.charm,work.beadFacings);this.fitBracelet(preview,165,354,390,260);
+    this.text(work.name,112,639,496,42,29,INK,this.overlay,true);
+    this.text(work.beads.length+' 件珠材 · 建议 '+suggestedPrice(work.beads)+' 金币',112,684,496,30,21,MUTED,this.overlay,true);
+    this.rect('Listing divider',112,733,496,1,'#d8c6ad',this.overlay,0);
+    this.text('设置售价',112,752,496,32,23,SAGE,this.overlay,true);
+    const priceLabel=this.text('',220,791,280,70,54,GOLD,this.overlay,true);priceLabel.node.name='Listing price';
+    this.text('金币',475,821,62,28,21,MUTED,this.overlay);
+    const duration=this.text('',112,1044,496,32,22,SAGE,this.overlay,true),slider=this.box('Listing price slider',120,873,480,48,this.overlay);
+    const presets:{node:Node,label:Label,value:number}[]=[];
     let accessible:HTMLInputElement|null=null;
     const change=(value:number)=>{
       price=Math.round(Math.max(bounds.min,Math.min(bounds.max,value)));const percent=(price-bounds.min)/Math.max(1,bounds.max-bounds.min);
-      priceLabel.string='售价 '+price+' 金币';duration.string='口碑 '+this.save.rep+' · '+bounds.min+'–'+bounds.max+' 金\n预计 '+Math.ceil(saleDuration(work.beads,price)/1000)+' 秒售出';
-      this.clear(slider);this.rect('Price rail',10,18,380,6,'#e0d3bf',slider,3);this.rect('Price value',10,18,380*percent,6,SAGE,slider,3);this.ellipse('Price handle',10+380*percent,21,12,12,PAPER,slider,SAGE);
+      priceLabel.string=String(price);duration.string='预计 '+Math.ceil(saleDuration(work.beads,price)/1000)+' 秒售出';
+      this.clear(slider);this.rect('Price rail',14,20,452,6,'#e0d3bf',slider,3);this.rect('Price value',14,20,452*percent,6,SAGE,slider,3);this.ellipse('Price handle',14+452*percent,23,13,13,PAPER,slider,SAGE);
+      presets.forEach(p=>{const active=price===p.value,g=p.node.getComponent(Graphics)!;g.clear();g.fillColor=color(active?SAGE:'#efe8dc');g.roundRect(0,-50,160,50,14);g.fill();p.label.color=color(active?PAPER:INK);});
       if(accessible){accessible.value=String(Math.round(percent*100));accessible.setAttribute('aria-valuetext',price+' 金币，预计 '+Math.ceil(saleDuration(work.beads,price)/1000)+' 秒售出');}
     };
-    const slide=(e:EventTouch)=>change(bounds.min+(bounds.max-bounds.min)*Math.max(0,Math.min(1,(this.localPoint(e).x-slider.position.x-10)/380)));
+    const slide=(e:EventTouch)=>change(bounds.min+(bounds.max-bounds.min)*Math.max(0,Math.min(1,(this.localPoint(e).x-slider.position.x-14)/452)));
     slider.on(Node.EventType.TOUCH_START,slide);slider.on(Node.EventType.TOUCH_MOVE,slide);slider.on(Node.EventType.TOUCH_END,slide);
     accessible=this.accessibility?.range?.('作品售价',Math.round((price-bounds.min)/Math.max(1,bounds.max-bounds.min)*100),value=>change(bounds.min+(bounds.max-bounds.min)*value/100))||null;
-    [['快卖',bounds.min],['建议价',suggestedPrice(work.beads)],['高价',bounds.max]].forEach(([name,value],i)=>this.button(name as string,105+i*175,846,160,42,()=>change(value as number),this.overlay,name==='建议价'));
+    const adjust=(name:string,glyph:string,x:number,amount:number)=>{
+      const n=this.rect('Button: '+name,x,798,64,64,'#efe8dc',this.overlay,32);this.text(glyph,0,0,64,64,38,INK,n,true);
+      const action=()=>change(price!+amount);this.bindTap(n,()=>{this.play();action();});this.accessibleButton(name,action,this.overlay);
+    };adjust('降价 10','−',120,-10);adjust('加价 10','+',536,10);
+    this.text(bounds.min+' 金',120,924,130,28,19,MUTED,this.overlay);
+    this.text(bounds.max+' 金',470,924,130,28,19,MUTED,this.overlay,true);
+    [['快卖',bounds.min],['建议价',suggestedPrice(work.beads)],['高价',bounds.max]].forEach(([name,value],i)=>{
+      const n=this.rect('Button: '+name,112+i*168,974,160,50,'#efe8dc',this.overlay,14),label=this.text(name as string,0,0,160,50,23,INK,n,true);
+      const action=()=>change(value as number);this.bindTap(n,()=>{this.play();action();});this.accessibleButton(name as string,action,this.overlay);presets.push({node:n,label,value:value as number});
+    });
     change(price);
-    this.button('确认上架',130,962,460,66,()=>{
+    this.button('确认上架',112,1100,496,70,()=>{
       const next=listWork(this.save,id,price!);if(!next)return;this.save=next;this.persist();this.salesTab='listing';this.ordersPage=0;this.navigate('orders');this.toast('作品已上架，售出后到「已售」点击收钱。');
     },this.overlay,true);
   }
@@ -976,6 +996,12 @@ export class AtelierGame extends Component {
     beads.forEach((t,i)=>{const a=ringAngle(beads,i,sizes),x=cx+Math.cos(a)*r,y=cy+Math.sin(a)*r*.95;
       if(t!==null){const d=diameter*sizes[i]/8*fit,p=materialPlacement(t,Math.atan2(Math.sin(a)*.95,Math.cos(a)),ring.facings[i]);this.ellipse('Bead shadow',x+d*p.offsetX+2,y+d*p.offsetY+d*.27,d*.42,d*.2,'#8b705535',parent);this.materialOnWire(t,x,y,d,p,parent);}
     });
+  }
+  private fitBracelet(work:Node,x:number,y:number,width:number,height:number) {
+    const bounds=work.children.map(n=>n.getComponent(UITransform)!.getBoundingBox());
+    const left=Math.min(...bounds.map(b=>b.xMin)),right=Math.max(...bounds.map(b=>b.xMax)),bottom=Math.min(...bounds.map(b=>b.yMin)),top=Math.max(...bounds.map(b=>b.yMax));
+    const fit=Math.min(width/(right-left),height/(top-bottom),1);
+    work.setScale(fit,fit,1);work.setPosition(x+width/2-(left+right)*fit/2,-y-height/2-(bottom+top)*fit/2);
   }
   private materialArt(type:number) { const m=MATERIALS[type];return m?.id?'charm-'+m.id:'bead-'+type; }
   private materialOnWire(type:number,x:number,y:number,diameter:number,pose:ReturnType<typeof materialPlacement>,parent:Node) {
@@ -1465,7 +1491,10 @@ export class AtelierGame extends Component {
     this.button('返回修改',566,119,122,48,()=>this.navigate('craft'));
     this.text('配色、珠序和吊坠，都由你决定',85,123,470,40,24,SAGE,this.page,true);
     this.image('pencil-packing-box',40,190,640,540);
-    this.bracelet(this.save.draft.filter(t=>t!==null),360,496,119,this.page,8,normalizeBeadSizes(this.save.draft,this.save.draftSizes,this.save.beadSize).filter((_,i)=>this.save.draft[i]!==null),this.save.charm,normalizeBeadFacings(this.save.draft,this.save.draftFacings).filter((_,i)=>this.save.draft[i]!==null));
+    const work=this.box('Packed work',0,0,0,0);
+    this.bracelet(this.save.draft.filter(t=>t!==null),0,0,119,work,8,normalizeBeadSizes(this.save.draft,this.save.draftSizes,this.save.beadSize).filter((_,i)=>this.save.draft[i]!==null),this.save.charm,normalizeBeadFacings(this.save.draft,this.save.draftFacings).filter((_,i)=>this.save.draft[i]!==null));
+    // Fit the entire preview, including rotated charms and shadows, inside the box cushion.
+    this.fitBracelet(work,245,447,230,166);
     this.text('给这份手作起个名字',140,750,440,55,32,INK,this.page,true);
     this.nameField(this.save.draftName||'',824,this.page,value=>{this.save.draftName=value;this.persist();});
     this.text('手动输入或随机取名 · 最多 24 个字\n留空将使用默认名称，保存后仍可改名',100,903,520,70,22,MUTED,this.page,true);

@@ -201,3 +201,5 @@ for index,item in enumerate(items,48):
 (root/'assets/resources/art/extra-material-sources.json').write_text(json.dumps(records,ensure_ascii=False,indent=2)+'\n',encoding='utf-8')
 assert len({i['name'] for i in items})==len(items)
 print('Prepared',len(catalog),'new materials; category totals:',counts)
+import runpy
+runpy.run_path(str(root/'tools/apply-material-overrides.py'))

@@ -494,14 +494,8 @@
     "asset": "bead-83.png",
     "name": "橄榄切面桶珠",
     "category": 0,
-    "source": "04dc20dd4b437e3c64361d1622cc79d4.png",
-    "crop": [
-      78,
-      82,
-      461,
-      306
-    ],
-    "method": "Original alpha retained; isolated sprite; similar views/sizes represented once"
+    "source": "Dreamina text2image 06f3e387-ab36-4d67-820c-36e2785aa33f",
+    "method": "Strict frontal orthographic generation; magenta backdrop removed; complete silhouette uniformly fitted with transparent margins"
   },
   {
     "type": 84,
@@ -802,56 +796,32 @@
     "asset": "charm-new-silver-flower-cap.png",
     "name": "银花托",
     "category": 3,
-    "source": "8d48fb6f9f6a6ec92555f105a7521661.png",
-    "crop": [
-      334,
-      774,
-      444,
-      843
-    ],
-    "method": "Original alpha retained; isolated sprite; similar views/sizes represented once"
+    "source": "Dreamina text2image ccc05cff-a2f2-4ae7-b1a5-b5ec24db7c39",
+    "method": "Strict frontal orthographic generation; magenta backdrop removed; complete silhouette uniformly fitted with transparent margins"
   },
   {
     "type": 106,
     "asset": "charm-new-silver-filigree.png",
     "name": "镂空银隔珠",
     "category": 3,
-    "source": "8d48fb6f9f6a6ec92555f105a7521661.png",
-    "crop": [
-      456,
-      763,
-      576,
-      852
-    ],
-    "method": "Original alpha retained; isolated sprite; similar views/sizes represented once"
+    "source": "Dreamina text2image 4428fd7e-0753-4256-8ed4-546bb3a7cd73",
+    "method": "Strict frontal orthographic generation; magenta backdrop removed; complete silhouette uniformly fitted with transparent margins"
   },
   {
     "type": 107,
     "asset": "charm-new-silver-diamond-spacer.png",
     "name": "镶钻银隔珠",
     "category": 3,
-    "source": "8d48fb6f9f6a6ec92555f105a7521661.png",
-    "crop": [
-      612,
-      775,
-      710,
-      844
-    ],
-    "method": "Original alpha retained; isolated sprite; similar views/sizes represented once"
+    "source": "Dreamina text2image 2e68e1dd-626a-4d32-a81e-288b9ddb238e",
+    "method": "Strict frontal orthographic generation; magenta backdrop removed; complete silhouette uniformly fitted with transparent margins"
   },
   {
     "type": 108,
     "asset": "charm-new-silver-ball.png",
     "name": "镂空银球",
     "category": 3,
-    "source": "8d48fb6f9f6a6ec92555f105a7521661.png",
-    "crop": [
-      605,
-      910,
-      768,
-      1046
-    ],
-    "method": "Original alpha retained; isolated sprite; similar views/sizes represented once"
+    "source": "Dreamina text2image 3cfc29ce-de29-4f21-82aa-147b5ee40033",
+    "method": "Strict frontal orthographic generation; magenta backdrop removed; complete silhouette uniformly fitted with transparent margins"
   },
   {
     "type": 109,
@@ -872,14 +842,8 @@
     "asset": "charm-new-silver-tail.png",
     "name": "银鱼尾",
     "category": 3,
-    "source": "8d48fb6f9f6a6ec92555f105a7521661.png",
-    "crop": [
-      320,
-      880,
-      452,
-      1052
-    ],
-    "method": "Original alpha retained; isolated sprite; similar views/sizes represented once"
+    "source": "silver-tail-original.png (user supplied 1.png)",
+    "method": "Complete user-provided silhouette including loop and both tail fins; original alpha preserved, transparent padding only; no shape clipping"
   },
   {
     "type": 111,
@@ -998,14 +962,8 @@
     "asset": "charm-new-gold-diamond-spacer.png",
     "name": "镶钻金隔珠",
     "category": 3,
-    "source": "8dd97cd2c40b07c778fe8958b863b24c.png",
-    "crop": [
-      126,
-      1004,
-      320,
-      1130
-    ],
-    "method": "Original alpha retained; isolated sprite; similar views/sizes represented once"
+    "source": "Dreamina text2image 66c1daf6-6558-4106-8522-61bd4764be48",
+    "method": "Strict frontal orthographic generation; magenta backdrop removed; complete silhouette uniformly fitted with transparent margins"
   },
   {
     "type": 120,
@@ -1096,42 +1054,24 @@
     "asset": "charm-new-double-spacer.png",
     "name": "双环银隔珠",
     "category": 3,
-    "source": "9eb067fe788148993db574628f7e2009.png",
-    "crop": [
-      466,
-      774,
-      574,
-      844
-    ],
-    "method": "Original alpha retained; isolated sprite; similar views/sizes represented once"
+    "source": "Dreamina text2image f42489d7-b288-405b-94ec-021c59ad1904",
+    "method": "Strict frontal orthographic generation; magenta backdrop removed; complete silhouette uniformly fitted with transparent margins"
   },
   {
     "type": 127,
     "asset": "charm-new-gold-cube.png",
     "name": "雕花金方珠",
     "category": 3,
-    "source": "9eb067fe788148993db574628f7e2009.png",
-    "crop": [
-      955,
-      770,
-      1043,
-      860
-    ],
-    "method": "Original alpha retained; isolated sprite; similar views/sizes represented once"
+    "source": "Dreamina text2image 4e6c4fd6-7844-48e1-a314-1e62e48c5506",
+    "method": "Strict frontal orthographic generation; magenta backdrop removed; complete silhouette uniformly fitted with transparent margins"
   },
   {
     "type": 128,
     "asset": "charm-new-gold-tube.png",
     "name": "金管珠",
     "category": 3,
-    "source": "9eb067fe788148993db574628f7e2009.png",
-    "crop": [
-      1065,
-      785,
-      1209,
-      837
-    ],
-    "method": "Original alpha retained; isolated sprite; similar views/sizes represented once"
+    "source": "Dreamina text2image e718ff6b-b7c4-4d7a-9ae9-8f8683ce36d3",
+    "method": "Strict frontal orthographic generation; magenta backdrop removed; complete silhouette uniformly fitted with transparent margins"
   },
   {
     "type": 129,
@@ -1320,14 +1260,8 @@
     "asset": "bead-142.png",
     "name": "浅绿玉桶",
     "category": 0,
-    "source": "086d8ef1bca682a1b7d986c46f2b1633.png",
-    "crop": [
-      132,
-      528,
-      479,
-      764
-    ],
-    "method": "Original alpha retained; isolated sprite; similar views/sizes represented once"
+    "source": "Dreamina text2image 1e697908-64ea-4f2e-97d1-a20371735bff",
+    "method": "Strict frontal orthographic generation; magenta backdrop removed; complete silhouette uniformly fitted with transparent margins"
   },
   {
     "type": 143,
@@ -1348,14 +1282,8 @@
     "asset": "bead-144.png",
     "name": "扁木隔片",
     "category": 2,
-    "source": "086d8ef1bca682a1b7d986c46f2b1633.png",
-    "crop": [
-      863,
-      562,
-      938,
-      745
-    ],
-    "method": "Original alpha retained; isolated sprite; similar views/sizes represented once"
+    "source": "Dreamina text2image ec9614aa-34b8-4602-8888-4c73a0373984",
+    "method": "Strict frontal orthographic generation; magenta backdrop removed; complete silhouette uniformly fitted with transparent margins"
   },
   {
     "type": 145,
@@ -1376,14 +1304,8 @@
     "asset": "charm-new-jade-setting.png",
     "name": "金镶绿玉",
     "category": 3,
-    "source": "086d8ef1bca682a1b7d986c46f2b1633.png",
-    "crop": [
-      449,
-      942,
-      908,
-      1214
-    ],
-    "method": "Original alpha retained; isolated sprite; similar views/sizes represented once"
+    "source": "Dreamina text2image 47022d18-48f0-44ce-b136-ff4c429650cb",
+    "method": "Strict frontal orthographic generation; magenta backdrop removed; complete silhouette uniformly fitted with transparent margins"
   },
   {
     "type": 147,

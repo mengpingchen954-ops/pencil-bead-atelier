@@ -35,6 +35,18 @@ test('old inventory, draft and listed works keep their original IDs while new ma
  assert.equal(restored.inventory.length,count);assert.ok(restored.inventory.slice(48).every(n=>n===0));assert.ok(restored.materialUnlocked.slice(48).every(n=>n===false));
  assert.equal(canPlace(restored,48,0),false);
 });
+test('approved full silhouettes and frontal replacements survive sheet extraction at the original material IDs',()=>{
+ const folder=root+'/source-art/material-overrides/',changes=JSON.parse(fs.readFileSync(folder+'manifest.json','utf8'));
+ assert.deepEqual(changes.map(r=>r.type),[83,105,106,107,108,110,119,126,127,128,142,144,146]);
+ for(const change of changes){
+  const m=MATERIALS[change.type],asset=m.id?'charm-'+m.id+'.png':'bead-'+change.type+'.png',source=fs.readFileSync(folder+asset),runtime=fs.readFileSync(root+'/assets/resources/'+(m.id?'art/':'beads/')+asset);
+  assert.equal(m.name,change.name);assert.deepEqual(runtime,source,asset+' must keep its approved complete silhouette');
+  assert.equal(source.readUInt32BE(16),192);assert.equal(source.readUInt32BE(20),192);assert.equal(source[25],6,'RGBA transparency');
+  assert.ok(m.bounds[0]>0&&m.bounds[1]>0&&m.bounds[2]<1&&m.bounds[3]<1,'transparent margin prevents edge clipping');
+  if(change.type===110){assert.deepEqual(m.attachment,change.attachment);assert.ok(m.bounds[2]-m.bounds[0]>.8,'both fish-tail fins retained');assert.ok(fs.existsSync(folder+'silver-tail-original.png'));}
+  else {assert.equal(change.status,'success');assert.ok(change.submit_id);assert.match(change.prompt,/纯正面/);}
+ }
+});
 test('every new material is earned at its actual ID once and can complete and reload a listed DIY work',()=>{
  const reached=new Set();for(let level=1;level<=count*2;level++)for(let slot=0;slot<6;slot++){
   const collected=Array(6).fill(30);collected[slot]=1000;

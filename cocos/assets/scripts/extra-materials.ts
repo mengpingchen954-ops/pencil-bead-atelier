@@ -541,9 +541,9 @@ export const EXTRA_MATERIALS = [
     "color": "#d6b0a1",
     "bounds": [
       0.0104,
-      0.2031,
+      0.1094,
       0.9896,
-      0.7917
+      0.8854
     ],
     "tone": "green",
     "pale": true,
@@ -868,10 +868,10 @@ export const EXTRA_MATERIALS = [
     "cell": 20,
     "color": "#d4b676",
     "bounds": [
-      0.0156,
-      0.1771,
-      0.9896,
-      0.8177
+      0.0104,
+      0.0104,
+      0.9844,
+      0.9896
     ],
     "tone": "metal",
     "id": "new-silver-flower-cap"
@@ -883,10 +883,10 @@ export const EXTRA_MATERIALS = [
     "cell": 21,
     "color": "#d4b676",
     "bounds": [
+      0.0156,
       0.0104,
-      0.1354,
-      0.9896,
-      0.8594
+      0.9844,
+      0.9896
     ],
     "tone": "metal",
     "id": "new-silver-filigree"
@@ -898,10 +898,10 @@ export const EXTRA_MATERIALS = [
     "cell": 22,
     "color": "#d4b676",
     "bounds": [
+      0.0156,
       0.0104,
-      0.1562,
-      0.9896,
-      0.8438
+      0.9844,
+      0.9896
     ],
     "tone": "metal",
     "id": "new-silver-diamond-spacer"
@@ -915,7 +915,7 @@ export const EXTRA_MATERIALS = [
     "bounds": [
       0.0104,
       0.0104,
-      0.9844,
+      0.9896,
       0.9896
     ],
     "tone": "metal",
@@ -949,18 +949,18 @@ export const EXTRA_MATERIALS = [
     "cell": 25,
     "color": "#d4b676",
     "bounds": [
-      0.1094,
-      0.0104,
-      0.8854,
-      0.9896
+      0.0625,
+      0.0208,
+      0.9271,
+      0.9792
     ],
     "tone": "metal",
     "id": "new-silver-tail",
     "attachment": [
-      76.29,
-      33.95,
-      98.41,
-      140.85
+      90.24,
+      31.8,
+      91.39,
+      121.22
     ]
   },
   {
@@ -1119,10 +1119,10 @@ export const EXTRA_MATERIALS = [
     "cell": 33,
     "color": "#d4b676",
     "bounds": [
+      0.0156,
       0.0104,
-      0.2292,
-      0.9896,
-      0.7708
+      0.9792,
+      0.9896
     ],
     "tone": "metal",
     "id": "new-gold-diamond-spacer"
@@ -1230,9 +1230,9 @@ export const EXTRA_MATERIALS = [
     "color": "#d4b676",
     "bounds": [
       0.0104,
-      0.1198,
-      0.9896,
-      0.8854
+      0.0104,
+      0.9844,
+      0.9896
     ],
     "tone": "metal",
     "id": "new-double-spacer"
@@ -1244,9 +1244,9 @@ export const EXTRA_MATERIALS = [
     "cell": 36,
     "color": "#d4b676",
     "bounds": [
+      0.0156,
       0.0104,
-      0.0104,
-      0.9896,
+      0.9792,
       0.9896
     ],
     "tone": "metal",
@@ -1260,9 +1260,9 @@ export const EXTRA_MATERIALS = [
     "color": "#d4b676",
     "bounds": [
       0.0104,
-      0.3177,
+      0.3229,
       0.9896,
-      0.6823
+      0.6719
     ],
     "tone": "metal",
     "id": "new-gold-tube"
@@ -1511,10 +1511,10 @@ export const EXTRA_MATERIALS = [
     "cell": 37,
     "color": "#d6b0a1",
     "bounds": [
+      0.1198,
       0.0104,
-      0.151,
-      0.9896,
-      0.8438
+      0.8802,
+      0.9896
     ],
     "tone": "green",
     "pale": true,
@@ -1541,9 +1541,9 @@ export const EXTRA_MATERIALS = [
     "cell": 14,
     "color": "#a58160",
     "bounds": [
-      0.2812,
       0.0104,
-      0.7188,
+      0.0104,
+      0.9896,
       0.9896
     ],
     "tone": "brown",
@@ -1577,10 +1577,10 @@ export const EXTRA_MATERIALS = [
     "cell": 48,
     "color": "#d4b676",
     "bounds": [
+      0.1042,
       0.0104,
-      0.1562,
-      0.9896,
-      0.8385
+      0.8958,
+      0.9896
     ],
     "tone": "metal",
     "id": "new-jade-setting"

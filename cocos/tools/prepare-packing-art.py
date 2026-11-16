@@ -25,8 +25,11 @@ def save(im,name,description):
             data.pop('vertices',None)
     meta['userData'].update(hasAlpha=im.mode=='RGBA',redirect=asset_id+'@f9941')
     meta_path.write_text(json.dumps(meta,ensure_ascii=False,indent=2)+'\n',encoding='utf-8')
-    manifest['assets']=[a for a in manifest['assets'] if a['asset']!=name]
-    manifest['assets'].append(dict(asset=name,source=source.name,method=description))
+    record=next((a for a in manifest['assets'] if a['asset']==name),None)
+    if record is None:
+        record={}
+        manifest['assets'].append(record)
+    record.update(asset=name,source=source.name,method=description)
 
 # Replace the reference's example jewellery with blank cushion sampled from its lid.
 cushion=art.copy()
@@ -34,7 +37,15 @@ cushion.paste(art.crop((263,260,450,329)).resize((270,200),Image.Resampling.BICU
 mask=Image.new('L',art.size)
 ImageDraw.Draw(mask).polygon([(265,373),(456,373),(485,410),(494,545),(473,558),(240,558),(229,544),(239,410)],fill=255)
 clean=Image.composite(cushion,art,mask.filter(ImageFilter.GaussianBlur(2)))
-save(clean.crop((42,137,678,674)),'pencil-packing-box.jpg','Proportion-preserved open box and ribbon, example bracelet replaced with sampled blank cushion; actual twelve beads and charm rendered natively')
+box=clean.crop((42,137,678,674))
+# Remove ornaments clipped by the original crop, retaining the box, ribbon and watercolor.
+for region,sample in [((0,0,29,47),(35,0,85,65)),((523,0,636,96),(473,0,515,68))]:
+    patch=box.copy()
+    patch.paste(box.crop(sample).resize((region[2]-region[0],region[3]-region[1]),Image.Resampling.BICUBIC),region[:2])
+    mask=Image.new('L',box.size)
+    ImageDraw.Draw(mask).rectangle(region,fill=255)
+    box=Image.composite(patch,box,mask.filter(ImageFilter.GaussianBlur(2)))
+save(box,'pencil-packing-box.jpg','Proportion-preserved open box, ribbon and blank cushion; clipped corner ornaments removed; actual jewelry rendered natively within the cushion')
 people=art.crop((0,674,720,1050)).convert('RGBA')
 mask=Image.new('L',people.size);draw=ImageDraw.Draw(mask)
 draw.polygon([(102,14),(150,18),(188,42),(207,78),(210,134),(196,174),(192,205),(218,242),(237,295),(255,359),(227,376),(15,376),(6,350),(10,279),(17,228),(28,198),(31,151),(28,117),(39,61),(70,24)],fill=255)

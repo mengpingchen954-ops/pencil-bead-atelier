@@ -30,7 +30,15 @@ class Color {
   toHEX(){return [this.r,this.g,this.b,this.a].map(n=>n.toString(16).padStart(2,'0')).join('');}
 }
 class Component {}
-class UITransform {setAnchorPoint(x,y){this.anchorPoint=typeof x==='object'?x:{x,y};}setContentSize(w,h){this.contentSize=typeof w==='object'?{width:w.width,height:w.height}:{width:w,height:h};}}
+class UITransform {
+  setAnchorPoint(x,y){this.anchorPoint=typeof x==='object'?x:{x,y};}
+  setContentSize(w,h){this.contentSize=typeof w==='object'?{width:w.width,height:w.height}:{width:w,height:h};}
+  getBoundingBox(){
+    const n=this.node,a=(n.angle||0)*Math.PI/180,c=Math.cos(a),s=Math.sin(a),points=[];
+    for(const x of [-this.anchorPoint.x*this.contentSize.width,(1-this.anchorPoint.x)*this.contentSize.width])for(const y of [-this.anchorPoint.y*this.contentSize.height,(1-this.anchorPoint.y)*this.contentSize.height])points.push({x:n.position.x+x*n.scale.x*c-y*n.scale.y*s,y:n.position.y+x*n.scale.x*s+y*n.scale.y*c});
+    return {xMin:Math.min(...points.map(p=>p.x)),xMax:Math.max(...points.map(p=>p.x)),yMin:Math.min(...points.map(p=>p.y)),yMax:Math.max(...points.map(p=>p.y))};
+  }
+}
 class Graphics {
   constructor(){this.commands=[];}
   clear(){this.commands=[];}

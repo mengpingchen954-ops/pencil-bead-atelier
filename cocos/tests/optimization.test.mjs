@@ -105,8 +105,8 @@ test('random names exclude all existing names even after the original suggestion
 test('price presets update the displayed waiting time and commit the selected slider price',()=>{
  const trade=load(root+'/assets/scripts/commerce.ts'),{g,actions}=fixture();g.save=trade.finishWork({...g.save,inventory:Array(MATERIAL_COUNT).fill(20),gatheredStock:Array(MATERIAL_COUNT).fill(20),draft:[0,0,0]},1000);
  const bounds=trade.priceBounds([0,0,0],0);g.listingDialog(1,bounds.min);
- actions.get('高价')();assert.ok(g.overlay.getComponentsInChildren(Label).some(l=>l.string==='售价 '+bounds.max+' 金币'));
- actions.get('降价 10')();assert.ok(g.overlay.getComponentsInChildren(Label).some(l=>l.string==='售价 '+(bounds.max-10)+' 金币'));actions.get('快卖')();actions.get('确认上架')();assert.equal(g.save.commerce.works[0].price,bounds.min);assert.equal(g.save.commerce.works[0].sellAt-g.save.commerce.works[0].listedAt,trade.saleDuration([0,0,0],bounds.min));
+ actions.get('高价')();assert.equal(g.overlay.getChildByName('Listing price').getComponent(Label).string,String(bounds.max));
+ actions.get('降价 10')();assert.equal(g.overlay.getChildByName('Listing price').getComponent(Label).string,String(bounds.max-10));actions.get('快卖')();actions.get('确认上架')();assert.equal(g.save.commerce.works[0].price,bounds.min);assert.equal(g.save.commerce.works[0].sellAt-g.save.commerce.works[0].listedAt,trade.saleDuration([0,0,0],bounds.min));
 });
 test('character progress uses distinct experiences and does not fill from several quotes in one story',()=>{
  const {characterMemories}=load(root+'/assets/scripts/memories.ts'),save=rules.freshSave();save.seenStories=['old-table','first-receipt'];

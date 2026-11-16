@@ -274,3 +274,6 @@ Creator 只替换「委托」布局子树，其他十七页逐条校验保留，
 验收：`node --test cocos/tests/*.test.mjs`、`node scripts/test-cocos-extra-materials.mjs`。素材筛选与提取记录：`cocos/assets/resources/art/extra-material-sources.json`，重制脚本：`cocos/tools/prepare-extra-materials.py`（读取本机原始十二张 PNG）。
 
 每个材质分类按首次解锁顺序展示：已解锁在前，未解锁在后；材料用尽、再次采集和刷新都保留顺序。旧存档缺少解锁历史时，已有解锁材质沿用原相对顺序，新解锁接在其后。DIY与材料盒同步，比赛练习目录不变。
+
+成品确认页移除角落花边、玫瑰和盒图裁切残片，仅保留细线边框、礼盒与丝带。整件手串按珠子、吊坠及阴影的实际范围等比适配盒子内衬，保留存档中的珠序、尺寸和朝向。
+上架弹窗改为作品预览、名称、居中售价、调价与确认的清晰布局，保留滑杆、快捷价及售出时间。12款侧视材质经即梦重新生成为纯正面；银鱼尾使用用户完整原图，保留两侧鱼鳍及挂环。已批准透明素材与生成记录保存在 source-art/material-overrides，重新提取图集后自动恢复替换，原有编号、库存、分类和解锁状态不变。
