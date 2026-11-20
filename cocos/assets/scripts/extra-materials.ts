@@ -1553,6 +1553,7 @@ export const EXTRA_MATERIALS = [
   },
   {
     "name": "扁木隔片",
+    "retired": true,
     "short": "扁木隔片",
     "category": 2,
     "cell": 14,
