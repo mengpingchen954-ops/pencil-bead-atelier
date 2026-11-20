@@ -1,4 +1,4 @@
-System.register(["./application.bc32b.js"], function (_export, _context) {
+System.register(["./application.45c42.js"], function (_export, _context) {
   "use strict";
 
   var Application, canvas, $p, bcr, application;
@@ -6,8 +6,8 @@ System.register(["./application.bc32b.js"], function (_export, _context) {
     return System["import"](url);
   }
   return {
-    setters: [function (_applicationBc32bJs) {
-      Application = _applicationBc32bJs.Application;
+    setters: [function (_application45c42Js) {
+      Application = _application45c42Js.Application;
     }],
     execute: function () {
       canvas = document.getElementById('GameCanvas');

@@ -952,13 +952,26 @@ export class AtelierGame extends Component {
   }
   private freeWorkPreview(id:number) {
     const work=this.save.commerce.works.find(w=>w.id===id);if(!work)return;
-    this.dialog('free-work',work.name);this.bracelet(work.beads,360,504,150,this.overlay,work.beadSize,work.beadSizes,work.charm,work.beadFacings);
+    this.dialog('free-work',work.name);this.clear(this.overlay);this.accessibility?.clear(true);
+    const shade=this.rect('Modal backdrop',0,0,720,1280,'#403a2c8c',this.overlay,0);shade.addComponent(BlockInputEvents);
+    this.image('work-preview-panel',58,222,604,849,this.overlay);
+    this.text(work.name,116,254,430,68,48,'#788366',this.overlay);
+    const preview=this.box('Enlarged work',0,0,720,1280,this.overlay);
+    this.bracelet(work.beads,360,542,166,preview,work.beadSize,work.beadSizes,work.charm,work.beadFacings);
+    this.fitBracelet(preview,160,350,400,382);
+    const paintedButton=(name:string,x:number,y:number,w:number,h:number,action:()=>void,primary=false,printed=false)=>{
+      const n=this.box('Button: '+name,x,y,w,h,this.overlay);
+      if(!printed)this.text(name,8,0,w-16,h,primary?33:27,primary?'#fff9e9':INK,n,true);
+      this.bindTap(n,()=>{if(!this.busy){this.play();action();}});this.accessibleButton(name,action,this.overlay);return n;
+    };
+    paintedButton('×',579,242,58,54,()=>this.dismiss(),false,true);
     const materials=rules.draftCounts(ringMaterials(work.beads,work.beadSizes,work.charm).beads).flatMap((n,i)=>n?[MATERIALS[i].name+' ×'+n]:[]).join(' · ');
-    this.text(materials+'\n'+(work.status==='sold'?'已售给'+work.buyer:work.status==='listing'?'橱窗在售':'待上架'),105,754,510,115,24,INK,this.overlay,true);
-    this.button('编辑名称',220,674,280,55,()=>this.renameWorkDialog(id),this.overlay);
-    if(work.status==='ready'&&this.save.customers?.active?.status==='accepted')this.button('交付给顾客',130,875,460,42,()=>this.customerConfirm(id),this.overlay);
-    this.button('再做一条',130,925,460,64,()=>{this.remember();this.workingDraft=[...work.beads];this.workingSizes=normalizeBeadSizes(work.beads,work.beadSizes,work.beadSize);this.workingFacings=normalizeBeadFacings(work.beads,work.beadFacings);this.save.charm=work.charm;this.persist();this.navigate('craft');},this.overlay,true);
-    this.text('沿用配色作为草稿，仍需准备实际珠材。',105,1004,510,39,20,MUTED,this.overlay,true);
+    this.accessibility?.text(materials,true);
+    paintedButton('编辑名称',195,773,330,67,()=>this.renameWorkDialog(id));
+    paintedButton('再做一条',137,885,447,79,()=>{this.remember();this.workingDraft=[...work.beads];this.workingSizes=normalizeBeadSizes(work.beads,work.beadSizes,work.beadSize);this.workingFacings=normalizeBeadFacings(work.beads,work.beadFacings);this.save.charm=work.charm;this.persist();this.navigate('craft');},true);
+    this.text(work.status==='sold'?'已售给'+work.buyer:work.status==='listing'?'橱窗在售':'待上架',155,970,410,28,20,SAGE,this.overlay,true);
+    if(work.status==='ready'&&this.save.customers?.active?.status==='accepted')this.button('交付给顾客',160,1005,400,42,()=>this.customerConfirm(id),this.overlay);
+    else this.text('沿用配色作为草稿，仍需准备实际珠材。',105,1004,510,35,18,MUTED,this.overlay,true);
   }
 
   private orderArrival() { this.craft(); }
@@ -1011,9 +1024,9 @@ export class AtelierGame extends Component {
       for(const x of [(bounds[0]-p.anchorX)*d,(bounds[2]-p.anchorX)*d])for(const y of [(1-bounds[3]-p.anchorY)*d,(1-bounds[1]-p.anchorY)*d]){
         extent=Math.max(extent,Math.hypot(Math.cos(a)*radius+x*Math.cos(r)-y*Math.sin(r),-Math.sin(a)*radius+x*Math.sin(r)+y*Math.cos(r))+6);
       }
-    });return Math.max(266,extent/.89);
+    });return Math.max(316,extent/.89);
   }
-  private craftCenterY() {return Math.max(416,this.craftPlateRadius()+86);}
+  private craftCenterY() {return Math.max(451,this.craftPlateRadius()+86);}
   private slotPos(i: number) {
     const a=this.contestEntry?i*Math.PI*2/12-Math.PI/2:ringAngle(this.workingDraft,i,this.workingSizes),radius=this.craftRadius(),x=360+Math.cos(a)*radius,y=this.craftCenterY()+Math.sin(a)*radius;
     return {x,y};
@@ -1097,23 +1110,22 @@ export class AtelierGame extends Component {
     const back=event?'返回比赛':({home:'返回小店',orders:'返回售珠',album:'返回图鉴',storyMap:'返回故事',memories:'返回人物',journal:'返回手账',decor:'返回装修'}[this.craftFrom]||'返回小店');
     this.text(back,66,25,115,42,24,'#80543e',this.page,true);
     this.hitButton(back,20,14,178,64,()=>this.navigate(event?'contest':this.craftFrom));
-    this.text('手串工坊',243,21,235,56,43,'#8e7972',this.page,true);
-    this.rect('Pause first stroke',564,34,4,24,'#a85d52',this.page,2);
-    this.rect('Pause second stroke',574,34,4,24,'#a85d52',this.page,2);
+    this.text('手串工坊',243,29,235,56,43,'#986f58',this.page,true);
     this.text('菜单',604,24,85,44,24,'#995548',this.page,true);
     this.hitButton('菜单',558,13,139,65,()=>this.pauseMatch());
     const labels=['珠宝','水晶','木质','饰品'];
     const placed=this.workingDraft.filter(t=>t!==null).length;
     if(!event&&this.save.customers?.active?.status==='accepted'){
       const active=this.save.customers.active,style=CUSTOM_STYLES.find(style=>style.id===active.style)!,fit=customerFit(active.style,this.save.draft,this.save.charm);
-      this.button('定制：'+style.name+' · 查看要求',155,84,410,34,()=>this.customerDialog(),this.page,true);
+      this.text('定制：'+style.name+' · 查看要求',181,84,358,35,23,'#fffaf0',this.page,true);
+      this.hitButton('定制：'+style.name+' · 查看要求',179,82,362,40,()=>this.customerDialog());
       this.accessibility?.text('至少6件 · 风格珠材 '+fit.matching+'/'+fit.required+' · '+(fit.ok?'已达标':'自由搭配中'),false);
-    }
+    }else if(!event)this.text('自由搭配 · 随心创作',181,84,358,35,23,'#fffaf0',this.page,true);
     if(event){
       const scored=evaluateCompetition(event.id,this.workingDraft.map(t=>t===null?35:t),this.workingCharm)!;
       const main=this.workingDraft.filter(t=>t===event.main).length,accent=this.workingDraft.filter(t=>t===event.accent).length;
-      this.text(BEADS[event.main].short+' '+main+'/8 · '+BEADS[event.accent].short+' '+accent+'/3 · '+CHARMS[event.charm],95,108,530,35,20,SAGE,this.page,true);
-      this.text(placed+'/12 颗 · 预计 '+scored.score+' 分 · '+scored.medal,130,155,460,30,20,MUTED,this.page,true);
+      this.text(BEADS[event.main].short+' '+main+'/8 · '+BEADS[event.accent].short+' '+accent+'/3 · '+CHARMS[event.charm],179,84,362,35,20,'#fffaf0',this.page,true);
+      this.text(placed+'/12 颗 · 预计 '+scored.score+' 分 · '+scored.medal,130,121,460,26,18,MUTED,this.page,true);
       const echo=this.box('Opposing slot guide',0,0,720,1280).addComponent(Graphics);echo.strokeColor=color('#a28f7470');echo.lineWidth=1.5;
       for(let i=0;i<6;i++){const a=this.slotPos(i),b=this.slotPos(i+6);for(let d=0;d<16;d+=2){echo.moveTo(a.x+(b.x-a.x)*d/16,-a.y-(b.y-a.y)*d/16);echo.lineTo(a.x+(b.x-a.x)*(d+1)/16,-a.y-(b.y-a.y)*(d+1)/16);}echo.stroke();}
       if(this.contestGhost){const palette=competitionPalette(event.id)!;palette.forEach((type,i)=>{if(this.workingDraft[i]!==null)return;const p=this.slotPos(i);this.image(this.materialArt(type),p.x-26,p.y-26,52,52).addComponent(UIOpacity).opacity=75;});}
@@ -1127,7 +1139,7 @@ export class AtelierGame extends Component {
       this.accessibleButton('第'+(i+1)+'槽：'+(type===null?'空槽':MATERIALS[type].name),()=>this.selectCraftSlot(i));
     });
     if(!event){
-      if(!placed)this.text('点下方珠材，串到线上',200,374,320,70,25,MUTED,this.page,true);
+      if(!placed)this.text('点下方珠材，串到线上',200,416,320,70,25,'#8d5e43',this.page,true);
       if(!this.availableMaterials)this.button('去三消采珠吧',220,650,280,48,()=>this.matchIntro(),this.page,true);
     }
     this.hitButton('前一材料分类',57,768,48,51,()=>{this.craftCategory=(this.craftCategory+3)%4;this.render();});
@@ -1138,7 +1150,7 @@ export class AtelierGame extends Component {
       this.text(name,0,0,121,53,25,active?'#4b544b':'#937967',n,true);
       this.hitButton(name,111+i*125,770,121,53,()=>{this.craftCategory=i;this.render();});
     });
-    const panel=this.rect('Material tray',70,826,580,307,'#f8f5f0',this.page,16,'#d6bfb1');
+    const panel=this.box('Material tray',50,826,620,307);
     const category=this.craftCategory,types=categoryMaterials(category,!!event,this.save),offset=event?0:this.craftScroll[category];
     const list=this.materialList('Material',83,MATERIAL_TOP,548,294,Math.ceil(types.length/4)*MATERIAL_STEP-6,offset,
       value=>{if(!event)this.craftScroll[category]=value;});
@@ -1162,7 +1174,7 @@ export class AtelierGame extends Component {
       const remove=this.button('×',x-34,y-34,68,68,()=>this.removeCraftBead());
       remove.name='Button: 删除选中材质';this.accessibleButton('删除选中材质',()=>this.removeCraftBead());
     }
-    if(selected){this.rect('Size paper',83,SIZE_Y,554,39,'#f7f2ec',this.page,12,'#e0d2c7');
+    if(selected&&!this.craftToolsOpen){this.rect('Size paper',83,SIZE_Y,554,39,'#f7f2ec',this.page,12,'#e0d2c7');
     this.text('单珠',94,SIZE_Y+3,61,33,22,INK);
     const resize=(value:number)=>{
       if(this.slot<0||this.workingDraft[this.slot]==null)return this.toast('先点选要调整尺寸的那颗珠子。');
@@ -1203,13 +1215,13 @@ export class AtelierGame extends Component {
     this.button('+',509,SIZE_Y,42,39,()=>resize(this.workingSizes[this.slot]+1));
     }
     if(!event&&selected&&!this.craftToolsOpen&&canRotateMaterial(this.workingDraft[this.slot])){
-      this.button('旋转',420,1188,214,34,()=>{
+      this.button('旋转',420,1240,214,34,()=>{
         this.clearCraftFlights();this.remember();const facings=this.workingFacings,turn=(materialTurn(facings[this.slot])+90)%360;
         facings[this.slot]=turn?'turn'+turn:'out';this.workingFacings=facings;this.persist();this.render();
       });
     }else if(!event&&selected&&!this.craftToolsOpen&&MATERIALS[this.workingDraft[this.slot]]?.id){
       const facing=this.workingFacings[this.slot];
-      for(const [i,value] of ['in','out'].entries())this.button(value==='in'?'朝内':'朝外',420+i*111,1188,103,34,()=>{
+      for(const [i,value] of ['in','out'].entries())this.button(value==='in'?'朝内':'朝外',420+i*111,1240,103,34,()=>{
         if(this.workingFacings[this.slot]===value)return;
         this.clearCraftFlights();this.remember();const facings=this.workingFacings;facings[this.slot]=value;this.workingFacings=facings;this.persist();this.render();
       },this.page,facing===value);
@@ -1218,15 +1230,18 @@ export class AtelierGame extends Component {
     const tools=[['撤销',undo],['移除',()=>this.removeCraftBead()],['替换',()=>this.slot<0?this.toast('先点选要替换的珠子。'):this.place(this.craftMaterial)],['预览',()=>this.previewCraft()],['参考配色',()=>this.sample()],[event?'评分规则':'采珠',()=>event?this.contestRules():this.matchIntro()]];
     tools.forEach(([name,action],i)=>{
       const run=()=>{this.craftToolsOpen=false;this.render();(action as ()=>void)();};
-      if(this.craftToolsOpen||i<2)this.button(name as string,77+i*95,1188,90,34,run,this.page,false,i===0?this.workingUndo.length>0:i===1?selected:true);
-      else this.accessibleButton(name as string,run);
+      const enabled=i===0?this.workingUndo.length>0:i===1?selected:true;
+      if(this.craftToolsOpen)this.button(name as string,77+i*95,1141,90,34,run,this.page,false,enabled);
+      else this.accessibleButton(name as string,run,this.page,enabled);
     });
-    this.button(this.craftToolsOpen?'收起工具':'工具',554,1230,100,42,()=>{this.craftToolsOpen=!this.craftToolsOpen;this.render();});
-    this.button(event?'提交参赛作品':'完成制作',224,1225,272,50,()=>{
+    this.text(this.craftToolsOpen?'收起工具':'工具',565,1195,116,44,27,'#80543e',this.page,true);
+    this.hitButton(this.craftToolsOpen?'收起工具':'工具',565,1193,116,48,()=>{this.craftToolsOpen=!this.craftToolsOpen;this.render();});
+    this.text(event?'提交参赛作品':'完成制作',202,1182,315,57,29,ready?'#80543e':'#a7937a',this.page,true);
+    this.hitButton(event?'提交参赛作品':'完成制作',202,1182,315,57,()=>{
       if(event){if(this.workingDraft.includes(null))return this.toast('先串满十二颗珠子，再提交作品。');this.contestConfirm();return;}
       if(!Object.values(craftChecks(this.save)).every(Boolean))return this.toast(!checks.full?'先放入喜欢的珠子，再完成制作。':'材料需通过三消获得，且库存足够；可移除已用尽的饰品。');
       this.confirmDelivery();
-    },this.page,ready);
+    },ready);
   }
   private selectCraftSlot(index:number) {
     if(this.modal)return;
@@ -1451,20 +1466,25 @@ export class AtelierGame extends Component {
     },this.overlay,true);
   }
   private contest() {
-    this.title('A SMALL OCCASION, A LITTLE COURAGE','偶尔，去参加一场比赛','街坊主题赛 · 累计售出 1、3、5 件作品后收到邀请。');
-    this.rect('Contest invitation',38,282,644,76,'#e8ecde',this.page,16,'#c9b995');
-    this.text('赛事提供练习珠材 · 免费参加 · 尽情尝试配色',54,292,612,55,22,SAGE,this.page,true);
+    this.image('contest-background',0,84,720,1056);
+    this.text('A SMALL OCCASION, A LITTLE COURAGE',38,112,390,32,17,MUTED);
+    this.text('偶尔，去参加一场比赛',38,153,400,49,32,INK);
+    this.text('街坊主题赛 · 累计售出 1、3、5 件作品后收到邀请。',38,222,644,37,21,MUTED);
+    this.text('赛事提供练习珠材 · 免费参加 · 尽情尝试配色',96,305,528,42,21,SAGE,this.page,true);
     COMPETITIONS.forEach((event,i)=>{
-      const y=384+i*244,entry=this.save.competitions.entries.find((e:any)=>e.id===event.id);
+      const y=[380,615,854][i],entry=this.save.competitions.entries.find((e:any)=>e.id===event.id);
       const unlocked=salesProgress(this.save)>=event.unlock,resuming=this.save.competitions.draft?.id===event.id;
-      this.rect('Competition '+event.id,38,y,644,224,entry?'#edf0e3':'#fffaf0',this.page,18,'#d3bf9d');
-      this.text('✦ '+event.title,58,y+12,604,44,29,entry?SAGE:INK);
-      this.text(event.description,58,y+62,604,56,22,MUTED);
-      this.text(`${BEADS[event.main].short}≥8 · ${BEADS[event.accent].short}≥3 · ${CHARMS[event.charm]}`,58,y+122,604,32,21,SAGE);
-      this.text(entry?entry.medal+' · '+entry.score+' 分':unlocked?'邀请已送达 · 金奖 '+event.reward+' 金':'累计售出 '+event.unlock+' 件作品后邀请',58,y+170,370,36,21,MUTED);
-      this.button(entry?'查看参赛作品':unlocked?resuming?'继续参赛':'报名参加':'等待下一次邀请',438,y+164,224,46,()=>entry?this.contestResult(event.id):this.enterCompetition(event.id),this.page,unlocked&&!entry,unlocked);
+      this.box('Competition '+event.id,31,y,658,217);
+      this.text(event.title,237,y+19,432,43,30,INK);
+      this.text(event.description,200,y+68,469,38,20,MUTED);
+      this.text(`${BEADS[event.main].short}≥8 · ${BEADS[event.accent].short}≥3 · ${CHARMS[event.charm]}`,200,y+111,469,34,20,SAGE);
+      this.text(entry?entry.medal+' · '+entry.score+' 分':unlocked?'邀请已送达 · 金奖 '+event.reward+' 金':'累计售出 '+event.unlock+' 件作品后邀请',202,y+157,236,42,19,MUTED,this.page,true);
+      const name=entry?'查看参赛作品':unlocked?resuming?'继续参赛':'报名参加':'等待下一次邀请';
+      if(!unlocked)this.rect('Locked invitation '+event.id,472,y+154,200,49,'#eee9e0ed',this.page,14,'#d8cbb9');
+      this.text(name,476,y+154,191,49,24,!unlocked?MUTED:i===0?INK:'#fff9eb',this.page,true);
+      this.hitButton(name,472,y+154,200,49,()=>entry?this.contestResult(event.id):this.enterCompetition(event.id),unlocked);
     });
-    this.text('每场可提交一件作品，成绩与奖牌会保留在这里。',38,1104,644,28,22,MUTED,this.page,true);
+    this.text('每场可提交一件作品，成绩与奖牌会保留在这里。',132,1101,456,33,20,MUTED,this.page,true);
   }
   private enterCompetition(id:string,replace=false) {
     const old=this.save.competitions.draft,next=beginCompetition(this.save,id,replace);

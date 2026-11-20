@@ -362,7 +362,7 @@ test('DIY tools expand without changing progress and retain undo, preview and ga
  const {game,actions}=pausedGame('home');game.navigate('craft');
  const before=JSON.stringify(game.save),tools=['撤销','移除','替换','预览','参考配色','采珠'];
  const native=()=>game.page.children.filter(n=>n.name.startsWith('Button: ')).map(n=>n.name.slice(8));
- assert.ok(tools.slice(2).every(name=>!native().includes(name)&&actions.has(name)));assert.ok(native().includes('撤销'));assert.ok(native().includes('移除'));
+ assert.ok(tools.every(name=>!native().includes(name)));assert.ok(tools.slice(2).every(name=>actions.has(name)));
  actions.get('工具')();assert.ok(tools.every(name=>native().includes(name)));assert.equal(JSON.stringify(game.save),before);
  actions.get('收起工具')();assert.ok(tools.slice(2).every(name=>!native().includes(name)));assert.equal(JSON.stringify(game.save),before);
  actions.get('工具')();actions.get('采珠')();assert.equal(game.modal,'intro');assert.equal(game.craftToolsOpen,false);assert.equal(JSON.stringify(game.save),before);

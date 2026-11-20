@@ -42,7 +42,7 @@ test('all 48 materials and their per-slot sizes survive save, listing, settlemen
  const save=trade.finishWork(game.save,1000),work=save.commerce.works[0];assert.equal(work.charm,'none');assert.equal(work.beads.length,Math.min(20,48-start));assert.ok(work.beads.every(type=>save.inventory[type]===2));
  const listed=trade.listWork(save,work.id,trade.suggestedPrice(work.beads),2000),restored=rules.normalizeSave(plain(listed));assert.deepEqual(plain(restored.commerce),plain(listed.commerce));
  const sold=trade.settleSales(restored,50000);assert.equal(trade.settleSales(sold,60000),sold);game.save=sold;game.freeWorkPreview(work.id);
- assert.equal(game.overlay.children.filter(n=>n.name.startsWith('charm-')).length,work.beads.filter(type=>type>=36).length);actions.get('再做一条')();assert.deepEqual(plain(game.save.draft.filter(type=>type!==null)),plain(work.beads));assert.deepEqual(plain(game.save.draftSizes.slice(0,work.beads.length)),plain(work.beadSizes));assert.ok(work.beads.every(type=>game.save.inventory[type]===2));
+ assert.equal(game.overlay.getChildByName('Enlarged work').children.filter(n=>n.name.startsWith('charm-')).length,work.beads.filter(type=>type>=36).length);actions.get('再做一条')();assert.deepEqual(plain(game.save.draft.filter(type=>type!==null)),plain(work.beads));assert.deepEqual(plain(game.save.draftSizes.slice(0,work.beads.length)),plain(work.beadSizes));assert.ok(work.beads.every(type=>game.save.inventory[type]===2));
  }
 });
 test('old central charm moves to a ring slot once without losing beads, sizes, stock or listings',()=>{
@@ -52,6 +52,6 @@ test('old central charm moves to a ring slot once without losing beads, sizes, s
  assert.deepEqual(plain(rules.normalizeSave(migrated).draft),migrated.draft);
  const partial=ringMaterials([0,null,1],[6,8,12],'leaf');assert.deepEqual(plain(partial),{beads:[0,leaf,1],sizes:[6,8,12],facings:['out','out','out']});
  const oldWork=trade.finishWork(original,1000),listed=trade.listWork(oldWork,1,trade.suggestedPrice(oldWork.commerce.works[0].beads),2000);assert.deepEqual(plain(rules.normalizeSave(plain(listed)).commerce),plain(listed.commerce));
- game.save=listed;game.freeWorkPreview(1);const icon=game.overlay.children.find(n=>n.name==='charm-leaf');assert.ok(Math.abs(Math.hypot(icon.position.x-360,(-icon.position.y-504)/.95)-150)<.001);
+ game.save=listed;game.freeWorkPreview(1);const icon=game.overlay.getChildByName('Enlarged work').children.find(n=>n.name==='charm-leaf');assert.ok(Math.abs(Math.hypot(icon.position.x-360,(-icon.position.y-542)/.95)-166)<.001);
  game.save.inventory[leaf]=game.save.gatheredStock[leaf]=0;actions.get('再做一条')();assert.equal(game.save.draft.at(-1),leaf);assert.equal(game.save.inventory[leaf],0);assert.equal(trade.craftChecks(game.save).stock,false);
 });

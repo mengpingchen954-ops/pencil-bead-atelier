@@ -25,7 +25,7 @@ test('all twelve charm holes stay on the circular wire at every slot, size and f
    const image=art(game,i),t=image.getComponent(UITransform),half=game.craftSlotSize()/2;
    assert.equal(image.position.x,half);assert.equal(image.position.y,-half);
    assert.ok(t.anchorPoint.x>0&&t.anchorPoint.x<1&&t.anchorPoint.y>0&&t.anchorPoint.y<1);
-   const pose=game.craftPose(i),p=game.slotPos(i),dot=pose.offsetX*(p.x-360)+pose.offsetY*(p.y-410);
+   const pose=game.craftPose(i),p=game.slotPos(i),dot=pose.offsetX*(p.x-360)+pose.offsetY*(p.y-game.craftCenterY());
    assert.ok(facing==='out'?dot>0:dot<0,'body must face '+facing);
    assert.ok(Number.isFinite(image.angle));
   }
@@ -66,7 +66,7 @@ test('old and malformed facings safely default outward without changing beads or
 test('radial charm drags preview around the hole, commit only that instance and undo in one step',()=>{
  for(const index of [0,1,3,6,9])for(const facing of ['in','out']){
   const {game,actions}=fixture();game.save.draft=Array(12).fill(leaf);game.save.draftFacings=Array(12).fill(facing==='in'?'out':'in');game.render();
-  const before=plain(game.save),p=game.slotPos(index),scale=facing==='in'?.65:1.28,end={x:360+(p.x-360)*scale,y:410+(p.y-410)*scale},touch=p=>({getUILocation:()=>({x:p.x,y:1280-p.y})}),node=game.slotNodes[index],image=art(game,index),angle=image.angle;
+  const before=plain(game.save),p=game.slotPos(index),cy=game.craftCenterY(),scale=facing==='in'?.65:1.28,end={x:360+(p.x-360)*scale,y:cy+(p.y-cy)*scale},touch=p=>({getUILocation:()=>({x:p.x,y:1280-p.y})}),node=game.slotNodes[index],image=art(game,index),angle=image.angle;
   image.events.start(touch(p));image.events.move(touch(end));assert.ok(Math.abs(Math.abs(image.angle-angle)-180)<.001);assert.equal(game.save.draftFacings[index],before.draftFacings[index]);assert.equal(node.position.x,p.x-game.craftSlotSize()/2);assert.equal(node.position.y,-p.y+game.craftSlotSize()/2);
   image.events.end(touch(end));assert.equal(game.save.draftFacings[index],facing);assert.deepEqual(plain(game.save.draft),before.draft);assert.deepEqual(plain(game.save.inventory),before.inventory);assert.equal(game.undo.length,1);
   const same=art(game,index);same.events.start(touch(p));same.events.move(touch(end));same.events.end(touch(end));assert.equal(game.undo.length,1);
@@ -83,9 +83,10 @@ test('cancelled, reversed and small charm drags keep the saved facing; ordinary 
 });
 
 test('Creator outside-hit releases commit the gesture while genuine input cancellation restores it',()=>{
- for(const [y,code] of [[300,'touch-end'],[110,'touch-end'],[300,'touch-cancel']]){
+ for(const [outside,code] of [[false,'touch-end'],[true,'touch-end'],[false,'touch-cancel']]){
   const {game}=fixture(),p=game.slotPos(0),image=art(game,0),touch=(x,y)=>({getUILocation:()=>({x,y:1280-y}),getEventCode:()=>code});
+  const y=outside?game.craftCenterY()-game.craftPlateRadius()-20:p.y+50;
   image.events.start(touch(p.x,p.y));image.events.move(touch(p.x,y));image.events.cancel(touch(p.x,y));
-  if(y===110)assert.deepEqual(plain(game.save.draft),[leaf,0]);assert.equal(game.save.draft[0],leaf);assert.equal(game.workingFacings[0],y===300&&code==='touch-end'?'in':'out');assert.equal(game.undo.length,code==='touch-end'?1:0);
+  if(outside)assert.deepEqual(plain(game.save.draft),[leaf,0]);assert.equal(game.save.draft[0],leaf);assert.equal(game.workingFacings[0],!outside&&code==='touch-end'?'in':'out');assert.equal(game.undo.length,code==='touch-end'?1:0);
  }
 });

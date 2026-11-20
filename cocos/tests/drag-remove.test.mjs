@@ -14,7 +14,7 @@ function fixture(){
  game.save={...rules.freshSave(),started:true,reduced:true,inventory:Array(MATERIAL_COUNT).fill(20),gatheredStock:Array(MATERIAL_COUNT).fill(20),materialUnlocked:Array(MATERIAL_COUNT).fill(true),draft:[0,leaf,1,...Array(9).fill(null)],draftSizes:[12,10,6,...Array(9).fill(8)],draftFacings:['out','in',...Array(10).fill('out')]};game.screen='craft';game.render();return {game,actions};
 }
 test('beads and charm bodies drop outside every side of the tray without consuming stock, with one-step undo',()=>{
- for(const index of [0,1])for(const [x,y] of [[35,410],[685,410],[360,115],[360,705],[125,175]]){
+ for(const index of [0,1])for(const [x,y] of [[35,451],[685,451],[360,115],[360,790],[125,175]]){
   const {game,actions}=fixture(),before=plain(game.save),p=game.slotPos(index),slot=game.slotNodes[index],hit=index===1?slot.children.find(n=>n.name==='charm-leaf'):slot;
   hit.events.start(touch(p.x,p.y));hit.events.move(touch(x,y));assert.equal(game.save.draft[index],before.draft[index]);hit.events.end(touch(x,y));
   assert.deepEqual(plain(game.save.draft),before.draft.filter((type,i)=>type!==null&&i!==index));assert.equal(game.undo.length,1);assert.equal(game.slot,-1);assert.deepEqual(plain(game.save.inventory),before.inventory);assert.deepEqual(plain(game.save.gatheredStock),before.gatheredStock);
