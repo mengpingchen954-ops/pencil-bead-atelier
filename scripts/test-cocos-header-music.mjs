@@ -8,7 +8,7 @@ fs.mkdirSync(dir,{recursive:true});const browser=await chromium.launch({headless
 try{
  const context=await browser.newContext({viewport:{width:540,height:960},isMobile:true,hasTouch:true}),page=await context.newPage(),errors=[];
  page.on('pageerror',e=>errors.push(e.message));page.on('console',m=>{if(m.type()==='error')errors.push(m.text());});page.on('response',r=>{if(r.status()>=400)errors.push(r.status()+' '+r.url());});
- const initial={...freshSave(),started:true,completed:['daisy'],orderId:'sea',sound:false,coins:1342,inventory:[200,200,200,200,200,218],gatheredStock:[200,200,200,200,200,218],music:{enabled:false,track:'glimmer',volume:.35}};
+ const initial={...freshSave(),started:true,completed:['daisy'],orderId:'sea',sound:false,customers:{nextId:1,nextAt:Date.now()+3600000,lastStyle:'',active:null},coins:1342,inventory:[200,200,200,200,200,218],gatheredStock:[200,200,200,200,200,218],music:{enabled:false,track:'glimmer',volume:.35}};
  await page.addInitScript(save=>{if(!localStorage.getItem('pencil-bead-atelier-v1'))localStorage.setItem('pencil-bead-atelier-v1',JSON.stringify(save));},initial);
  const ready=()=>page.waitForFunction(()=>typeof window.render_game_to_text==='function');
  const state=async()=>JSON.parse(await page.evaluate(()=>window.render_game_to_text()));
