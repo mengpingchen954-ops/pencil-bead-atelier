@@ -66,3 +66,12 @@ test('painted button backgrounds remain behind text when their image arrives asy
  try{g.skin(button,'pencil-ui-primary');assert.deepEqual(positions,[{node:'Painted surface',index:0}]);assert(button.children.includes(label));}
  finally{Node.prototype.setSiblingIndex=before;}
 });
+
+test('all short effects are ready before the first interaction and the first uncached effect is not discarded after 300ms',async()=>{
+ const original=cc.resources.load,pending=[];cc.resources.load=(file,type,done)=>pending.push({file,done});
+ try{const g=new AtelierGame();g.save={sound:true,music:{enabled:false}};const calls=[];g.sound={playOneShot:(clip,volume)=>calls.push({clip,volume})};
+ const preparing=g.prepareSounds();assert.equal(pending.length,13);for(const record of pending)record.done(null,{name:record.file.split('/').at(-1),addRef(){}});await preparing;
+ g.play('tap');g.play('bead-wood-1');assert.deepEqual(calls.map(c=>c.clip.name),['tap','bead-wood-1']);
+ g.sounds.delete('clear');g.play('clear');await new Promise(resolve=>setTimeout(resolve,350));pending.at(-1).done(null,{name:'clear',addRef(){}});assert.equal(calls.at(-1).clip.name,'clear');
+ }finally{cc.resources.load=original;}
+});

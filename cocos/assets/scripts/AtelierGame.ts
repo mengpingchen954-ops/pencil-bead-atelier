@@ -21,6 +21,7 @@ import { SEA_QUESTIONS, SEA_BLESSINGS, SEA_PAPERS, SEA_RIBBONS, askSea, chooseSe
 import { characterMemories } from './memories';
 import { THEME, actionText, wrapText } from './theme';
 import { ART_PATHS } from './asset-paths';
+import { installAssetPacks } from './AssetPacks';
 
 const { ccclass } = _decorator;
 const { paper:PAPER, ink:INK, sage:SAGE, muted:MUTED, gold:GOLD } = THEME;
@@ -127,6 +128,7 @@ export class AtelierGame extends Component {
   private layoutKeys = new Map<Node, string>();
 
   async onLoad() {
+    installAssetPacks();
     if(this.productionLayouts)this.layoutData=JSON.parse(this.productionLayouts);
     if(sys.isMobile)game.frameRate=30;
     const templates = this.node.getChildByPath('Canvas/Atelier/EditableLayouts');
@@ -182,8 +184,9 @@ export class AtelierGame extends Component {
       this.save.music.track=track;this.persist();if(this.modal==='music')this.musicDialog(this.musicFromPause);
     });
     this.screen = rules.pendingDelivery(this.save) ? 'delivery' : this.save.started ? 'home' : 'cover';
-    const critical=this.screen==='cover'?['pencil-cover']:this.screen==='home'?['pencil-home-page','pencil-navigation','pencil-resource-beads','pencil-resource-coins','pencil-resource-energy','pencil-icon-home','pencil-icon-orders','pencil-icon-craft','pencil-icon-chair','pencil-icon-album']:['pencil-paper','pencil-frame'];
+    const critical=this.screen==='cover'?['pencil-cover']:this.screen==='home'?['pencil-home-page','pencil-navigation','pencil-resource-beads','pencil-resource-coins','pencil-resource-energy','icon-home','icon-orders','icon-craft','icon-chair','icon-album']:['pencil-paper','pencil-frame'];
     const loaded=await Promise.all(critical.filter(key=>ART_PATHS[key]).map(key=>this.loadFrame(key)));
+    await this.prepareSounds();
     if(this.disposed)return;
     if(loaded.some(frame=>!frame)){
       (globalThis as any).atelierLoadFailure?.();
@@ -201,7 +204,8 @@ export class AtelierGame extends Component {
       host.__atelierPerformance=host.__atelierPerformance||{};
       host.__atelierPerformance.sceneFrame=performance.now();
       document.getElementById('atelier-loading')?.remove();
-      // Music is deliberately started by the first user gesture, after the scene is usable.
+      // Warm compressed page packs after the actual first frame, without uploading hidden textures.
+      void host.__atelierPacks?.warm();
     });
     input.on(Input.EventType.KEY_DOWN, this.onKey, this);
     game.on(Game.EVENT_HIDE, this.onHide, this);
@@ -311,18 +315,28 @@ export class AtelierGame extends Component {
     try { sys.localStorage.setItem(rules.SAVE_KEY, JSON.stringify(this.save)); this.storageFailed = false; }
     catch { if (!this.storageFailed) this.toast('当前设备无法保存，请先导出进度。'); this.storageFailed = true; }
   }
+  private async prepareSounds() {
+    const names=['tap','land','clear','special','success','chain-1','chain-2','chain-3','bead-glass-1','bead-glass-2','bead-glass-3','bead-metal-1','bead-wood-1'];
+    await Promise.all(names.map(name=>new Promise<void>(resolve=>{
+      resources.load('audio/'+name,AudioClip,(error,clip)=>{
+        if(!this.disposed&&!error&&clip){clip.addRef();this.sounds.set(name,clip);}
+        else if(error)console.warn('Sound unavailable: '+name);
+        resolve();
+      });
+    })));
+  }
   private play(name = 'tap', volume = .7) {
     this.music?.update(this.save.music);
     if(!this.save.sound)return;
     const clip=this.sounds.get(name);
     if(clip){this.sound.playOneShot(clip,volume);return;}
     if(this.audioRequests.has(name))return;
-    this.audioRequests.add(name);const started=Date.now();
+    this.audioRequests.add(name);
     resources.load('audio/'+name,AudioClip,(error,asset)=>{
       this.audioRequests.delete(name);if(this.disposed)return;
       if(error||!asset){console.warn('Sound unavailable: '+name);return;}
       asset.addRef();this.sounds.set(name,asset);
-      if(this.save.sound&&Date.now()-started<300)this.sound.playOneShot(asset,volume);
+      if(this.save.sound)this.sound.playOneShot(asset,volume);
     });
   }
 
@@ -1237,17 +1251,21 @@ export class AtelierGame extends Component {
       this.hitButton(name,111+i*125,770,121,53,()=>{this.craftCategory=i;this.render();});
     });
     const panel=this.box('Material tray',50,826,620,307);
-    const category=this.craftCategory,types=categoryMaterials(category,!!event,this.save),offset=event?0:this.craftScroll[category];
+    const category=this.craftCategory,types=categoryMaterials(category,!!event,this.save),offset=event?0:this.craftScroll[category],materialImages:Array<()=>void>=[];
     const list=this.materialList('Material',83,MATERIAL_TOP,548,294,Math.ceil(types.length/4)*MATERIAL_STEP-6,offset,
-      value=>{if(!event)this.craftScroll[category]=value;});
+      value=>{if(!event)this.craftScroll[category]=value;materialImages.forEach(show=>show());});
     this.accessibility?.text('上下滑动浏览珠材，轻点放入；手机长按后可拖入盘中。',false);
     types.forEach((i,cell)=>{
       const m=MATERIALS[i],x=(cell%4)*140,y=Math.floor(cell/4)*MATERIAL_STEP;
       const unlocked=!!event||this.save.materialUnlocked[i],stock=materialStock(this.save,i),available=Math.max(0,stock-(counts[i]||0));
       const selected=event&&m.id?this.workingCharm===m.id:this.craftMaterial===i;
       const n=this.rect('Bead material '+i,x,y,128,94,selected?'#e9ded1':'#f0e8e1',list.content,9,selected?'#9aab99':'#f0e8e1');
-      const art=this.image(this.materialArt(i),30,0,68,68,n);
-      if(!unlocked)art.addComponent(UIOpacity).opacity=85;
+      let art:Node|null=null;
+      const show=()=>{const top=list.content.position.y;if(art||y+94<top||y>top+294)return;
+        art=this.image(this.materialArt(i),30,0,68,68,n);art.setSiblingIndex(0);
+        if(!unlocked)art.addComponent(UIOpacity).opacity=85;
+      };
+      materialImages.push(show);show();
       this.text(m.name,1,65,126,27,18,unlocked?'#59463c':'#93867b',n,true);
       this.text(event?'练习':!unlocked?'未解锁':available>0?'×'+available:'已用尽',73,1,53,25,17,unlocked&&available>0?'#627968':'#95887c',n,true);
       const choose=()=>{if(!unlocked)return this.toast('未解锁：通过三消获得'+m.name+'后可使用。');if(event&&m.id)this.chooseCharm(m.id);else{this.craftMaterial=i;this.place(i);}};

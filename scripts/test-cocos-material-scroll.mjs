@@ -33,13 +33,13 @@ try{
    await button(['珠宝','水晶','木质','饰品'][(c+1)%4]);const remembered=await game((g,cc,c)=>g.craftScroll[c],c);await button(['珠宝','水晶','木质','饰品'][c]);assert.ok(Math.abs((await state()).crafting.scrollOffset-remembered)<2,'category offset retained');
    const max=(await state()).crafting.maxScroll;for(let value=0;value<=max+299;value+=300){await scrollTo(Math.min(value,max));s=await state();s.crafting.materials.filter(m=>m.visible).forEach(m=>seen.add(m.type));}
    const last=categoryMaterials(c,false,(await state()).save).at(-1);assert.equal((await state()).crafting.materials[last].visible,true,'last material visible in category '+c);await page.screenshot({path:dir+'/category-'+c+'-bottom-'+width+'.png'});
-  }assert.equal(seen.size,MATERIALS.length);
+  }assert.equal(seen.size,MATERIALS.filter(m=>!m.retired).length);
   // A quick swipe leaving the tray cannot become a bead dropped into the plate.
   await button('水晶');await scrollTo(0);if(mobile){await pointer({x:286,y:970},{x:360,y:430});await page.waitForTimeout(900);assert.deepEqual((await state()).save.draft,[]);}
   await scrollTo((await state()).crafting.maxScroll);let s=await state(),locked=s.crafting.materials[152];await tap(locked.x,locked.y);assert.deepEqual((await state()).save.draft,[]);
   const material=s.crafting.materials.find(m=>m.visible&&m.unlocked),offset=s.crafting.scrollOffset;
   await pointer({x:material.x,y:material.y},{x:360,y:430},mobile?450:0);await page.waitForTimeout(700);s=await state();assert.deepEqual(s.save.draft,[material.type]);assert.deepEqual(s.save.inventory,stock);assert.ok(Math.abs(s.crafting.scrollOffset-offset)<2,'drag preserves scroll');
-  await page.screenshot({path:dir+'/dragged-'+width+'.png'});await button('撤销');assert.deepEqual((await state()).save.draft,[]);assert.ok(Math.abs((await state()).crafting.scrollOffset-offset)<2);
+  await page.screenshot({path:dir+'/dragged-'+width+'.png'});await button('工具');await button('撤销');assert.deepEqual((await state()).save.draft,[]);assert.ok(Math.abs((await state()).crafting.scrollOffset-offset)<2);
   // A scrolled material can still be tapped normally after the ring is redrawn.
   s=await state();const chosen=s.crafting.materials.find(m=>m.visible&&m.unlocked);await tap(chosen.x,chosen.y);await page.waitForTimeout(1000);assert.deepEqual((await state()).save.draft,[chosen.type]);assert.ok(Math.abs((await state()).crafting.scrollOffset-offset)<2);
   await game(g=>g.inventory());await button('水晶');await scrollTo(0,true);
@@ -50,5 +50,5 @@ try{
   await page.reload({waitUntil:'networkidle'});await page.waitForFunction(()=>typeof window.render_game_to_text==='function');assert.deepEqual((await state()).save.draft,[chosen.type]);assert.deepEqual((await state()).save.inventory,stock);
   report.widths.push(width);await context.close();
  }
- assert.deepEqual(errors,[]);fs.writeFileSync(dir+'/report.json',JSON.stringify({...report,nativeSwipes:true,mouseWheel:true,all153Reachable:true,categoryMemory:true,noAccidentalPlacement:true,longPressDrag:true,tapAndUndo:true,inventoryScroll:true,reload:true,errors},null,2));console.log('Continuous material scrolling passed at 390/540/1440: native swipes and wheel, all153 materials, category memory, no swipe placements, held drag, tap/undo, inventory and reload.');
+ assert.deepEqual(errors,[]);fs.writeFileSync(dir+'/report.json',JSON.stringify({...report,nativeSwipes:true,mouseWheel:true,allActiveMaterialsReachable:true,categoryMemory:true,noAccidentalPlacement:true,longPressDrag:true,tapAndUndo:true,inventoryScroll:true,reload:true,errors},null,2));console.log('Continuous material scrolling passed at 390/540/1440: native swipes and wheel, all active materials, category memory, no swipe placements, held drag, tap/undo, inventory and reload.');
 }finally{await browser.close();}
