@@ -142,3 +142,14 @@ test('Creator production bundle preserves collection iteration and complete game
   assert.equal(model.normalizeSave(JSON.parse(JSON.stringify(entry))).competitions.entries[0].score,83);
   assert.equal(restored.completed.length,6);assert.equal(restored.renovation.cleared.length,11);assert.equal(restored.seenStories.length,10);
 });
+
+test('embedded engine imports resolve inside a GitHub Pages project subdirectory',{skip:!fs.existsSync(path.join(web,'index.html'))},()=>{
+ const html=fs.readFileSync(path.join(web,'index.html'),'utf8');
+ if(!html.includes('__atelierStartup'))return;
+ const match=/<script type="systemjs-importmap">([^<]+)<\/script>/.exec(html);assert(match,'inline map missing');
+ const map=JSON.parse(match[1]),base='https://example.test/pencil-bead-atelier/';
+ for(const target of Object.values(map.imports)){
+  const resolved=new URL(target,base);assert(resolved.pathname.startsWith('/pencil-bead-atelier/'));
+  assert(fs.existsSync(path.join(web,resolved.pathname.slice('/pencil-bead-atelier/'.length))));
+ }
+});

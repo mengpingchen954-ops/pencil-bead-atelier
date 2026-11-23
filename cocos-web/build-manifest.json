@@ -757,7 +757,7 @@
     "tests/orders.test.mjs": "d4f6b32ab63205fcf445fbd579219518bfeee2650ffe84a8a4eeb4fdebdf7d61",
     "tests/packing-fit.test.mjs": "13ba9e21493cd3e02e3e476f7d31295b16bec28ada6f29a7eaa5aa3d79ff1cf0",
     "tests/performance.test.mjs": "2e61de2dbdd6a2b59e9bdbafcd7ba4fe8dad6aa1ac7834a3864180c2205cb351",
-    "tests/production.test.mjs": "495ca3454ba24ff244f45a578db1eaaeb7c9b54ca26f2ba5a6bd121c4ee002a6",
+    "tests/production.test.mjs": "189c8d673532d4ff8466d34f7740ac349ac97c0e5aedc8ba05f40c0a6198372c",
     "tests/renovation.test.mjs": "feaa5df0e3510fda2ebaf4141cfa298465e7712ae2bce07f8637e8d4c60f48ae",
     "tests/ring-charms.test.mjs": "ad274c8618ac9168b472a87886599006f8b1cdb44844f4c0690242ab59a6fe13",
     "tests/spacer-refinement.test.mjs": "0f8e72e549b524a0270321963b76568091c03888d95a83f4fb13328bac42baa2",
