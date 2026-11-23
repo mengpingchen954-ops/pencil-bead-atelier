@@ -1,0 +1,25 @@
+'use strict';
+const fs=require('fs'),path=require('path'),crypto=require('crypto');
+const ts=require('typescript');
+module.exports=function(web,jsonFiles,scriptFiles){
+ const engineName=fs.readdirSync(path.join(web,'cocos-js')).find(n=>/^cc\..*\.js$/.test(n));
+ let engine=fs.readFileSync(path.join(web,'cocos-js',engineName),'utf8'),ast=ts.createSourceFile(engineName,engine,ts.ScriptTarget.Latest,true),fileReader,scriptReader;
+ function visit(n){if(ts.isFunctionDeclaration(n)&&n.body){const body=n.body.getText(ast);if(n.parameters.length===4&&body.includes('new XMLHttpRequest')&&body.includes('.xhrResponseType'))fileReader=n;if(n.parameters.length===3&&body.includes('.scriptAsyncLoading')&&body.includes('createElement("script")'))scriptReader=n;}ts.forEachChild(n,visit);}visit(ast);
+ if(!fileReader||!scriptReader)throw Error('Unsupported engine startup loaders; no production cache patch applied');
+ const edits=[];
+ const args=n=>n.parameters.map(p=>p.name.getText(ast));
+ const [url,options,progress,complete]=args(fileReader);
+ edits.push({at:fileReader.body.getStart(ast)+1,text:'var startup=window.__atelierStartup,key=new URL('+url+',document.baseURI).href;if(startup&&Object.prototype.hasOwnProperty.call(startup.json,key)){var value=startup.json[key];Promise.resolve().then(function(){try{'+complete+'(null,'+options+'.xhrResponseType==="json"?JSON.parse(value):value);}catch(error){'+complete+'(error);}});return null;}'});
+ const [script,scriptOptions,done]=args(scriptReader);
+ edits.push({at:scriptReader.body.getStart(ast)+1,text:'var startup=window.__atelierStartup,key=new URL('+script+',document.baseURI).href;if(startup&&Object.prototype.hasOwnProperty.call(startup.scripts,key)){Promise.resolve().then(function(){try{if(!startup.executed[key]){(0,eval)(startup.scripts[key]);startup.executed[key]=true;}'+done+'(null);}catch(error){'+done+'(error);}});return null;}'});
+ for(const edit of edits.sort((a,b)=>b.at-a.at))engine=engine.slice(0,edit.at)+edit.text+engine.slice(edit.at);
+ const renamed=engineName.replace(/\.[a-f0-9]{5}\./,'.'+crypto.createHash('md5').update(engine).digest('hex').slice(0,5)+'.');
+ fs.writeFileSync(path.join(web,'cocos-js',renamed),engine);if(engineName!==renamed)fs.unlinkSync(path.join(web,'cocos-js',engineName));
+ const mapName=fs.readdirSync(path.join(web,'src')).find(n=>/^import-map\..*\.json$/.test(n)),mapFile=path.join(web,'src',mapName);fs.writeFileSync(mapFile,fs.readFileSync(mapFile,'utf8').replace(engineName,renamed));
+ const payload={json:{},scripts:{}};
+ for(const file of new Set(jsonFiles))payload.json[file]=fs.readFileSync(path.join(web,file),'utf8');
+ for(const file of new Set(scriptFiles))payload.scripts[file]=fs.readFileSync(path.join(web,file),'utf8');
+ const encoded=JSON.stringify(payload).replace(/</g,'\\u003c');
+ const code='(function(data){var target=window.__atelierStartup={json:{},scripts:{},executed:{}};for(var type of ["json","scripts"])for(var key of Object.keys(data[type]))target[type][new URL(key,document.baseURI).href]=data[type][key];})('+encoded+');';
+ return {code,engineName:renamed,jsonCount:Object.keys(payload.json).length,scriptCount:Object.keys(payload.scripts).length};
+};

@@ -1,0 +1,20 @@
+import test from 'node:test';
+import assert from 'node:assert/strict';
+import fs from 'node:fs';import path from 'node:path';import os from 'node:os';import vm from 'node:vm';import {createRequire} from 'node:module';
+const require=createRequire(import.meta.url),patch=require('../tools/startup-cache.cjs');
+test('startup cache serves embedded JSON and named scripts once, preserving the normal network fallback',async()=>{
+ const root=fs.mkdtempSync(path.join(os.tmpdir(),'atelier-startup-'));
+ fs.mkdirSync(path.join(root,'cocos-js'));fs.mkdirSync(path.join(root,'src'));
+ fs.writeFileSync(path.join(root,'cocos-js/cc.12345.js'),'function read(url,options,progress,done){var x=new XMLHttpRequest();x.responseType=options.xhrResponseType;done(null,x);}function script(url,options,done){var node=document.createElement("script");node.async=options.scriptAsyncLoading;done(null,node);}');
+ fs.writeFileSync(path.join(root,'src/import-map.12345.json'),'cc.12345.js');
+ fs.writeFileSync(path.join(root,'settings.json'),JSON.stringify({title:'</script><script>bad</script>',value:42}));
+ fs.writeFileSync(path.join(root,'logic.js'),'window.executions=(window.executions||0)+1;');
+ const result=patch(root,['settings.json'],['logic.js']);assert(!result.code.includes('</script>'));
+ const host={},context={window:host,document:{baseURI:'https://example.test/game/',createElement:()=>({native:true})},URL,Promise,queueMicrotask,XMLHttpRequest:function(){this.native=true;}};
+ const sandbox=vm.createContext(context);vm.runInContext(result.code,sandbox);vm.runInContext(fs.readFileSync(path.join(root,'cocos-js',result.engineName),'utf8'),sandbox);
+ const json=await new Promise((resolve,reject)=>context.read('settings.json',{xhrResponseType:'json'},null,(e,data)=>e?reject(e):resolve(data)));
+ assert.equal(json.value,42);assert.equal(json.title,'</script><script>bad</script>');
+ for(let i=0;i<2;i++)await new Promise((resolve,reject)=>context.script('logic.js',{},e=>e?reject(e):resolve()));assert.equal(host.executions,1);
+ const fallback=await new Promise(resolve=>context.read('other.json',{},null,(e,data)=>resolve(data)));assert.equal(fallback.native,true);
+ fs.writeFileSync(path.join(root,'cocos-js',result.engineName),'unrecognized engine');assert.throws(()=>patch(root,[],[]),/Unsupported/);
+});
