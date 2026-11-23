@@ -47,7 +47,8 @@ for(let i=preloads.length-1;i>=0;i--){if(!preloads[i].includes('cocos-js/'))prel
 preloads.push('<script>'+cache.code+'</script>');
 preloads.push('<script>(function(groups){var page="cover";try{var save=JSON.parse(localStorage.getItem("pencil-bead-atelier-v1")||"null");if(save&&save.started)page="home";}catch{}for(var file of groups[page].filter(function(n){return /\\.(jpg|png)$/.test(n);})){var link=document.createElement("link");link.rel="preload";link.href=file;link.as="image";link.crossOrigin="anonymous";document.head.appendChild(link);}})('+JSON.stringify(artGroups)+');</script>');
 const mapName=find('src','import-map.','.json');
-html=html.replace(/<script[^>]*src="src\/import-map[^>]*>\s*<\/script>/,'<script type="systemjs-importmap">'+fs.readFileSync(path.join(web,'src',mapName),'utf8')+'</script>');
+const inlineMap=JSON.parse(fs.readFileSync(path.join(web,'src',mapName),'utf8'));for(const [key,value]of Object.entries(inlineMap.imports))inlineMap.imports[key]='./'+path.posix.normalize('src/'+value);
+html=html.replace(/<script[^>]*src="src\/import-map[^>]*>\s*<\/script>/,'<script type="systemjs-importmap">'+JSON.stringify(inlineMap)+'</script>');
 let registrations='';
 for(const file of [renamedApp,...fs.readdirSync(path.join(web,'src/chunks')).filter(n=>n.endsWith('.js')).map(n=>'src/chunks/'+n),renamedIndex]){
  const source=fs.readFileSync(path.join(web,file),'utf8');
