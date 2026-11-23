@@ -58,3 +58,11 @@ test('a deferred image keeps its Sprite and caller tint until the frame arrives'
   assert.equal(image.getComponent(cc.Sprite),sprite);assert.equal(sprite.color,tint);assert.equal(sprite.spriteFrame,frame);
  }finally{cc.resources.load=original;}
 });
+
+test('painted button backgrounds remain behind text when their image arrives asynchronously',()=>{
+ const g=new AtelierGame(),button=new Node('Button'),label=new Node('Title');label.parent=button;button.addComponent(cc.UITransform).setContentSize(200,60);
+ const frame={addRef(){},decRef(){}};g.textures.set('pencil-ui-primary',frame);
+ const positions=[],before=Node.prototype.setSiblingIndex;Node.prototype.setSiblingIndex=function(index){positions.push({node:this.name,index});};
+ try{g.skin(button,'pencil-ui-primary');assert.deepEqual(positions,[{node:'Painted surface',index:0}]);assert(button.children.includes(label));}
+ finally{Node.prototype.setSiblingIndex=before;}
+});

@@ -502,7 +502,7 @@ export class AtelierGame extends Component {
     if(!frame){if(ART_PATHS[key])void this.loadFrame(key).then(asset=>{if(asset&&!this.disposed&&node.isValid&&node.parent)this.skin(node,key,tint,clipRadius);});return;}
     node.getComponent(Graphics)?.clear();
     const size=node.getComponent(UITransform)!.contentSize;
-    const surface=this.box('Painted surface',0,0,size.width,size.height,node);
+    const surface=this.box('Painted surface',0,0,size.width,size.height,node);surface.setSiblingIndex(0);
     let art=surface;
     if(clipRadius>0){
       const mask=surface.addComponent(Mask);mask.type=Mask.Type.GRAPHICS_STENCIL;
