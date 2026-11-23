@@ -1,5 +1,5 @@
 import {
-  _decorator, Component, Node, UITransform, Graphics, Color, Label, Sprite,
+  _decorator, director, Director, Component, Node, UITransform, Graphics, Color, Label, Sprite,
   SpriteFrame, resources, Canvas, Camera, Layers, view, ResolutionPolicy,
   Vec3, tween, Tween, AudioSource, AudioClip, BlockInputEvents, EventTouch,
   input, Input, KeyCode, sys, game, Game, EditBox, JsonAsset, VideoPlayer,
@@ -20,6 +20,7 @@ import { COMPETITIONS, beginCompetition, submitCompetition, evaluateCompetition,
 import { SEA_QUESTIONS, SEA_BLESSINGS, SEA_PAPERS, SEA_RIBBONS, askSea, chooseSeaGift, seaVisitReady, finishSeaVisit, seaResponse } from './heart';
 import { characterMemories } from './memories';
 import { THEME, actionText, wrapText } from './theme';
+import { ART_PATHS } from './asset-paths';
 
 const { ccclass } = _decorator;
 const { paper:PAPER, ink:INK, sage:SAGE, muted:MUTED, gold:GOLD } = THEME;
@@ -110,12 +111,24 @@ export class AtelierGame extends Component {
   private toastGeneration = 0;
   private accessibility: BrowserAccessibility;
   private camera: Camera;
+  @_decorator.property({ visible: false }) productionLayouts = '';
+  private layoutData: Record<string, any> = {};
+  private frameRequests = new Map<string, Promise<SpriteFrame | null>>();
+  private textureBytes = 0;
+  private frameQueue: Array<() => void> = [];
+  private activeFrameLoads = 0;
+  private disposed = false;
+  private failedImages = new Set<string>();
+  private audioRequests = new Set<string>();
+  private firstSceneDrawn = false;
 
   private layouts = new Map<string, Node>();
   private layoutCounts = new Map<string, number>();
   private layoutKeys = new Map<Node, string>();
 
   async onLoad() {
+    if(this.productionLayouts)this.layoutData=JSON.parse(this.productionLayouts);
+    if(sys.isMobile)game.frameRate=30;
     const templates = this.node.getChildByPath('Canvas/Atelier/EditableLayouts');
     if (templates) {
       const collect = (node: Node) => {
@@ -168,24 +181,28 @@ export class AtelierGame extends Component {
     this.music=new BackgroundMusic(this.node.addComponent(AudioSource),undefined,()=>this.toast('这首音乐暂时没有加载成功，请选择另一首。'),track=>{
       this.save.music.track=track;this.persist();if(this.modal==='music')this.musicDialog(this.musicFromPause);
     });
-    try {
-      const frames = await new Promise<SpriteFrame[]>((resolve, reject) => resources.loadDir('art', SpriteFrame, (err, data) => err ? reject(err) : resolve(data)));
-      frames.forEach(frame => this.textures.set(frame.name, frame));
-      const beads = await new Promise<SpriteFrame[]>((resolve, reject) => resources.loadDir('beads', SpriteFrame, (err, data) => err ? reject(err) : resolve(data)));
-      beads.forEach(frame => this.textures.set(frame.name, frame));
-      const clips = await new Promise<AudioClip[]>((resolve, reject) => resources.loadDir('audio', AudioClip, (err, data) => err ? reject(err) : resolve(data)));
-      clips.forEach(clip => this.sounds.set(clip.name, clip));
-      resources.load('story-media', JsonAsset, (err, json) => { if (!err) this.media = json.json || {}; });
-    } catch (err) {
-      console.error('Atelier assets failed to load', err);
-      this.page.removeAllChildren();
-      this.text('珠盒暂时没有打开\n请检查 resources 素材是否完整，再重新预览。', 60, 500, 600, 180, 28);
+    this.screen = rules.pendingDelivery(this.save) ? 'delivery' : this.save.started ? 'home' : 'cover';
+    const critical=this.screen==='cover'?['pencil-cover']:this.screen==='home'?['pencil-home-page','pencil-navigation','pencil-resource-beads','pencil-resource-coins','pencil-resource-energy','pencil-icon-home','pencil-icon-orders','pencil-icon-craft','pencil-icon-chair','pencil-icon-album']:['pencil-paper','pencil-frame'];
+    const loaded=await Promise.all(critical.filter(key=>ART_PATHS[key]).map(key=>this.loadFrame(key)));
+    if(this.disposed)return;
+    if(loaded.some(frame=>!frame)){
+      (globalThis as any).atelierLoadFailure?.();
+      this.text('素材未能加载，请检查网络后重试。',60,600,600,120,28);
       return;
     }
+    resources.load('story-media', JsonAsset, (err, json) => { if (!this.disposed&&!err) this.media = json.json || {}; });
     this.save=settleSales(this.save);this.persist();
     this.screen = rules.pendingDelivery(this.save) ? 'delivery' : this.save.started ? 'home' : 'cover';
     this.render();
-    this.music.update(this.save.music);
+    director.once(Director.EVENT_AFTER_DRAW,()=>{
+      if(this.disposed)return;
+      this.firstSceneDrawn=true;
+      const host=globalThis as any;
+      host.__atelierPerformance=host.__atelierPerformance||{};
+      host.__atelierPerformance.sceneFrame=performance.now();
+      document.getElementById('atelier-loading')?.remove();
+      // Music is deliberately started by the first user gesture, after the scene is usable.
+    });
     input.on(Input.EventType.KEY_DOWN, this.onKey, this);
     game.on(Game.EVENT_HIDE, this.onHide, this);
     game.on(Game.EVENT_SHOW, this.onShow, this);
@@ -198,6 +215,7 @@ export class AtelierGame extends Component {
   }
 
   onDestroy() {
+    this.disposed=true;
     this.cancelMusicTap();
     this.clearCraftFlights();
     if(this.coinEffects)this.clear(this.coinEffects);
@@ -208,7 +226,10 @@ export class AtelierGame extends Component {
     game.off(Game.EVENT_SHOW, this.onShow, this);
     this.stopVideo();
     this.music?.dispose();
+    this.textures.forEach(frame=>frame.decRef());
     this.textures.clear();
+    this.frameQueue.splice(0).forEach(start=>start());
+    this.sounds.forEach(clip=>clip.decRef());
     this.sounds.clear();
     this.accessibility?.destroy();
     view.off('canvas-resize',this.fitCamera,this);
@@ -290,7 +311,68 @@ export class AtelierGame extends Component {
     try { sys.localStorage.setItem(rules.SAVE_KEY, JSON.stringify(this.save)); this.storageFailed = false; }
     catch { if (!this.storageFailed) this.toast('当前设备无法保存，请先导出进度。'); this.storageFailed = true; }
   }
-  private play(name = 'tap', volume = .7) { this.music?.update(this.save.music);const clip = this.sounds.get(name); if (this.save.sound && clip) this.sound.playOneShot(clip, volume); }
+  private play(name = 'tap', volume = .7) {
+    this.music?.update(this.save.music);
+    if(!this.save.sound)return;
+    const clip=this.sounds.get(name);
+    if(clip){this.sound.playOneShot(clip,volume);return;}
+    if(this.audioRequests.has(name))return;
+    this.audioRequests.add(name);const started=Date.now();
+    resources.load('audio/'+name,AudioClip,(error,asset)=>{
+      this.audioRequests.delete(name);if(this.disposed)return;
+      if(error||!asset){console.warn('Sound unavailable: '+name);return;}
+      asset.addRef();this.sounds.set(name,asset);
+      if(this.save.sound&&Date.now()-started<300)this.sound.playOneShot(asset,volume);
+    });
+  }
+
+  private loadFrame(key:string):Promise<SpriteFrame|null> {
+    const cached=this.textures.get(key);
+    if(cached){this.textures.delete(key);this.textures.set(key,cached);return Promise.resolve(cached);}
+    const pending=this.frameRequests.get(key);if(pending)return pending;
+    const assetPath=ART_PATHS[key];if(!assetPath||this.disposed)return Promise.resolve(null);
+    const request=new Promise<SpriteFrame|null>(resolve=>{
+      this.frameQueue.push(()=>{
+        if(this.disposed){resolve(null);return;}
+        this.activeFrameLoads++;
+        resources.load(assetPath+'/spriteFrame',SpriteFrame,(error,frame)=>{
+          this.activeFrameLoads--;this.frameRequests.delete(key);
+          if(error||!frame||this.disposed){
+            if(error&&!this.disposed){this.failedImages.add(key);console.warn('Image unavailable: '+key);(globalThis as any).atelierLoadFailure?.();}
+            resolve(null);
+          }else{
+            frame.addRef();this.textures.set(key,frame);
+            this.textureBytes+=frame.originalSize.width*frame.originalSize.height*4;
+            this.trimTextures(key);resolve(frame);
+          }
+          this.pumpFrames();
+        });
+      });
+    });
+    this.frameRequests.set(key,request);this.pumpFrames();return request;
+  }
+  private pumpFrames() { while(!this.disposed&&this.activeFrameLoads<4&&this.frameQueue.length)this.frameQueue.shift()!(); }
+  private trimTextures(protectedKey='') {
+    const budget=(sys.isMobile?32:64)*1024*1024;
+    for(const [key,frame] of this.textures){
+      if(this.textureBytes<=budget)break;
+      if(key===protectedKey||frame.refCount>1)continue;
+      this.textures.delete(key);this.textureBytes-=frame.originalSize.width*frame.originalSize.height*4;frame.decRef();
+    }
+  }
+  private retainFrame(node:Node,frame:SpriteFrame) { frame.addRef?.();node.once?.(Node.EventType.NODE_DESTROYED,()=>frame.decRef?.()); }
+  private applyImage(n:Node,frame:SpriteFrame) {
+    if(n.isValid===false||!n.parent)return;
+    this.retainFrame(n,frame);
+    const s=n.getComponent(Sprite)||n.addComponent(Sprite);s.sizeMode=Sprite.SizeMode.CUSTOM;s.spriteFrame=frame;
+    const transform=n.getComponent(UITransform)!,size=transform.contentSize,source=frame.originalSize;
+    if(source?.width>0&&source?.height>0){
+      const scale=Math.min(size.width/source.width,size.height/source.height),width=source.width*scale,height=source.height*scale;
+      const anchor=transform.anchorPoint;
+      n.setPosition(n.position.x+(size.width-width)*(.5-anchor.x),n.position.y+(size.height-height)*(.5-anchor.y),n.position.z);
+      transform.setContentSize(width,height);
+    }
+  }
 
   private container(name: string, parent: Node) {
     const n = new Node(name); n.layer = Layers.Enum.UI_2D; n.parent = parent;
@@ -315,6 +397,8 @@ export class AtelierGame extends Component {
     if (parent === this.page || this.layoutKeys.has(parent)) {
       const key = layoutKey(this.layoutKeys.get(parent) || this.screen, x, y, w, h, this.layoutCounts);
       this.layoutKeys.set(n, key);
+      const data=this.layoutData[key];
+      if(data){if(data.p)n.setPosition(data.p[0],data.p[1],data.p[2]);if(data.s)n.setScale(data.s[0],data.s[1],data.s[2]);if(data.r)n.setRotation(data.r);if(data.a!==undefined)n.active=data.a;if(data.z)t.setContentSize(data.z[0],data.z[1]);if(data.o)t.setAnchorPoint(data.o[0],data.o[1]);}
       const template = this.layouts.get(key);
       if (template) {
         n.setPosition(template.position); n.setScale(template.scale); n.setRotation(template.rotation);
@@ -361,24 +445,17 @@ export class AtelierGame extends Component {
       }
       if (style.color.toHEX('#rrggbbaa') !== original.color) label.color = style.color;
     }
+    const data=this.layoutData[this.layoutKeys.get(n)||''];
+    if(data?.label)for(const [field,value] of Object.entries(data.label)){if(field==='color')label.color=color(value as string);else(label as any)[field]=value;}
     return label;
   }
   private image(key: string, x: number, y: number, w: number, h: number, parent = this.page) {
-    const frame = /^(bead-|charm-)/.test(key) ? this.textures.get(key) : this.textures.get('pencil-'+key) || this.textures.get(key);
-    if (!frame) return this.box(key, x, y, w, h, parent);
-    const n = this.box(key, x, y, w, h, parent), s = n.addComponent(Sprite);
-    s.sizeMode = Sprite.SizeMode.CUSTOM; s.spriteFrame = frame;
-    const template = this.layouts.get(this.layoutKeys.get(n) || '');
-    const artwork = template?.getComponent(Sprite), baseline = template?.getComponent(AtelierLayout);
-    if (artwork?.spriteFrame && artwork.spriteFrame.name !== baseline?.originalImage) s.spriteFrame = artwork.spriteFrame;
-    const transform=n.getComponent(UITransform)!, size=transform.contentSize, source=s.spriteFrame!.originalSize;
-    // Fit the artwork itself, including editor replacements, without changing its proportions.
-    if(source?.width>0&&source?.height>0){
-      const scale=Math.min(size.width/source.width,size.height/source.height),width=source.width*scale,height=source.height*scale;
-      const anchor=transform.anchorPoint;
-      n.setPosition(n.position.x+(size.width-width)*(.5-anchor.x),n.position.y+(size.height-height)*(.5-anchor.y),n.position.z);
-      transform.setContentSize(width,height);
-    }
+    const n=this.box(key,x,y,w,h,parent);
+    const template=this.layouts.get(this.layoutKeys.get(n)||''),artwork=template?.getComponent(Sprite),baseline=template?.getComponent(AtelierLayout);
+    if(artwork?.spriteFrame&&artwork.spriteFrame.name!==baseline?.originalImage){this.applyImage(n,artwork.spriteFrame);return n;}
+    const resolved=this.layoutData[this.layoutKeys.get(n)||'']?.image || (/^(bead-|charm-)/.test(key)?key:ART_PATHS['pencil-'+key]?'pencil-'+key:key);
+    const frame=this.textures.get(resolved);
+    if(frame)this.applyImage(n,frame);else if(ART_PATHS[resolved]){n.addComponent(Sprite).sizeMode=Sprite.SizeMode.CUSTOM;void this.loadFrame(resolved).then(asset=>{if(asset&&!this.disposed)this.applyImage(n,asset);});}
     return n;
   }
   private emptyArt(kind:'showcase'|'album'|'journal'|'customer',x:number,y:number,size:number,parent=this.page) {
@@ -421,7 +498,8 @@ export class AtelierGame extends Component {
     return n;
   }
   private skin(node:Node,key:string,tint='#ffffff',clipRadius=0) {
-    const frame=this.textures.get(key);if(!frame)return;
+    const frame=this.textures.get(key);
+    if(!frame){if(ART_PATHS[key])void this.loadFrame(key).then(asset=>{if(asset&&!this.disposed&&node.isValid&&node.parent)this.skin(node,key,tint,clipRadius);});return;}
     node.getComponent(Graphics)?.clear();
     const size=node.getComponent(UITransform)!.contentSize;
     const surface=this.box('Painted surface',0,0,size.width,size.height,node);
@@ -432,6 +510,7 @@ export class AtelierGame extends Component {
       stencil.clear();stencil.roundRect(0,-size.height,size.width,size.height,clipRadius);stencil.fill();
       art=this.container('Clipped paint',surface);art.getComponent(UITransform)!.setContentSize(size);
     }
+    this.retainFrame(art,frame);
     const sprite=art.addComponent(Sprite);
     sprite.sizeMode=Sprite.SizeMode.CUSTOM;sprite.type=Sprite.Type.SLICED;sprite.spriteFrame=frame;sprite.color=color(tint);
   }
@@ -517,18 +596,23 @@ export class AtelierGame extends Component {
     this.craftFlights.forEach((flight,index)=>{if(!['craft','contestCraft'].includes(this.screen)||this.save.reduced||this.workingDraft[index]!==flight.type)this.clearCraftFlight(index);});
     this.layoutCounts.clear(); this.layoutKeys.clear();
     this.clear(this.page);
+    this.trimTextures();
     this.boardNodes = []; this.slotNodes = [];
     this.rect('Paper', 0, 0, 720, 1280, PAPER);
-    for(let y=0;y<1280;y+=720*112/680)this.image('pencil-paper',0,y,720,720*112/680);
+    const painted=['cover','home','orders','craft','contestCraft','orderArrival','album','storyMap','memories','packing'].includes(this.screen);
+    if(!painted)for(let y=0;y<1280;y+=720*112/680)this.image('pencil-paper',0,y,720,720*112/680);
     if(['delivery','dialogue'].includes(this.screen))this.image('pencil-frame',0,0,720,1280);
     if(this.screen==='packing'){
       this.rect('Packing border',24,24,672,1232,'#00000000',this.page,2,'#b49673');
       this.rect('Packing border lining',30,30,660,1220,'#00000000',this.page,2,'#d8c6ad');
     }
     // Subtle stationary paper grain, generated once per page instead of every frame.
+    if(painted)layoutKey(this.screen,0,0,720,1280,this.layoutCounts);
+    if(!painted){
     const grain = this.box('Paper fibres', 0, 0, 720, 1280).addComponent(Graphics);
     grain.strokeColor = color('#b6a17b14'); grain.lineWidth = 1;
     for (let i=0;i<180;i++) { const x=(i*173)%720,y=(i*97)%1280; grain.moveTo(x,-y); grain.lineTo(x+3,-y-1); } grain.stroke();
+    }
     if (!['cover','home','orders','delivery','dialogue','memories','packing','storyMap','craft','contestCraft','orderArrival','album'].includes(this.screen)) this.chrome();
     switch (this.screen) {
       case 'cover': this.cover(); break;
@@ -551,6 +635,8 @@ export class AtelierGame extends Component {
     this.layoutKeys.forEach((key,node) => {
       const source=this.layouts.get(key)?.getComponent(AtelierLayout), drawing=node.getComponent(Graphics);
       if(source && drawing && source.drawing !== source.originalDrawing) source.redraw(drawing);
+      const override=this.layoutData[key]?.drawing;
+      if(override&&drawing){const layout=new AtelierLayout();layout.drawing=override;layout.redraw(drawing);}
     });
     this.slotNodes.forEach(slot=>slot.children.forEach(child=>{
       if(this.save.reduced||!(/^(bead-|charm-)/.test(child.name)||child.name==='Bead contact shadow'))return;

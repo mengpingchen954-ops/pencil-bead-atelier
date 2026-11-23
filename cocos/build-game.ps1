@@ -4,6 +4,8 @@ $projectRoot = $PSScriptRoot
 $package = Get-Content -LiteralPath (Join-Path $projectRoot 'package.json') -Raw | ConvertFrom-Json
 if (-not $Creator) { $Creator = Join-Path $env:ProgramData "cocos\editors\Creator\$($package.creator.version)\CocosCreator.exe" }
 if (-not (Test-Path -LiteralPath $Creator)) { throw '找不到 Cocos Creator，请使用 -Creator 指定 CocosCreator.exe。' }
+& node (Join-Path $projectRoot 'tools/prepare-performance.cjs')
+if ($LASTEXITCODE -ne 0) { throw '生成轻量启动场景失败。' }
 $buildConfig = Join-Path $projectRoot 'buildConfig_web-mobile.json'
 $started = Get-Date
 $arguments = @('--project', ('"' + $projectRoot + '"'), '--build', ('"configPath=' + $buildConfig + '"'))
@@ -16,6 +18,8 @@ for ($i = 0; $i -lt 180; $i++) {
   try { $content = Get-Content -LiteralPath $log.FullName -Raw -ErrorAction Stop } catch { continue }
   if ($content -match 'build success in' -and $content -match 'Finished in') {
     if ($content -match '(?m) - error:|Missing class:') { throw "构建包含脚本或资源错误：$($log.FullName)" }
+    & node (Join-Path $projectRoot 'tools/finalize-performance.cjs')
+    if ($LASTEXITCODE -ne 0) { throw '启动页优化失败。' }
     Write-Output ('构建完成：' + (Join-Path $projectRoot 'build\web-mobile'))
     exit 0
   }

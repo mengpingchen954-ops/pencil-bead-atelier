@@ -29,14 +29,14 @@ export class BackgroundMusic {
     if(this.track!==this.settings.track){
       this.track=this.settings.track;this.failed=false;this.loading=false;
       const generation=++this.generation;
-      this.source.stop();this.source.clip=null;
+      this.releaseClip();
       if(this.settings.enabled){
         this.loading=true;
         this.load('music/'+this.track,(error,clip)=>{
-          if(this.disposed||generation!==this.generation)return;
+          if(this.disposed||generation!==this.generation){clip?.addRef?.();clip?.decRef?.();return;}
           this.loading=false;
           if(error||!clip){this.failed=true;this.onError();return;}
-          this.source.clip=clip;this.sync();
+          clip.addRef?.();this.source.clip=clip;this.sync();
         });
       }
     }else if(this.settings.enabled&&!this.source.clip&&!this.loading&&!this.failed){
@@ -44,11 +44,12 @@ export class BackgroundMusic {
     }
     this.sync();
   }
+  private releaseClip() { const clip=this.source.clip;this.source.stop();this.source.clip=null;clip?.decRef?.(); }
   private sync() {
     if(this.hidden||!this.settings.enabled||this.settings.volume===0){this.source.pause();return;}
     if(this.source.clip&&!this.source.playing)this.source.play();
   }
   setHidden(hidden:boolean) { if(this.disposed)return;this.hidden=hidden;this.sync(); }
   snapshot() { return {track:this.track,loading:this.loading,failed:this.failed,playing:this.source.playing,volume:this.source.volume}; }
-  dispose() { this.disposed=true;this.generation++;this.source.node?.off('ended',this.advance,this);this.source.stop();this.source.clip=null; }
+  dispose() { this.disposed=true;this.generation++;this.source.node?.off('ended',this.advance,this);this.releaseClip(); }
 }

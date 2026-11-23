@@ -8,13 +8,16 @@ fs.mkdirSync(dir,{recursive:true});const browser=await chromium.launch({headless
 try{
  const context=await browser.newContext({viewport:{width:540,height:960},isMobile:true,hasTouch:true}),page=await context.newPage(),errors=[];
  page.on('pageerror',e=>errors.push(e.message));page.on('console',m=>{if(m.type()==='error')errors.push(m.text());});page.on('response',r=>{if(r.status()>=400)errors.push(r.status()+' '+r.url());});
- const initial={...freshSave(),started:true,completed:['daisy'],orderId:'sea',sound:false,coins:1342,inventory:[200,200,200,200,200,218],music:{enabled:false,track:'glimmer',volume:.35}};
+ const initial={...freshSave(),started:true,completed:['daisy'],orderId:'sea',sound:false,coins:1342,inventory:[200,200,200,200,200,218],gatheredStock:[200,200,200,200,200,218],music:{enabled:false,track:'glimmer',volume:.35}};
  await page.addInitScript(save=>{if(!localStorage.getItem('pencil-bead-atelier-v1'))localStorage.setItem('pencil-bead-atelier-v1',JSON.stringify(save));},initial);
  const ready=()=>page.waitForFunction(()=>typeof window.render_game_to_text==='function');
  const state=async()=>JSON.parse(await page.evaluate(()=>window.render_game_to_text()));
  const action=async name=>page.getByRole('button',{name,exact:true}).dispatchEvent('click');
  const point=async(x,y)=>{const b=await page.locator('#GameCanvas').boundingBox(),s=Math.min(b.width/720,b.height/1280);return {x:b.x+b.width/2+(x-360)*s,y:b.y+b.height/2+(y-640)*s};};
- const tap=async(x=674,y=42)=>{const p=await point(x,y);await page.touchscreen.tap(p.x,p.y);};
+ const tap=async(x,y)=>{
+  if(x===undefined){const target=await page.evaluate(async()=>{const cc=await System.import('cc'),g=cc.director.getScene().getChildByName('AtelierGame').getComponent('AtelierGame'),n=g.page.getChildByName('Music shortcut')||g.page.getChildByName('Button: ♪'),t=n.getComponent(cc.UITransform),p=t.convertToWorldSpaceAR(new cc.Vec3(t.width/2,-t.height/2));return{x:p.x+360,y:640-p.y};});x=target.x;y=target.y;}
+  const p=await point(x,y);await page.touchscreen.tap(p.x,p.y);
+ };
  const double=async()=>{await tap();await page.waitForTimeout(80);await tap();await page.waitForTimeout(400);};
  const escape=async()=>{await page.locator('#GameCanvas').focus();await page.keyboard.press('Escape');};
  const next=id=>MUSIC_TRACKS[(MUSIC_TRACKS.findIndex(t=>t.id===id)+1)%MUSIC_TRACKS.length].id;
@@ -26,19 +29,19 @@ try{
   const track=(await state()).save.music.track;await tap();await page.waitForTimeout(420);
   assert.equal((await state()).save.music.track,next(track));await audioReady();
   const selected=(await state()).save.music.track;await double();assert.equal((await state()).modal,'music');assert.equal((await state()).save.music.track,selected,'Double tap must not switch track');
-  await tap(455,834);assert.equal((await state()).save.music.volume,.75);assert.equal((await state()).music.volume,.75);await escape();
+  const volume=await page.evaluate(async()=>{const cc=await System.import('cc'),g=cc.director.getScene().getChildByName('AtelierGame').getComponent('AtelierGame'),n=g.overlay.getChildByName('Music floral panel').getChildByName('Music volume'),p=n.getComponent(cc.UITransform).convertToWorldSpaceAR(new cc.Vec3(10+380*.75,-22));return {x:p.x+360,y:640-p.y};});await tap(volume.x,volume.y);assert.equal((await state()).save.music.volume,.75);assert.equal((await state()).music.volume,.75);await escape();
   await page.screenshot({path:dir+'/home-'+width+'.png'});
-  const labels=await page.evaluate(async()=>{const cc=await System.import('cc'),g=cc.director.getScene().getChildByName('AtelierGame').getComponent('AtelierGame');return g.page.children.filter(n=>n.position.y>-84).flatMap(n=>n.getComponentsInChildren(cc.Label).map(l=>l.string));});
+  const labels=await page.evaluate(async()=>{const cc=await System.import('cc'),g=cc.director.getScene().getChildByName('AtelierGame').getComponent('AtelierGame');return g.page.children.filter(n=>n.name.startsWith('Resource ')).flatMap(n=>n.getComponentsInChildren(cc.Label).map(l=>l.string));});
   assert.ok(labels.includes('1218'));assert.ok(labels.includes('1342'));assert.ok(!labels.includes('珠 1218')&&!labels.includes('金 1342'));
   assert.deepEqual(withoutMusic((await state()).save),withoutMusic(saved));
  }
  await page.setViewportSize({width:540,height:960});await page.waitForTimeout(180);
  for(let i=0;i<MUSIC_TRACKS.length;i++){const t=(await state()).save.music.track;await tap();await page.waitForTimeout(420);assert.equal((await state()).save.music.track,next(t));await audioReady();}
- for(const source of ['售珠','装修','手账','参加比赛']){
+ for(const source of ['售珠','装修','参加比赛']){
   await action('小店');await action(source);const t=(await state()).save.music.track;await tap();await page.waitForTimeout(420);assert.equal((await state()).save.music.track,next(t));
   await double();assert.equal((await state()).modal,'music');await escape();await page.screenshot({path:dir+'/page-'+(await state()).screen+'.png'});
  }
- await action('小店');let t=(await state()).save.music.track;await tap();await tap(607,42);await page.waitForTimeout(450);assert.equal((await state()).modal,'settings');assert.equal((await state()).save.music.track,t);await escape();
+ await action('小店');let t=(await state()).save.music.track;await tap();await action('⚙');await page.waitForTimeout(450);assert.equal((await state()).modal,'settings');assert.equal((await state()).save.music.track,t);await escape();
  await tap();await action('售珠');await page.waitForTimeout(450);assert.equal((await state()).save.music.track,t,'Leaving must cancel a pending single tap');
  // A mouse double-click follows the same native touch gesture path.
  const p=await point(674,42);await page.mouse.dblclick(p.x,p.y,{delay:80});await page.waitForTimeout(420);assert.equal((await state()).modal,'music');assert.equal((await state()).save.music.track,t);

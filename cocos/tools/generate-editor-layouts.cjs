@@ -75,7 +75,7 @@ class Node {
 }
 Node.EventType={TOUCH_END:'end',TOUCH_START:'start',TOUCH_MOVE:'move',TOUCH_CANCEL:'cancel'};
 const decorator=(...args)=>args.length===1&&typeof args[0]==='function'?args[0]:()=>{};
-const cc={sys:{isMobile:false},KeyCode:{DELETE:46,ESCAPE:27,KEY_F:70},_decorator:{ccclass:()=>x=>x,property:decorator,executeInEditMode:x=>x},Component,Node,UITransform,Graphics,Color,Label,Sprite,Mask,ScrollView,Vec2:Vec3,UIOpacity,EditBox,Vec3,Enum:x=>x,Layers:{Enum:{UI_2D:1<<25}},SpriteFrame:class{},AudioSource:class{},BlockInputEvents:class{},Tween:{stopAllByTarget(){}}};
+const cc={resources:{load(){}},sys:{isMobile:false},KeyCode:{DELETE:46,ESCAPE:27,KEY_F:70},_decorator:{ccclass:()=>x=>x,property:decorator,executeInEditMode:x=>x},Component,Node,UITransform,Graphics,Color,Label,Sprite,Mask,ScrollView,Vec2:Vec3,UIOpacity,EditBox,Vec3,Enum:x=>x,Layers:{Enum:{UI_2D:1<<25}},SpriteFrame:class{},AudioSource:class{},BlockInputEvents:class{},Tween:{stopAllByTarget(){}}};
 const cache={};
 function load(file){
   if(file==='cc')return cc;if(file==='cc/env')return {EDITOR:false};

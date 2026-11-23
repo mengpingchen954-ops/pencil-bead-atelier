@@ -46,10 +46,10 @@
         "offsetY": 0,
         "trimX": 0,
         "trimY": 0,
-        "width": 760,
-        "height": 1115,
-        "rawWidth": 760,
-        "rawHeight": 1115,
+        "width": 608,
+        "height": 892,
+        "rawWidth": 608,
+        "rawHeight": 892,
         "borderTop": 0,
         "borderBottom": 0,
         "borderLeft": 0,
@@ -64,17 +64,17 @@
         "atlasUuid": "",
         "vertices": {
           "rawPosition": [
-            -380,
-            -557.5,
+            -304,
+            -446,
             0,
-            380,
-            -557.5,
+            304,
+            -446,
             0,
-            -380,
-            557.5,
+            -304,
+            446,
             0,
-            380,
-            557.5,
+            304,
+            446,
             0
           ],
           "indexes": [
@@ -87,12 +87,12 @@
           ],
           "uv": [
             0,
-            1115,
-            760,
-            1115,
+            892,
+            608,
+            892,
             0,
             0,
-            760,
+            608,
             0
           ],
           "nuv": [
@@ -106,13 +106,13 @@
             1
           ],
           "minPos": [
-            -380,
-            -557.5,
+            -304,
+            -446,
             0
           ],
           "maxPos": [
-            380,
-            557.5,
+            304,
+            446,
             0
           ]
         }
@@ -127,7 +127,7 @@
   },
   "userData": {
     "type": "sprite-frame",
-    "hasAlpha": true,
+    "hasAlpha": false,
     "fixAlphaTransparencyArtifacts": false,
     "redirect": "f1fa0650-0bf6-4797-949a-5dc51595863d@f9941"
   }

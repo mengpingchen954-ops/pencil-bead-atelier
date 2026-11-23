@@ -6,18 +6,18 @@
   "debug": false,
   "md5Cache": true,
   "sourceMaps": false,
-  "startScene": "874ba68e-8895-4ea0-9aef-2b85d9ea9f12",
+  "startScene": "a760be11-3344-4a63-8e87-503c28f6c421",
   "scenes": [
     {
-      "url": "db://assets/scenes/Atelier.scene",
-      "uuid": "874ba68e-8895-4ea0-9aef-2b85d9ea9f12"
+      "url": "db://assets/scenes/Launch.scene",
+      "uuid": "a760be11-3344-4a63-8e87-503c28f6c421"
     }
   ],
   "orientation": "portrait",
   "webOrientation": "portrait",
   "embedWebDebugger": false,
   "polyfills": {
-    "asyncFunctions": true
+    "asyncFunctions": false
   },
   "experimentalEraseModules": false
 }

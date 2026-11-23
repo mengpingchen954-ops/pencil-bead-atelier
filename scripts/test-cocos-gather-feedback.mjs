@@ -55,7 +55,7 @@ async function finish(ui,reduced=false){
  }
  const {after,amount,effects}=final,kinds=after.save.inventory.filter(Boolean).length;
  assert.equal(after.modal,'result');assert.equal(amount,total(gatheredMaterials(after.session)));assert.ok([3,4].includes(kinds));
- assert.ok(effects.result.some(t=>t.startsWith('本关获得 '+kinds+' 种珠材，共 '+amount+' 颗')));
+ assert.ok(effects.result.some(t=>t.startsWith('获得 '+kinds+' 种珠材，共 '+amount+' 颗')));
  assert.equal(effects.result.filter(t=>/^\+[1-9]\d*$/.test(t)).length,kinds);assert.ok(!effects.result.includes('+0'));
  return final;
 }
