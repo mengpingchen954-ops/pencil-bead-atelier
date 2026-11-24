@@ -32,6 +32,14 @@ test('floral settings preserves toggles, save access, reset confirmation and mus
  actions.get('下一首')();assert.equal(g.save.music.track,'time');assert.equal(g.save.music.enabled,true);
  g.settings();assert.ok(actions.has('导出 / 导入存档'));const before=JSON.stringify(g.save);actions.get('重新开始')();assert.equal(g.modal,'reset');assert.equal(JSON.stringify(g.save),before);assert.ok(actions.has('保留进度'));
 });
+
+test('both sound switches play a preview only when enabling effects',()=>{
+ const {g,actions}=fixture(),played=[];g.play=(name,volume)=>{if(g.save.sound)played.push({name,volume});};
+ g.settings();actions.get('操作音效  开启')();assert.equal(g.save.sound,false);assert.equal(played.length,0);
+ actions.get('操作音效  关闭')();assert.equal(g.save.sound,true);assert.deepEqual(played,[{name:'clear',volume:.6}]);
+ g.screen='craft';g.pauseMatch();actions.get('音效：开启')();assert.equal(g.save.sound,false);assert.equal(played.length,1);
+ actions.get('音效：关闭')();assert.equal(g.save.sound,true);assert.equal(played.length,2);assert.deepEqual(played[1],{name:'clear',volume:.6});
+});
 test('flat wooden spacer is retired while legacy inventory and works keep their material IDs',()=>{
  assert.equal(MATERIALS[144].name,'扁木隔片');assert.equal(MATERIALS[144].retired,true);
  const save={...rules.freshSave(),draft:[0,144,1],inventory:Array(MATERIALS.length).fill(4),gatheredStock:Array(MATERIALS.length).fill(4),materialUnlocked:Array(MATERIALS.length).fill(true)};

@@ -23,7 +23,7 @@ try {
  await page.screenshot({path:'artifacts/pause/craft.png'});
  await tap(90,1040);assert.deepEqual((await state()).save.draft,initial.draft);
  await tap(477,453);s=await state();assert.equal(s.pause.music,true);await audioReady();assert.equal((await state()).music.playing,true);
- await tap(477,531);assert.equal((await state()).save.sound,true);await tap(477,609);assert.equal((await state()).save.reduced,false);
+ assert.equal((await state()).save.sound,true);await tap(477,531);assert.equal((await state()).save.sound,false);await tap(477,531);assert.equal((await state()).save.sound,true);await tap(477,609);assert.equal((await state()).save.reduced,false);
  await tap(360,680);assert.equal((await state()).modal,'music');await tap(455,834);assert.equal((await state()).save.music.volume,.75);
  const track=(await state()).music.track;await tap(492,916);await audioReady();assert.notEqual((await state()).music.track,track);assert.equal((await state()).music.playing,true);
  await escape();assert.equal((await state()).modal,'pause');await tap(360,770);s=await state();assert.equal(s.modal,'');assert.deepEqual(s.save.draft,initial.draft);assert.deepEqual(s.save.inventory,initial.inventory);assert.equal(s.save.energy,initial.energy);

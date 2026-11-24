@@ -180,6 +180,7 @@ export class AtelierGame extends Component {
     this.text('正在打开奶奶的旧珠盒…', 70, 590, 580, 70, 30, SAGE, this.page, true);
     try { this.save = rules.refreshEnergy(rules.normalizeSave(JSON.parse(sys.localStorage.getItem(rules.SAVE_KEY) || 'null'))); }
     catch { this.save = rules.freshSave(); }
+    this.save.sound=true;
     this.music=new BackgroundMusic(this.node.addComponent(AudioSource),undefined,()=>this.toast('这首音乐暂时没有加载成功，请选择另一首。'),track=>{
       this.save.music.track=track;this.persist();if(this.modal==='music')this.musicDialog(this.musicFromPause);
     });
@@ -338,6 +339,11 @@ export class AtelierGame extends Component {
       asset.addRef();this.sounds.set(name,asset);
       if(this.save.sound)this.sound.playOneShot(asset,volume);
     });
+  }
+
+  private toggleSound() {
+    this.save.sound=!this.save.sound;
+    if(this.save.sound)this.play('clear',.6);
   }
 
   private loadFrame(key:string):Promise<SpriteFrame|null> {
@@ -2147,7 +2153,7 @@ export class AtelierGame extends Component {
     this.rect('Pause backdrop',0,0,720,1280,'#40382d80',stage,0).addComponent(BlockInputEvents);
     this.image('pencil-pause-panel',24,182,660,868,stage);
     this.text('暂停游戏',230,309,275,67,46,'#674526',stage,true);
-    const rows=[['音乐',this.save.music.enabled,()=>{this.save.music.enabled=!this.save.music.enabled;this.music?.update(this.save.music);}],['音效',this.save.sound,()=>{this.save.sound=!this.save.sound;}],['减少动效',this.save.reduced,()=>{this.save.reduced=!this.save.reduced;}]] as const;
+    const rows=[['音乐',this.save.music.enabled,()=>{this.save.music.enabled=!this.save.music.enabled;this.music?.update(this.save.music);}],['音效',this.save.sound,()=>this.toggleSound()],['减少动效',this.save.reduced,()=>{this.save.reduced=!this.save.reduced;}]] as const;
     rows.forEach(([label,enabled,change],i)=>{
       const y=421+i*78,row=this.box('Pause '+label,191,y,351,67,stage),icon=this.box('Pause icon '+i,5,13,40,40,row).addComponent(Graphics);
       icon.strokeColor=color('#94703e');icon.fillColor=color('#c3a06b');icon.lineWidth=2.5;
@@ -2728,7 +2734,7 @@ export class AtelierGame extends Component {
       this.accessibleButton(label,action,panel);
     };
     row('背景音乐 · 切歌 / 音量',758,()=>this.musicDialog());
-    row('操作音效  '+(this.save.sound?'开启':'关闭'),923,()=>{this.save.sound=!this.save.sound;this.persist();this.settings();});
+    row('操作音效  '+(this.save.sound?'开启':'关闭'),923,()=>{this.toggleSound();this.persist();this.settings();});
     row('减少动态效果  '+(this.save.reduced?'开启':'关闭'),1088,()=>{this.save.reduced=!this.save.reduced;this.persist();this.settings();});
     row('导出 / 导入存档',1256,()=>this.saveDialog());
     row('玩法说明',1425,()=>this.info('小店的日常','采珠：交换相邻珠子，三连或 2×2 同色方块可消。通关按阶段得13～18颗珠材，未过关保留六成（向下取整），每次3～4种，优先发放消除最多的材质。提前退出或重开不发本关奖励。\n手作：珠子种类和数量自由搭配，保存时按实际用料扣除。\n定制：顾客随机来访，接单后按风格制作；达标后交付并收款，也可交付已有成品。\n售珠：作品上架橱窗，初始最高可定建议价的120%，每10口碑多1%，300口碑达150%；定价越高等候越久。售出后到「已售」点击收钱。\n音乐：设置中点选切歌，拖动音量条调节。\n装修：先免费打扫，再用金币修屋与添置家具，每件家具可升至3级。\n故事：累计售出作品推进主线，家具解锁支线。\n电脑：Esc 返回，F 全屏；方向键、空格操作棋盘。'));
