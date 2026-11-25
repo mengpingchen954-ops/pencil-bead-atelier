@@ -1,10 +1,6 @@
 (function(){
  'use strict';
  const state=window.__atelierPerformance={navigationStart:0,bootstrap:performance.now()};
- if(/Android|iPhone|iPad|iPod/i.test(navigator.userAgent)){
-  const ratio=Math.min(devicePixelRatio||1,((navigator.deviceMemory||4)<=4||(navigator.hardwareConcurrency||4)<=4)?1.25:1.5);
-  try{Object.defineProperty(window,'devicePixelRatio',{configurable:true,get:function(){return ratio;}});}catch{}
- }
  let recovery;
  window.atelierLoadFailure=function(){
   if(recovery)return;

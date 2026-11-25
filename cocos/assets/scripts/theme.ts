@@ -1,7 +1,8 @@
 export const THEME = {
   paper: '#faf5e9', ink: '#60391f', sage: '#687c5d', muted: '#857359', gold: '#a77b43',
   disabled: '#ebe5d8', disabledBorder: '#ddd3c2', buttonRadius: 14, dialogRadius: 26,
-  bodyFont: 'KaiTi, STKaiti, serif', titleFont: 'KaiTi, STKaiti, serif',
+  bodyFont: '-apple-system, BlinkMacSystemFont, "PingFang SC", "Microsoft YaHei", "Noto Sans CJK SC", sans-serif',
+  titleFont: '-apple-system, BlinkMacSystemFont, "PingFang SC", "Microsoft YaHei", "Noto Sans CJK SC", sans-serif',
 };
 
 export function actionText(label:string) { return label.replace(/ · \d+$/, ''); }
