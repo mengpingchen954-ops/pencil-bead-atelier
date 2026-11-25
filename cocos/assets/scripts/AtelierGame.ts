@@ -451,7 +451,7 @@ export class AtelierGame extends Component {
     label.string = h>=size*2.8?wrapText(value,w,size):value; label.fontSize = size; label.lineHeight = Math.round(size * 1.5);
     label.color = color(fill); label.fontFamily = size>=32?THEME.titleFont:THEME.bodyFont; label.enableWrapText = true;
     label.overflow = Label.Overflow.SHRINK;
-    label.horizontalAlign = center ? Label.HorizontalAlign.CENTER : Label.HorizontalAlign.LEFT;
+    label.horizontalAlign = Label.HorizontalAlign.CENTER;
     label.verticalAlign = Label.VerticalAlign.CENTER;
     if(!parent.name.startsWith('Button:')&&parent!==this.notices)this.accessibility?.text(value,this.isDialog(parent));
     const template = this.layouts.get(this.layoutKeys.get(n) || '');
@@ -466,9 +466,10 @@ export class AtelierGame extends Component {
     const data=this.layoutData[this.layoutKeys.get(n)||''];
     if(data?.label)for(const [field,value] of Object.entries(data.label)){if(field==='color')label.color=color(value as string);else(label as any)[field]=value;}
     const compactMaterial=/^Bead material /.test(parent.name);
+    const compactStatus=/^(Collection|DIY collection) /.test(parent.name)&&size<=20;
     label.isBold=true;
-    label.fontSize=compactMaterial?Math.min(20,Math.max(18,label.fontSize+1)):Math.max(28,label.fontSize+2);
-    label.lineHeight=compactMaterial?24:Math.max(label.lineHeight,Math.round(label.fontSize*1.25));
+    label.fontSize=compactMaterial?Math.min(20,Math.max(18,label.fontSize+1)):compactStatus?Math.min(19,Math.max(16,label.fontSize)):Math.max(18,label.fontSize+2);
+    label.lineHeight=compactMaterial||compactStatus?24:Math.max(label.lineHeight,Math.round(label.fontSize*1.25));
     const bounds=n.getComponent(UITransform)!;
     if(bounds.contentSize.height<label.lineHeight)bounds.setContentSize(bounds.contentSize.width,label.lineHeight);
     return label;

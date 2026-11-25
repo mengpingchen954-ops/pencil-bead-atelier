@@ -149,7 +149,7 @@ test('gathering waits for every material, charges once, and stays on the current
 });
 test('game labels are bold and larger, while the board drops repeated reward and tutorial prose',()=>{
  const {g}=fixture();g.screen='match';g.session=rules.newSession(42,1);g.render();
- const labels=g.page.getComponentsInChildren(Label);assert.ok(labels.length>0);assert.ok(labels.every(l=>l.isBold&&l.fontSize>=28));
+ const labels=g.page.getComponentsInChildren(Label);assert.ok(labels.length>0);assert.ok(labels.every(l=>l.isBold&&l.fontSize>=18));
  assert.equal(labels.some(l=>l.string.includes('未过关保留六成')||l.string.includes('交换相邻珠子')),false);
  assert.equal(g.guideNode,null);
 });
