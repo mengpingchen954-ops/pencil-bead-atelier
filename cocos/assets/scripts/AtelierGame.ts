@@ -465,9 +465,10 @@ export class AtelierGame extends Component {
     }
     const data=this.layoutData[this.layoutKeys.get(n)||''];
     if(data?.label)for(const [field,value] of Object.entries(data.label)){if(field==='color')label.color=color(value as string);else(label as any)[field]=value;}
+    const compactMaterial=/^Bead material /.test(parent.name);
     label.isBold=true;
-    label.fontSize=Math.max(28,label.fontSize+2);
-    label.lineHeight=Math.max(label.lineHeight,Math.round(label.fontSize*1.25));
+    label.fontSize=compactMaterial?Math.min(20,Math.max(18,label.fontSize+1)):Math.max(28,label.fontSize+2);
+    label.lineHeight=compactMaterial?24:Math.max(label.lineHeight,Math.round(label.fontSize*1.25));
     const bounds=n.getComponent(UITransform)!;
     if(bounds.contentSize.height<label.lineHeight)bounds.setContentSize(bounds.contentSize.width,label.lineHeight);
     return label;
