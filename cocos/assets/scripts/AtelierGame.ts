@@ -1555,7 +1555,9 @@ export class AtelierGame extends Component {
         const facing=dragFacing(p);
         if(facing){if(facing!==baseFacing){this.remember();const facings=this.workingFacings;facings[index]=facing;this.workingFacings=facings;this.persist();}this.slot=index;start=null;this.render();return;}
       }
-      if(dragged){const half=n.getComponent(UITransform)?.contentSize.width/2||46,p={x:n.position.x+half,y:n.position.y-half};let target=-1,nearest=Math.min(95,Math.hypot(original.x+half-p.x,original.y-half-p.y));for(let i=0;i<this.slotNodes.length;i++){if(i===index)continue;const s=this.slotNodes[i].position,half=this.slotNodes[i].getComponent(UITransform)?.contentSize.width/2||46,d=Math.hypot(s.x+half-p.x,s.y-half-p.y);if(d<nearest){target=i;nearest=d;}}
+      if(dragged){const half=n.getComponent(UITransform)?.contentSize.width/2||46,p={x:n.position.x+half,y:n.position.y-half};let target=-1,nearest=Infinity;
+        for(let i=0;i<this.slotNodes.length;i++){const s=this.slotPos(i),d=Math.hypot(s.x-p.x,-s.y-p.y);if(d<nearest){target=i;nearest=d;}}
+        // Any drop inside the tray snaps to its nearest groove; dropping back on the source is a no-op.
         if(target>=0&&target!==index){this.remember();const sizes=this.workingSizes,facings=this.workingFacings;[sizes[index],sizes[target]]=[sizes[target],sizes[index]];[facings[index],facings[target]]=[facings[target],facings[index]];[this.workingDraft[index],this.workingDraft[target]]=[this.workingDraft[target],this.workingDraft[index]];this.workingSizes=sizes;this.workingFacings=facings;this.slot=target;this.persist();this.playBeadImpact(this.workingDraft[target]);}
       }else{start=null;this.selectCraftSlot(index);return;}
       start=null;this.render();

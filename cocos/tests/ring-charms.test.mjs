@@ -55,3 +55,10 @@ test('old central charm moves to a ring slot once without losing beads, sizes, s
  game.save=listed;game.freeWorkPreview(1);const icon=game.overlay.getChildByName('Enlarged work').children.find(n=>n.name==='charm-leaf');assert.ok(Math.abs(Math.hypot(icon.position.x-360,(-icon.position.y-542)/.95)-166)<.001);
  game.save.inventory[leaf]=game.save.gatheredStock[leaf]=0;actions.get('再做一条')();assert.equal(game.save.draft.at(-1),leaf);assert.equal(game.save.inventory[leaf],0);assert.equal(trade.craftChecks(game.save).stock,false);
 });
+
+test('a charm dropped in open tray space snaps to the nearest groove without targeting another element',()=>{
+ const {game,actions}=fixture();game.slot=0;game.render();actions.get('饰品')();actions.get('选择叶子挂饰')();
+ const touch=(x,y)=>({getUILocation:()=>({x,y:1280-y})}),source=game.slotNodes[0].children.find(n=>n.name==='charm-leaf'),a=game.slotPos(0),b=game.slotPos(1),x=a.x+(b.x-a.x)*.62,y=a.y+(b.y-a.y)*.62;
+ source.events.start(touch(a.x,a.y));source.events.move(touch(x,y));source.events.end(touch(x,y));
+ assert.equal(game.save.draft[1],leaf);assert.equal(game.save.draft[0],null);
+});
