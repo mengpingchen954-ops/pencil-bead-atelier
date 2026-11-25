@@ -94,7 +94,7 @@ test('all persistent navigation uses the home dimensions and five destinations w
     tabs.forEach((n,i)=>{
       assert.equal(n.position.x,i*144);assert.equal(n.position.y,-1140);
       assert.deepEqual(n.getComponent(UITransform).contentSize,{width:144,height:140});
-      const label=n.getComponentsInChildren(Label)[0];assert.equal(label.fontSize,28);
+      const label=n.getComponentsInChildren(Label)[0];assert.equal(label.fontSize,30);assert.equal(label.isBold,true);
       assert.equal(n.children.some(c=>c.name==='Selected navigation'),targets[i]===page);
     });
     for(const n of game.page.children.filter(n=>n.name.startsWith('Button: '))){
@@ -135,7 +135,7 @@ test('real renderer honors edited transforms, typography and sprite while keepin
   label.fontSize=32;game.layouts.set(key,original.node);
   game.layoutCounts.clear();game.layoutKeys.clear();
   const live=game.text('珠 '+rules.total(game.save.inventory),10,20,100,50);
-  assert.equal(live.string,'珠 8');assert.equal(live.fontSize,32);
+  assert.equal(live.string,'珠 8');assert.equal(live.fontSize,34);
 });
 
 test('moved board cells remain animation targets, and generated scene is not overwritten implicitly', () => {
@@ -217,7 +217,7 @@ function pausedGame(screen='match') {
   const game=new AtelierGame(),actions=new Map();
   game.page=new Node('Page');game.overlay=new Node('Dialogs');game.notices=new Node('Notices');
   game.persist=()=>{};game.toast=()=>{};game.music={update(){},snapshot(){return {};}};
-  game.accessibility={clear(){actions.clear();},text(){},button(name,action,modal,enabled){if(enabled)actions.set(name,action);},showDialog(){},closeDialog(){}};
+  game.loadFrame=async()=>({});game.accessibility={busy(){},clear(){actions.clear();},text(){},button(name,action,modal,enabled){if(enabled)actions.set(name,action);},showDialog(){},closeDialog(){}};
   game.save={...rules.freshSave(),started:true,reduced:true,music:{enabled:false,volume:.35,track:'glimmer'},draft:[0,3,...Array(10).fill(null)]};
   game.screen=screen;game.session=screen==='match'?rules.newSession(42,1):null;
   return {game,actions};
@@ -235,10 +235,10 @@ test('pause toggles, nested music and continued play preserve the exact board an
   game.busy=true;game.pauseMatch();assert.equal(game.modal,'');
 });
 
-test('restart and leaving a paused match require their explicit choice and never grant unclaimed stock',()=>{
+test('restart and leaving a paused match require their explicit choice and never grant unclaimed stock',async()=>{
   const {game,actions}=pausedGame(),session=game.session,stock=JSON.stringify(game.save.inventory),draft=JSON.stringify(game.save.draft),energy=game.save.energy;
   game.pauseMatch();actions.get('重新开始')();assert.equal(game.modal,'pause-restart');game.dismiss();assert.equal(game.session,session);assert.equal(game.save.energy,energy);
-  actions.get('重新开始')();const confirm=actions.get('重开本关 · 1 体力');confirm();confirm();assert.equal(game.save.energy,energy-1);assert.equal(game.modal,'');assert.notEqual(game.session,session);assert.equal(JSON.stringify(game.save.inventory),stock);assert.equal(JSON.stringify(game.save.draft),draft);
+  actions.get('重新开始')();const confirm=actions.get('重开本关 · 1 体力');confirm();confirm();await new Promise(resolve=>setImmediate(resolve));assert.equal(game.save.energy,energy-1);assert.equal(game.modal,'');assert.notEqual(game.session,session);assert.equal(JSON.stringify(game.save.inventory),stock);assert.equal(JSON.stringify(game.save.draft),draft);
   game.pauseMatch();actions.get('返回店铺')();assert.equal(game.modal,'pause-leave');actions.get('继续当前游戏')();assert.equal(game.screen,'match');
   actions.get('返回店铺')();actions.get('确认返回店铺')();assert.equal(game.screen,'home');assert.equal(game.session,null);assert.equal(JSON.stringify(game.save.inventory),stock);assert.equal(game.save.energy,energy-1);
   game.screen='match';game.session=session;game.save.energy=0;game.save.energyAt=Date.now();game.pauseMatch();actions.get('重新开始')();actions.get('重开本关 · 1 体力')();assert.equal(game.modal,'pause-restart');assert.equal(game.session,session);assert.equal(game.save.energy,0);
@@ -566,13 +566,13 @@ test('busy welcome exits leave both save and modal untouched until navigation is
  const {game}=pausedGame('home');game.info('普通提示','保持普通关闭行为');game.dismiss();assert.equal(game.screen,'home');assert.equal(game.modal,'');assert.equal(game.save.firstSteps.craft,undefined);
 });
 
-test('starting and restarting gathering preserve partial energy recovery and restart the clock only from full',()=>{
+test('starting and restarting gathering preserve partial energy recovery and restart the clock only from full',async()=>{
  const {game}=pausedGame('home');game.node=new Node('AtelierGame');game.save.energy=5;
- const clock=Date.now()-120000;game.save.energyAt=clock;game.startMatch();
+ const clock=Date.now()-120000;game.save.energyAt=clock;await game.startMatch();
  assert.equal(game.save.energy,4);assert.equal(game.save.energyAt,clock);
  assert.equal(rules.refreshEnergy(game.save,clock+180000).energy,5);
- game.startMatch();assert.equal(game.save.energy,3);assert.equal(game.save.energyAt,clock);
- game.save.energy=10;game.save.energyAt=clock;const now=Date.now();game.startMatch();
+ await game.startMatch();assert.equal(game.save.energy,3);assert.equal(game.save.energyAt,clock);
+ game.save.energy=10;game.save.energyAt=clock;const now=Date.now();await game.startMatch();
  assert.equal(game.save.energy,9);assert.ok(game.save.energyAt>=now);
 });
 

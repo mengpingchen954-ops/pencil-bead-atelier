@@ -187,7 +187,7 @@ export class AtelierGame extends Component {
     this.screen = rules.pendingDelivery(this.save) ? 'delivery' : this.save.started ? 'home' : 'cover';
     const critical=this.screen==='cover'?['pencil-cover']:this.screen==='home'?['pencil-home-page','pencil-navigation','pencil-resource-beads','pencil-resource-coins','pencil-resource-energy','icon-home','icon-orders','icon-craft','icon-chair','icon-album']:['pencil-paper','pencil-frame'];
     const loaded=await Promise.all(critical.filter(key=>ART_PATHS[key]).map(key=>this.loadFrame(key)));
-    await this.prepareSounds();
+    void this.prepareSounds();
     if(this.disposed)return;
     if(loaded.some(frame=>!frame)){
       (globalThis as any).atelierLoadFailure?.();
@@ -465,6 +465,11 @@ export class AtelierGame extends Component {
     }
     const data=this.layoutData[this.layoutKeys.get(n)||''];
     if(data?.label)for(const [field,value] of Object.entries(data.label)){if(field==='color')label.color=color(value as string);else(label as any)[field]=value;}
+    label.isBold=true;
+    label.fontSize=Math.max(28,label.fontSize+2);
+    label.lineHeight=Math.max(label.lineHeight,Math.round(label.fontSize*1.25));
+    const bounds=n.getComponent(UITransform)!;
+    if(bounds.contentSize.height<label.lineHeight)bounds.setContentSize(bounds.contentSize.width,label.lineHeight);
     return label;
   }
   private image(key: string, x: number, y: number, w: number, h: number, parent = this.page) {
@@ -681,16 +686,16 @@ export class AtelierGame extends Component {
   private firstGuide() {
     if(this.modal)return;
     const find=(name:string)=>this.page.children.find(n=>n.name===name),steps=this.save.firstSteps||{};
-    if(this.screen==='home'&&!steps.firstGather&&!this.save.commerce.works.length&&this.availableMaterials<6)this.guide(find('Button: 消除采珠'),'先采一盒珠材，再做第一条手串。');
-    if(this.screen==='match'&&this.session?.level===1&&this.session.moves===rules.levelConfig(1).moves){const pair=rules.findMove(this.session.board);if(pair){this.hint=pair;this.guide(this.boardNodes[pair[0]],'交换这两颗相邻珠子，试试第一次消除。');}}
+    if(this.screen==='home'&&!steps.firstGather&&!this.save.commerce.works.length&&this.availableMaterials<6)this.guide(find('Button: 消除采珠'),'先点采珠');
+    if(this.screen==='match'&&this.session?.level===1&&this.session.moves===rules.levelConfig(1).moves)this.hint=rules.findMove(this.session.board)||[];
     if(this.screen==='craft'&&!this.save.commerce.works.length){
       if(this.workingDraft.every(t=>t===null)){
         const offset=this.craftScroll[this.craftCategory],type=categoryMaterials(this.craftCategory,false,this.save).find((i,cell)=>materialStock(this.save,i)>0&&Math.floor(cell/4)*MATERIAL_STEP>=offset&&Math.floor(cell/4)*MATERIAL_STEP+94<=offset+294);
-        this.guide(find('Material viewport')?.getChildByName('Material content')?.getChildByName('Bead material '+type),this.availableMaterials?'上下滑动找珠材，轻点放入；长按可拖入。':'先去采珠，获得材料后就能开始。');
+        this.guide(find('Material viewport')?.getChildByName('Material content')?.getChildByName('Bead material '+type),this.availableMaterials?'点珠材放入 · 长按拖动':'先去采珠，获得材料后就能开始。');
       }
-      else if(this.slot<0&&!this.craftToolsOpen)this.guide(find('Button: 完成制作'),'搭配好了，就点完成制作，保存第一件作品。');
+      else if(this.slot<0&&!this.craftToolsOpen)this.guide(find('Button: 完成制作'),'搭配好后点完成制作');
     }
-    if(this.screen==='orders'&&this.save.commerce.works.length===1&&this.save.commerce.works[0].status==='ready')this.guide(find('Button: 上架橱窗 · '+this.save.commerce.works[0].id),'给作品设个价格，让第一位顾客看见它。');
+    if(this.screen==='orders'&&this.save.commerce.works.length===1&&this.save.commerce.works[0].status==='ready')this.guide(find('Button: 上架橱窗 · '+this.save.commerce.works[0].id),'上架出售');
     if(this.screen==='decor'&&this.save.renovation.cleared.length<3){const spot=CLEAN_SPOTS.find(s=>!this.save.renovation.cleared.includes(s.id));if(spot)this.guide(find('Clean '+spot.id),'先收好三处杂物，再擦窗、扫灰。打扫免费。');}
   }
   private get availableMaterials() { return MATERIALS.reduce((sum,_,i)=>sum+materialStock(this.save,i),0); }
@@ -758,7 +763,7 @@ export class AtelierGame extends Component {
   }
   private firstOrder() {
     this.dialog('welcome-diy','从一颗珠子，开始自己的作品');
-    this.text('三消收集珠材，按自己的喜好搭配珠子与吊坠，种类与颗数自由决定。\n\n完成后保存作品，挂到「售珠」橱窗，让喜欢它的顾客带走。\n\n珠宝、水晶、木质和饰品都要先通过三消采集，获得后才会解锁。',105,350,510,340,27,INK,this.overlay);
+    this.text('采珠 → DIY → 出售\n\n先消除采集珠材，再做手串。',105,350,510,260,34,INK,this.overlay,true);
     this.button('先去三消采珠',130,795,460,66,()=>this.matchIntro(),this.overlay,true);
     this.button('自由做一条',130,888,460,62,()=>this.leaveWelcome(),this.overlay);
   }
@@ -791,7 +796,6 @@ export class AtelierGame extends Component {
     const storyLabel=seaVisitReady(this.save)?'小满回来了 · 看旅行留影':this.save.orderId==='sea'&&!this.save.completed.includes('sea')?'听听她的故事 · 小满的第一次旅行':pending?'继续剧情 · '+pending.title:'翻阅我们的故事';
     const storyAction=()=>seaVisitReady(this.save)?this.seaVisit():this.save.orderId==='sea'&&!this.save.completed.includes('sea')?this.seaChat():pending?this.startStory(STORIES.indexOf(pending)):this.navigate('journal');
     this.text('继续剧情 ▶',206,1021,193,45,33,'#fff8e4',this.page,true);
-    this.text('当前故事：'+(pending?pending.title:chapter.title),204,1066,197,28,17,'#fff8e4',this.page,true);
     const story=this.box('Story invitation',194,1010,217,92);
     this.bindTap(story,storyAction);this.accessibleButton(storyLabel,storyAction);
     this.hitButton('故事与手账',69,1010,115,123,()=>this.storyJournal());
@@ -1592,7 +1596,6 @@ export class AtelierGame extends Component {
       this.text(name,476,y+154,191,49,24,!unlocked?MUTED:i===0?INK:'#fff9eb',this.page,true);
       this.hitButton(name,472,y+154,200,49,()=>entry?this.contestResult(event.id):this.enterCompetition(event.id),unlocked);
     });
-    this.text('每场可提交一件作品，成绩与奖牌会保留在这里。',132,1101,456,33,20,MUTED,this.page,true);
   }
   private enterCompetition(id:string,replace=false) {
     const old=this.save.competitions.draft,next=beginCompetition(this.save,id,replace);
@@ -1653,7 +1656,6 @@ export class AtelierGame extends Component {
     const price=suggestedPrice(this.save.draft);
     this.text('我的手作 · 成品确认',100,49,520,62,38,INK,this.page,true);
     this.button('返回修改',566,119,122,48,()=>this.navigate('craft'));
-    this.text('配色、珠序和吊坠，都由你决定',85,123,470,40,24,SAGE,this.page,true);
     this.image('pencil-packing-box',40,190,640,540);
     const work=this.box('Packed work',0,0,0,0);
     this.bracelet(this.save.draft.filter(t=>t!==null),0,0,119,work,8,normalizeBeadSizes(this.save.draft,this.save.draftSizes,this.save.beadSize).filter((_,i)=>this.save.draft[i]!==null),this.save.charm,normalizeBeadFacings(this.save.draft,this.save.draftFacings).filter((_,i)=>this.save.draft[i]!==null));
@@ -1661,7 +1663,6 @@ export class AtelierGame extends Component {
     this.fitBracelet(work,238,430,244,180);
     this.text('给这份手作起个名字',140,750,440,55,32,INK,this.page,true);
     this.nameField(this.save.draftName||'',824,this.page,value=>{this.save.draftName=value;this.persist();});
-    this.text('留空自动命名 · 保存后可修改',100,903,520,32,22,MUTED,this.page,true);
     this.text(this.save.draft.filter(t=>t!==null).length+' 件材质 · 建议 '+price+' 金币',100,960,520,40,25,SAGE,this.page,true);
     if(this.save.customers?.active?.status==='accepted'){
       const fit=customerFit(this.save.customers.active.style,this.save.draft,this.save.charm);
@@ -1745,7 +1746,6 @@ export class AtelierGame extends Component {
     }
     const button=this.button('继续营业',163,1163,394,78,()=>this.continueDelivery(),this.page,true);
     button.children.find(n=>n.getComponent(Label))!.getComponent(Label)!.fontSize=34;
-    this.text('奖励已入账 · 作品与进度已保存',120,1250,480,25,18,MUTED,this.page,true);
   }
   private continueDelivery() {
     if(this.screen!=='delivery')return;
@@ -1794,7 +1794,6 @@ export class AtelierGame extends Component {
     this.ellipse('Ribbon bow left',340,499,23,9,gift.ribbon==='blue'?'#91b6c4':'#9bad87',this.overlay);
     this.ellipse('Ribbon bow right',382,499,23,9,gift.ribbon==='blue'?'#91b6c4':'#9bad87',this.overlay);
     this.bracelet(this.save.draft,360,432,72,this.overlay);
-    this.text('没有标准答案，选一句你想对她说的话。',105,535,510,38,21,MUTED,this.overlay,true);
     const choose=(field:string,id:string)=>{const next=chooseSeaGift(this.save,field,id);if(!next)return;this.save=next;this.persist();this.seaPacking();};
     SEA_BLESSINGS.forEach((b,i)=>{
       const open=!b.requires||state.facts.includes(b.requires);
@@ -1844,14 +1843,14 @@ export class AtelierGame extends Component {
   private matchIntro() {
     if(this.busy)return;
     const preview=rules.newSession(42,this.save.level);
+    preview.materialTypes.forEach(type=>{void this.loadFrame(this.materialArt(type));});
     this.dialog('intro',`第 ${this.save.level} 关 · ${preview.title}`);
     this.text('通关 '+rules.gatherRewardRange(preview).min+'～'+rules.gatherRewardRange(preview).max+' 颗 · 未过关保留六成',100,340,520,50,25,SAGE,this.overlay,true);
-    this.text(this.materialNeed(),100,397,520,66,23,MUTED,this.overlay,true);
     rules.goalProgress(preview).forEach((g:any,i:number)=>{
       this.rect('Level objective '+i,107,482+i*51,506,44,'#e7ebdb',this.overlay,12);
       this.text(g.label+'  '+g.target,125,482+i*51,470,44,25,INK,this.overlay,true);
     });
-    this.text('本关材料：'+preview.materialTypes.map(i=>MATERIALS[i].name).join('、')+'\n通关或步数用完后统一发放，优先采集消除最多的材质。\n提前退出或重开不领取本关奖励。',100,710,520,134,24,INK,this.overlay,true);
+    this.text('通关或用完步数领取奖励\n提前退出不领奖',100,710,520,100,28,INK,this.overlay,true);
     this.button('开始采珠 · '+preview.moves+' 步',130,879,460,66,()=>this.startMatch(),this.overlay,true);
     this.button('返回自由手作',130,969,460,54,()=>this.navigate('craft'),this.overlay);
   }
@@ -1864,7 +1863,15 @@ export class AtelierGame extends Component {
   private orderMaterialDeficits() {
     return rules.draftCounts(this.save.draft).map((n:number,i:number)=>Math.max(0,n-materialStock(this.save,i)));
   }
-  private startMatch() {
+  private async startMatch() {
+    if(this.busy)return;
+    if(rules.refreshEnergy(this.save).energy<1){this.toast('体力不足');return;}
+    this.setBusy(true);
+    const preview=rules.newSession(42,this.save.level);
+    const frames=await Promise.all(preview.materialTypes.map(type=>this.loadFrame(this.materialArt(type))));
+    this.setBusy(false);
+    if(this.disposed)return;
+    if(frames.some(frame=>!frame)){this.toast('珠子未加载完成，请重试。');return;}
     this.bankGather();
     this.save=rules.refreshEnergy(this.save);if(this.save.energy<1)return this.toast('体力不足，稍等一会儿，或先去做手串。');
     if(this.gatherEffects)this.clear(this.gatherEffects);
@@ -1882,11 +1889,10 @@ export class AtelierGame extends Component {
     const s=this.session;if(!s){this.screen='home';this.home();return;}
     if(s.level===1&&s.moves===rules.levelConfig(1).moves)this.hint=rules.findMove(s.board)||[];
     this.text(`第 ${s.level} 关 · ${s.title}`,38,105,644,46,30,INK,this.page,true);
-    this.text('通关 '+rules.gatherRewardRange(s).min+'～'+rules.gatherRewardRange(s).max+' 颗 · 未过关保留六成',38,155,644,37,21,MUTED,this.page,true);
     this.rect('Moves shadow',40,206,112,107,'#cfb98e',this.page,20);
     this.rect('Moves card',40,198,112,107,'#728467',this.page,20,'#c6b681');
     this.movesLabel=this.text(String(s.moves),45,198,102,67,43,PAPER,this.page,true);
-    this.text('剩余步数',45,265,102,33,18,PAPER,this.page,true);
+    this.text('步数',45,265,102,33,26,PAPER,this.page,true);
     this.goalLabels=[];
     const goals=rules.goalProgress(s),width=510/goals.length;
     goals.forEach((g:any,i:number)=>{
@@ -1917,9 +1923,11 @@ export class AtelierGame extends Component {
     s.collected.forEach((count: number,i: number)=>{this.image(this.materialArt(this.boardType(i)),44+i*109,991,43,43);this.text(String(count),88+i*109,989,53,49,25,INK,this.page,true);});
     ['hammer','bloom','shuffle','hint'].forEach((id,i)=>{
       const names=['小木槌','花开十字','重新排珠','灵感提示'];
-      this.button(names[i]+(id==='hint'?'':` ${s.tools[id]}`),38+i*165,1063,149,64,()=>this.selectTool(id),this.page,this.tool===id,id==='hint'||s.tools[id]>0);
+      const button=this.button(names[i]+(id==='hint'?'':` ${s.tools[id]}`),38+i*165,1063,149,64,()=>this.selectTool(id),this.page,this.tool===id,id==='hint'||s.tools[id]>0);
+      const label=button.getComponentsInChildren(Label)[0];
+      label.string=['敲珠','十字','重排','提示'][i]+(id==='hint'?'':` ${s.tools[id]}`);label.fontSize=30;label.lineHeight=38;
     });
-    this.text(this.tool?this.tool==='hammer'?'点一颗珠子，使用小木槌':'点一颗珠子，收集整行整列':s.tip,38,1146,644,53,22,MUTED,this.page,true);
+    if(this.tool)this.text(this.tool==='hammer'?'点珠子敲掉':'点珠子消除整行整列',38,1146,644,53,28,INK,this.page,true);
   }
   private makeBoardBead(i:number,type:number,special='',row?:number) {
     const p=this.boardPos(i,false),active=this.selected===i||this.hint.includes(i);

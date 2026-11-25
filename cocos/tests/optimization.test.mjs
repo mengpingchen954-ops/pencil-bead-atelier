@@ -14,7 +14,7 @@ function fixture(){
  g.page=new Node('Page');g.overlay=new Node('Dialogs');g.notices=new Node('Notices');
  g.save={...rules.freshSave(),started:true};g.screen='home';g.persist=()=>{};g.play=()=>{};
  g.scheduleOnce=fn=>scheduled.push(fn);
- g.accessibility={clear(){},text(){},button(name,fn,modal,enabled){if(enabled)actions.set(name,fn);},showDialog(){},closeDialog(){},announce(){}};
+ g.accessibility={busy(){},clear(){},text(){},button(name,fn,modal,enabled){if(enabled)actions.set(name,fn);},showDialog(){},closeDialog(){},announce(){}};
  return {g,actions,flush:()=>{for(const fn of scheduled.splice(0))fn();}};
 }
 test('visible action ids are hidden while native and accessible identities stay distinct',()=>{
@@ -80,8 +80,8 @@ test('new contest rubric and ghost reference preserve earlier paid results and a
  g.contestSample();actions.get('显示参考虚影')();assert.equal(g.contestGhost,true);assert.equal(JSON.stringify(g.save),before);assert.equal(g.workingUndo.length,0);
  assert.ok(g.page.getComponentsInChildren(Label).some(l=>l.string.includes('预计')));
 });
-test('match exposes only pause and music in the header and returning after gathering keeps the craft origin',()=>{
- const {g,actions}=fixture();g.navigate('craft');g.startMatch();
+test('match exposes only pause and music in the header and returning after gathering keeps the craft origin',async()=>{
+ const {g,actions}=fixture();g.navigate('craft');g.loadFrame=async()=>({});await g.startMatch();
  const top=g.page.children.filter(n=>n.name.startsWith('Button:')&&-n.position.y<85).map(n=>n.name);
  assert.deepEqual(top,['Button: 暂停','Button: ♪']);assert.equal(g.craftFrom,'home');
  g.session.status='lost';g.session.moves=0;g.session.collected=[10,10,10,10,10,10];g.leaveGather();assert.equal(g.craftFrom,'home');assert.ok(g.save.firstSteps.craft);actions.get('返回小店')();assert.equal(g.screen,'home');
@@ -136,4 +136,20 @@ test('bead impacts use short licensed material clips and respect the sound switc
   while(offset+8<=wav.length){const key=wav.toString('ascii',offset,offset+4),size=wav.readUInt32LE(offset+4);if(key==='fmt ')rate=wav.readUInt32LE(offset+12);if(key==='data')data=wav.subarray(offset+8,offset+8+size);offset+=8+size+(size%2);}
   assert.ok(data&&rate===44100);assert.ok(data.length/2/rate>.05&&data.length/2/rate<.5);let peak=0;for(let i=0;i<data.length;i+=2)peak=Math.max(peak,Math.abs(data.readInt16LE(i)));assert.ok(peak>500&&peak<32768);
  }
+});
+
+test('gathering waits for every material, charges once, and stays on the current page when an image fails',async()=>{
+ const {g}=fixture();g.accessibility.busy=()=>{};g.screen='home';g.render=()=>{};g.closeModal=()=>{};g.toast=()=>{};
+ const pending=[];g.loadFrame=()=>new Promise(resolve=>pending.push(resolve));
+ const energy=g.save.energy,starting=g.startMatch();assert.equal(g.busy,true);assert.equal(g.save.energy,energy);assert.equal(g.session,null);
+ await g.startMatch();assert.equal(pending.length,6);
+ pending.slice(0,5).forEach(done=>done({}));await Promise.resolve();assert.equal(g.screen,'home');
+ pending[5]({});await starting;assert.equal(g.screen,'match');assert.equal(g.save.energy,energy-1);assert.equal(g.busy,false);
+ g.screen='home';g.session=null;g.loadFrame=async()=>null;const before=JSON.stringify(g.save);await g.startMatch();assert.equal(g.screen,'home');assert.equal(JSON.stringify(g.save),before);
+});
+test('game labels are bold and larger, while the board drops repeated reward and tutorial prose',()=>{
+ const {g}=fixture();g.screen='match';g.session=rules.newSession(42,1);g.render();
+ const labels=g.page.getComponentsInChildren(Label);assert.ok(labels.length>0);assert.ok(labels.every(l=>l.isBold&&l.fontSize>=28));
+ assert.equal(labels.some(l=>l.string.includes('未过关保留六成')||l.string.includes('交换相邻珠子')),false);
+ assert.equal(g.guideNode,null);
 });

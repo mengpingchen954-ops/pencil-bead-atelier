@@ -45,7 +45,7 @@ jsonFiles.push(...imports.filter(n=>n.endsWith('.json')));
 const nativePacks=require('./native-packs.cjs')(web,root);
 const cache=require('./startup-cache.cjs')(web,jsonFiles,scriptFiles);
 for(let i=preloads.length-1;i>=0;i--){if(!preloads[i].includes('cocos-js/'))preloads.splice(i,1);else preloads[i]=preloads[i].replace(/cc\.[a-f0-9]{5}\.js/,cache.engineName);}
-preloads.push('<script>'+cache.code+';window.__atelierStartup.nativeManifest='+JSON.stringify(nativePacks.manifest)+';window.__atelierStartup.audio='+JSON.stringify(nativePacks.audio)+'</script>');
+preloads.push('<script>'+cache.code+';window.__atelierStartup.nativeManifest='+JSON.stringify(nativePacks.manifest)+';window.__atelierStartup.audio='+JSON.stringify(nativePacks.audio)+';window.__atelierStartup.images='+JSON.stringify(nativePacks.images)+'</script>');
 for(const page of Object.keys(artGroups))artGroups[page]=artGroups[page].filter(file=>/\.(jpg|png)$/.test(file)).map(file=>nativePacks.manifest.files[file]||file);
 preloads.push('<script>(function(groups){var page="cover";try{var save=JSON.parse(localStorage.getItem("pencil-bead-atelier-v1")||"null");if(save&&save.started)page="home";}catch{}for(var file of groups[page]){var link=document.createElement("link");link.rel="preload";link.href=file;link.as="image";link.crossOrigin="anonymous";document.head.appendChild(link);}})('+JSON.stringify(artGroups)+');</script>');
 const mapName=find('src','import-map.','.json');
