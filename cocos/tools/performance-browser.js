@@ -17,6 +17,11 @@
  document.addEventListener('webglcontextlost',function(event){event.preventDefault();state.contextLosses=(state.contextLosses||0)+1;window.atelierLoadFailure();},true);
  window.addEventListener('error',function(event){if(event.message)window.atelierLoadFailure();});
  window.addEventListener('unhandledrejection',function(){window.atelierLoadFailure();});
- const timer=setTimeout(function(){if(!state.sceneFrame)window.atelierLoadFailure();},15000);
+ const timer=setTimeout(function(){
+  if(state.sceneFrame)return;
+  const label=document.querySelector('#atelier-loading span');
+  if(label)label.textContent='网络较慢，正在继续加载，请稍候…';
+ },15000);
+ window.atelierLoadReady=function(){clearTimeout(timer);document.getElementById('atelier-loading')?.remove();};
  window.addEventListener('pagehide',function(){clearTimeout(timer);},{once:true});
 })();

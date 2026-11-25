@@ -2,24 +2,26 @@ import test from 'node:test';import assert from 'node:assert/strict';import fs f
 const require=createRequire(import.meta.url),ts=require('typescript');
 const source=ts.transpileModule(fs.readFileSync(path.resolve(import.meta.dirname,'../assets/scripts/AssetPacks.ts'),'utf8'),{compilerOptions:{module:ts.ModuleKind.CommonJS,target:ts.ScriptTarget.ES2020}}).outputText;
 function fixture(fail=false){
- const blobs=new Map(),requests=[],fallback=[],handlers={};let serial=0;
- class LocalURL extends URL {static createObjectURL(blob){const id='blob:fixture-'+serial++;blobs.set(id,blob);return id;}static revokeObjectURL(id){blobs.delete(id);}}
- const image=(url,options,done)=>{const blob=blobs.get(url);if(!blob)fallback.push(url);done(null,blob||url);};
+ const requests=[],handlers={};
+ const image=(url,options,done)=>{requests.push(url);done(fail&&url.endsWith('.webp')?Error('unavailable'):null,url);};
  const audio=(url,options,done)=>done(null,url);const downloader={_downloaders:{'.png':image,'.jpg':image,'.jpeg':image,'.wav':audio},register:(key,fn)=>handlers[key]=fn};
- const context={require:()=>({assetManager:{downloader}}),exports:{},URL:LocalURL,Blob,atob,document:{baseURI:'https://example.test/pencil-bead-atelier/'},console,
-  __atelierStartup:{nativeManifest:{files:{'a.png':'one','b.png':'one'},groups:{one:'page-assets/one.json'},bytes:6},audio:{'tap.wav':'data:audio/wav;base64,AQID'}},
-  fetch:async url=>{requests.push(url);if(fail)throw Error('offline');return {ok:true,json:async()=>({'a.png':{type:'image/png',data:'AQID'},'b.png':{type:'image/png',data:'BAUG'}})};},
+ const context={require:()=>({assetManager:{downloader}}),exports:{},URL,document:{baseURI:'https://example.test/pencil-bead-atelier/'},
+  __atelierStartup:{nativeManifest:{files:{'a.png':'page-assets/a.webp','b.png':'page-assets/b.webp'},bytes:6,originalBytes:30},audio:{'tap.wav':'data:audio/wav;base64,AQID'}},
  };
  vm.runInNewContext(source,context);context.exports.installAssetPacks();
  const download=(extension,url)=>new Promise((resolve,reject)=>handlers[extension](url,{},(error,value)=>error?reject(error):resolve(value)));
- return {context,requests,fallback,blobs,download};
+ return {context,requests,download};
 }
-test('page images share one pack, preserve bytes and release temporary object URLs',async()=>{
- const f=fixture(),images=await Promise.all([f.download('.png','a.png'),f.download('.png','b.png')]);
- assert.equal(f.requests.length,1);assert.deepEqual(Array.from(new Uint8Array(await images[0].arrayBuffer())),[1,2,3]);assert.equal(f.blobs.size,0);
- await f.context.__atelierPacks.warm();await f.download('.png','a.png');assert.equal(f.requests.length,1);assert.equal(f.context.__atelierPacks.snapshot().bytes,6);
- assert.equal(await f.download('.wav','tap.wav'),'data:audio/wav;base64,AQID');assert.equal(await f.download('.wav','music.wav'),'music.wav');
+test('only requested images download, using compressed files under the repository subpath',async()=>{
+ const f=fixture();assert.equal(f.requests.length,0);
+ assert.equal(await f.download('.png','a.png'),'https://example.test/pencil-bead-atelier/page-assets/a.webp');
+ assert.equal(f.requests.length,1);assert.equal(f.context.__atelierPacks.snapshot().images,1);
+ assert.equal(await f.download('.jpg','unmapped.jpg'),'unmapped.jpg');
+ assert.equal(await f.download('.wav','tap.wav'),'data:audio/wav;base64,AQID');
+ assert.equal(await f.download('.wav','music.wav'),'music.wav');
+ f.context.exports.installAssetPacks();assert.equal(f.requests.length,2,'installation stays idempotent');
 });
-test('a failed optional pack preserves the original image downloader',async()=>{
- const f=fixture(true);assert.equal(await f.download('.png','a.png'),'a.png');assert.deepEqual(f.fallback,['a.png']);
+test('failed compressed images fall back to their original image',async()=>{
+ const f=fixture(true);assert.equal(await f.download('.png','a.png'),'a.png');
+ assert.deepEqual(f.requests,['https://example.test/pencil-bead-atelier/page-assets/a.webp','a.png']);
 });

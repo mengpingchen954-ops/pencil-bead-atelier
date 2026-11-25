@@ -204,9 +204,7 @@ export class AtelierGame extends Component {
       const host=globalThis as any;
       host.__atelierPerformance=host.__atelierPerformance||{};
       host.__atelierPerformance.sceneFrame=performance.now();
-      document.getElementById('atelier-loading')?.remove();
-      // Warm compressed page packs after the actual first frame, without uploading hidden textures.
-      void host.__atelierPacks?.warm();
+      host.atelierLoadReady?.();
     });
     input.on(Input.EventType.KEY_DOWN, this.onKey, this);
     game.on(Game.EVENT_HIDE, this.onHide, this);
